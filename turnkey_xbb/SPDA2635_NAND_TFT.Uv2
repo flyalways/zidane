@@ -1,0 +1,752 @@
+### uVision2 Project, (C) Keil Software
+### Do not modify !
+
+Target (SPDA26XX_Nand_TFT), 0x0000 // Tools: 'MCS-51'
+
+Group (ASM)
+Group (USB)
+Group (SD)
+Group (Flash)
+Group (DSP)
+Group (MAIN)
+Group (File_Sytem)
+Group (Play)
+Group (Key)
+Group (UI_USB)
+Group (LogData)
+Group (IR)
+Group (Host)
+Group (DIR)
+Group (Menu)
+Group (LCM)
+Group (Jpeg)
+Group (Mjpeg)
+Group (Menu_HZK)
+
+File 1,2,<..\LIBSOURCE\ASM\STARTUP.A51><STARTUP.A51> 0x0 
+File 1,2,<..\LIBSOURCE\ASM\L51_BANK.A51><L51_BANK.A51> 0x0 
+File 1,1,<..\LIBSOURCE\ASM\L51_BankingLoader.c><L51_BankingLoader.c> 0x0 
+File 1,2,<..\libsource\ASM\util.a51><util.a51> 0x0 
+File 1,2,<..\libsource\ASM\lib.a51><lib.a51> 0x0 
+File 2,1,<..\libsource\USB\USB.c><USB.c> 0x0 
+File 2,1,<..\libsource\USB\USB_BULK.c><USB_BULK.c> 0x0 
+File 2,1,<..\libsource\USB\usb_cmds.c><usb_cmds.c> 0x0 
+File 2,1,<..\libsource\USB\USB_EP0.c><USB_EP0.c> 0x0 
+File 2,1,<..\libsource\USB\usbComm.C><usbComm.C> 0x0 
+File 2,1,<..\libsource\USB\USB_I2C.c><USB_I2C.c> 0x0 
+File 3,4,<..\libsource\LIB\SD_CMD.LIB><SD_CMD.LIB> 0x4CDB9458 
+File 3,4,<..\libsource\LIB\SD_HW.LIB><SD_HW.LIB> 0x4CDB9458 
+File 4,4,<..\libsource\LIB\FLASH.LIB><FLASH.LIB> 0x4CDB9458 
+File 4,4,<..\libsource\LIB\FLASH_COMM.LIB><FLASH_COMM.LIB> 0x4CDB9458 
+File 4,4,<..\libsource\LIB\FLASH_INIT.LIB><FLASH_INIT.LIB> 0x4CDB9458 
+File 4,4,<..\libsource\LIB\FLASH_READ.LIB><FLASH_READ.LIB> 0x4CDB9458 
+File 4,4,<..\libsource\LIB\FLSHSCAN.LIB><FLSHSCAN.LIB> 0x4CDB9458 
+File 4,4,<..\libsource\LIB\FLASH_ENHANCE.LIB><FLASH_ENHANCE.LIB> 0x4CDB9458 
+File 5,4,<..\libsource\LIB\DSPPHYSIC.LIB><DSPPHYSIC.LIB> 0x4CDB9458 
+File 5,4,<..\libsource\LIB\DSPUSER.LIB><DSPUSER.LIB> 0x4CDB9458 
+File 6,1,<.\MAIN\system.C><system.C> 0x0 
+File 6,1,<.\MAIN\ISR.c><ISR.c> 0x0 
+File 6,1,<.\MAIN\St_cmds.c><St_cmds.c> 0x0 
+File 6,1,<.\MAIN\const_timer_init.c><const_timer_init.c> 0x0 
+File 6,1,<.\MAIN\init.c><init.c> 0x0 
+File 6,1,<.\MAIN\variables.c><variables.c> 0x0 
+File 7,1,<..\LIBSOURCE\DOS\Memalloc.c><Memalloc.c> 0x0 
+File 7,4,<..\libsource\LIB\DOSFILE.LIB><DOSFILE.LIB> 0x4CDB9458 
+File 7,4,<..\libsource\LIB\DOSFDB.LIB><DOSFDB.LIB> 0x4CDB9458 
+File 7,4,<..\libsource\LIB\DOSFAT.LIB><DOSFAT.LIB> 0x4CDB9458 
+File 7,4,<..\libsource\LIB\DOS.LIB><DOS.LIB> 0x4CDB9458 
+File 7,4,<..\libsource\LIB\DOSINIT.LIB><DOSINIT.LIB> 0x4CDB9458 
+File 7,4,<..\libsource\LIB\DOSCOMM.LIB><DOSCOMM.LIB> 0x4CDB9458 
+File 7,4,<..\libsource\LIB\DOS_FILEPLAY.LIB><DOS_FILEPLAY.LIB> 0x4CDB9458 
+File 7,4,<..\libsource\LIB\FREE_CLUSTER.LIB><FREE_CLUSTER.LIB> 0x4CDB9458 
+File 8,1,<.\Play\Play_process.C><Play_process.C> 0x0 
+File 8,1,<.\Play\Lyric.c><Lyric.c> 0x0 
+File 8,1,<.\Play\id3.C><id3.C> 0x0 
+File 8,1,<.\Play\mcu_dspinit.c><mcu_dspinit.c> 0x0 
+File 8,1,<.\Play\FFR1.c><FFR1.c> 0x0 
+File 9,1,<.\Key\ProcessKey.c><ProcessKey.c> 0x0 
+File 10,1,<.\UI_USB\USB_process.c><USB_process.c> 0x0 
+File 11,1,<.\LogData\logData.c><logData.c> 0x0 
+File 12,1,<.\IR\remote.c><remote.c> 0x0 
+File 12,1,<.\IR\FM.c><FM.c> 0x0 
+File 13,4,<..\libsource\LIB\HOST_PHY.LIB><HOST_PHY.LIB> 0x4CDB9458 
+File 13,4,<..\libsource\LIB\HOST_COMMAND_SCSI.LIB><HOST_COMMAND_SCSI.LIB> 0x4CDB9458 
+File 13,4,<..\libsource\LIB\HOST_INIT.LIB><HOST_INIT.LIB> 0x4CDB9458 
+File 14,1,<.\DIR\Dir_process.c><Dir_process.c> 0x0 
+File 14,1,<.\DIR\Dir_process1.c><Dir_process1.c> 0x0 
+File 15,1,<.\Play\PlayMenu.C><PlayMenu.C> 0x0 
+File 16,1,<.\LCM\Indep_LCM_Func.c><Indep_LCM_Func.c> 0x0 
+File 16,1,<.\LCM\TFT_display.c><TFT_display.c> 0x0 
+File 16,1,<.\LCM\TFT_displayB7.c><TFT_displayB7.c> 0x0 
+File 16,1,<.\LCM\LCM_init.c><LCM_init.c> 0x0 
+File 16,1,<.\LCM\LCM_driver.c><LCM_driver.c> 0x0 
+File 17,1,<.\Jpeg\Jpeg_process.c><Jpeg_process.c> 0x0 
+File 18,1,<.\MJpeg\Mjpeg_process.c><Mjpeg_process.c> 0x0 
+File 19,1,<.\Menu_hzk\Menu_hzk1.c><Menu_hzk1.c> 0x0 
+File 19,1,<.\Menu_hzk\Menu_hzk2.c><Menu_hzk2.c> 0x0 
+
+
+Options 1,0,0  // Target 'SPDA26XX_Nand_TFT'
+ Device (DS80C323)
+ Vendor (Dallas Semiconductor)
+ Cpu (IRAM(0-0xFF) CLOCK(18000000) MODDP2)
+ FlashUt ()
+ StupF ("LIB\STARTUP.A51" ("Standard 8051 Startup Code"))
+ FlashDR ()
+ Rgf (REG320.H)
+ Mem ()
+ C ()
+ A ()
+ RL ()
+ OH ()
+ UseEnv=0
+ EnvBin (C:\Keil\C51\BIN\)
+ EnvInc ()
+ EnvLib ()
+ EnvReg (Dallas\)
+ OrgReg (ÿDallas\)
+ TgStat=0
+ OutDir (.\obj\)
+ OutName (SPDA23xx)
+ GenApp=1
+ GenLib=0
+ GenHex=1
+ Debug=1
+ Browse=1
+ LstDir (.\lst\)
+ HexSel=0
+ MG32K=0
+ TGMORE=0
+ RunUsr 0 1 <MAKE_2635_TFT_NAND.bat>
+ RunUsr 1 0 <>
+ BrunUsr 0 0 <>
+ BrunUsr 1 0 <>
+ SVCSID <>
+ MODEL5=2
+ RTOS5=0
+ ROMSZ5=2
+ DHOLD5=0
+ XHOLD5=0
+ T51FL=8464
+ CBANKS5=3
+ XBANKS5=0
+ RCB51 { 0,0,96,0,0,255,143,0,0 }
+ RXB51 { 0,0,0,0,0,0,0,0,0 }
+ OCM51 { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ OCR51 { 0,0,112,0,0,0,16,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ IRO51 { 1,0,0,0,0,0,0,0,0 }
+ IRA51 { 0,0,0,0,0,0,1,0,0 }
+ XRA51 { 0,0,0,0,0,0,0,0,0 }
+ XRA512 { 0,0,0,0,0,0,0,0,0 }
+ C51FL=17452368
+ C51VA=0
+ C51MSC ()
+ C51DEF (K_ICTYPE = 0x03)
+ C51UDF ()
+ INCC5 (..\libsource\header)
+ AX51FL=4
+ AX51MSC ()
+ AX51SET ()
+ AX51RST ()
+ INCA5 ()
+ PropFld { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ IncBld=1
+ AlwaysBuild=0
+ GenAsm=0
+ AsmAsm=0
+ PublicsOnly=0
+ StopCode=3
+ CustArgs ()
+ LibMods ()
+ BankNo=65535
+ LX51FL=293
+ LX51OVL ()
+ LX51MSC ()
+ LX51DWN ()
+ LX51LFI (.\SunplusmM.lin)
+ LX51ASN ()
+ LX51RES ()
+ LX51CCL ()
+ LX51UCL ()
+ LX51CSC ()
+ LX51UCS ()
+ LX51COB ()
+ LX51XDB (0X7000-0X7FFF)
+ LX51PDB ()
+ LX51BIB ()
+ LX51DAB ()
+ LX51IDB ()
+ LX51PRC ()
+ LX51STK ()
+ LX51COS ()
+ LX51XDS ()
+ LX51BIS ()
+ LX51DAS ()
+ LX51IDS ()
+  OPTDL (S8051.DLL)()(DP51.DLL)(-p320)(S8051.DLL)()(TP51.DLL)(-p320)
+  OPTDBG 44029,-1,()()()()()()()()()() (BIN\MON51.DLL)()()()
+ FLASH1 { 1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ FLASH2 ()
+ FLASH3 ("" ())
+EndOpt
+
+Options 1,1,0  // Group 'ASM'
+ PropFld { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ IncBld=2
+ AlwaysBuild=2
+ GenAsm=1
+ AsmAsm=1
+ PublicsOnly=2
+ StopCode=11
+ CustArgs ()
+ LibMods ()
+ BankNo=65535
+ C51FL=177119914
+ C51VA=0
+ C51MSC ()
+ C51DEF ()
+ C51UDF ()
+ INCC5 ()
+ AX51FL=170
+ AX51MSC ()
+ AX51SET ()
+ AX51RST ()
+ INCA5 ()
+EndOpt
+
+Options 1,2,0  // Group 'USB'
+ PropFld { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ IncBld=2
+ AlwaysBuild=2
+ GenAsm=2
+ AsmAsm=2
+ PublicsOnly=2
+ StopCode=11
+ CustArgs ()
+ LibMods ()
+ BankNo=3
+ C51FL=177119914
+ C51VA=0
+ C51MSC ()
+ C51DEF ()
+ C51UDF ()
+ INCC5 ()
+ AX51FL=170
+ AX51MSC ()
+ AX51SET ()
+ AX51RST ()
+ INCA5 ()
+EndOpt
+
+Options 1,3,0  // Group 'SD'
+ PropFld { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ IncBld=2
+ AlwaysBuild=2
+ GenAsm=2
+ AsmAsm=2
+ PublicsOnly=2
+ StopCode=11
+ CustArgs ()
+ LibMods ()
+ BankNo=0
+ C51FL=177119914
+ C51VA=0
+ C51MSC ()
+ C51DEF ()
+ C51UDF ()
+ INCC5 ()
+ AX51FL=170
+ AX51MSC ()
+ AX51SET ()
+ AX51RST ()
+ INCA5 ()
+EndOpt
+
+Options 1,4,0  // Group 'Flash'
+ PropFld { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ IncBld=2
+ AlwaysBuild=2
+ GenAsm=2
+ AsmAsm=2
+ PublicsOnly=2
+ StopCode=11
+ CustArgs ()
+ LibMods ()
+ BankNo=0
+ C51FL=177119914
+ C51VA=0
+ C51MSC ()
+ C51DEF ()
+ C51UDF ()
+ INCC5 ()
+ AX51FL=170
+ AX51MSC ()
+ AX51SET ()
+ AX51RST ()
+ INCA5 ()
+EndOpt
+
+Options 1,5,0  // Group 'DSP'
+ PropFld { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ IncBld=2
+ AlwaysBuild=2
+ GenAsm=2
+ AsmAsm=2
+ PublicsOnly=2
+ StopCode=11
+ CustArgs ()
+ LibMods ()
+ BankNo=4
+ C51FL=177119914
+ C51VA=0
+ C51MSC ()
+ C51DEF ()
+ C51UDF ()
+ INCC5 ()
+ AX51FL=170
+ AX51MSC ()
+ AX51SET ()
+ AX51RST ()
+ INCA5 ()
+EndOpt
+
+Options 1,6,0  // Group 'MAIN'
+ PropFld { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ IncBld=2
+ AlwaysBuild=2
+ GenAsm=2
+ AsmAsm=2
+ PublicsOnly=2
+ StopCode=11
+ CustArgs ()
+ LibMods ()
+ BankNo=0
+ C51FL=177119914
+ C51VA=0
+ C51MSC ()
+ C51DEF ()
+ C51UDF ()
+ INCC5 ()
+ AX51FL=170
+ AX51MSC ()
+ AX51SET ()
+ AX51RST ()
+ INCA5 ()
+EndOpt
+
+Options 1,7,0  // Group 'File_Sytem'
+ PropFld { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ IncBld=2
+ AlwaysBuild=2
+ GenAsm=2
+ AsmAsm=2
+ PublicsOnly=2
+ StopCode=11
+ CustArgs ()
+ LibMods ()
+ BankNo=0
+ C51FL=177119914
+ C51VA=0
+ C51MSC ()
+ C51DEF ()
+ C51UDF ()
+ INCC5 ()
+ AX51FL=170
+ AX51MSC ()
+ AX51SET ()
+ AX51RST ()
+ INCA5 ()
+EndOpt
+
+Options 1,8,0  // Group 'Play'
+ PropFld { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ IncBld=2
+ AlwaysBuild=2
+ GenAsm=2
+ AsmAsm=2
+ PublicsOnly=2
+ StopCode=11
+ CustArgs ()
+ LibMods ()
+ BankNo=4
+ C51FL=177119914
+ C51VA=0
+ C51MSC ()
+ C51DEF ()
+ C51UDF ()
+ INCC5 ()
+ AX51FL=170
+ AX51MSC ()
+ AX51SET ()
+ AX51RST ()
+ INCA5 ()
+EndOpt
+
+Options 1,10,0  // Group 'UI_USB'
+ PropFld { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ IncBld=2
+ AlwaysBuild=2
+ GenAsm=2
+ AsmAsm=2
+ PublicsOnly=2
+ StopCode=11
+ CustArgs ()
+ LibMods ()
+ BankNo=0
+ C51FL=177119914
+ C51VA=0
+ C51MSC ()
+ C51DEF ()
+ C51UDF ()
+ INCC5 ()
+ AX51FL=170
+ AX51MSC ()
+ AX51SET ()
+ AX51RST ()
+ INCA5 ()
+EndOpt
+
+Options 1,11,0  // Group 'LogData'
+ PropFld { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ IncBld=2
+ AlwaysBuild=2
+ GenAsm=2
+ AsmAsm=2
+ PublicsOnly=2
+ StopCode=11
+ CustArgs ()
+ LibMods ()
+ BankNo=1
+ C51FL=177119914
+ C51VA=0
+ C51MSC ()
+ C51DEF ()
+ C51UDF ()
+ INCC5 ()
+ AX51FL=170
+ AX51MSC ()
+ AX51SET ()
+ AX51RST ()
+ INCA5 ()
+EndOpt
+
+Options 1,12,0  // Group 'IR'
+ PropFld { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ IncBld=2
+ AlwaysBuild=2
+ GenAsm=2
+ AsmAsm=2
+ PublicsOnly=2
+ StopCode=11
+ CustArgs ()
+ LibMods ()
+ BankNo=7
+ C51FL=177119914
+ C51VA=0
+ C51MSC ()
+ C51DEF ()
+ C51UDF ()
+ INCC5 ()
+ AX51FL=170
+ AX51MSC ()
+ AX51SET ()
+ AX51RST ()
+ INCA5 ()
+EndOpt
+
+Options 1,13,0  // Group 'Host'
+ PropFld { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ IncBld=2
+ AlwaysBuild=2
+ GenAsm=2
+ AsmAsm=2
+ PublicsOnly=2
+ StopCode=11
+ CustArgs ()
+ LibMods ()
+ BankNo=4
+ C51FL=177119914
+ C51VA=0
+ C51MSC ()
+ C51DEF ()
+ C51UDF ()
+ INCC5 ()
+ AX51FL=170
+ AX51MSC ()
+ AX51SET ()
+ AX51RST ()
+ INCA5 ()
+EndOpt
+
+Options 1,14,0  // Group 'DIR'
+ PropFld { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ IncBld=2
+ AlwaysBuild=2
+ GenAsm=2
+ AsmAsm=2
+ PublicsOnly=2
+ StopCode=11
+ CustArgs ()
+ LibMods ()
+ BankNo=0
+ C51FL=177119914
+ C51VA=0
+ C51MSC ()
+ C51DEF ()
+ C51UDF ()
+ INCC5 ()
+ AX51FL=170
+ AX51MSC ()
+ AX51SET ()
+ AX51RST ()
+ INCA5 ()
+EndOpt
+
+Options 1,15,0  // Group 'Menu'
+ PropFld { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ IncBld=2
+ AlwaysBuild=2
+ GenAsm=2
+ AsmAsm=2
+ PublicsOnly=2
+ StopCode=11
+ CustArgs ()
+ LibMods ()
+ BankNo=8
+ C51FL=177119914
+ C51VA=0
+ C51MSC ()
+ C51DEF ()
+ C51UDF ()
+ INCC5 ()
+ AX51FL=170
+ AX51MSC ()
+ AX51SET ()
+ AX51RST ()
+ INCA5 ()
+EndOpt
+
+Options 1,16,0  // Group 'LCM'
+ PropFld { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ IncBld=2
+ AlwaysBuild=2
+ GenAsm=2
+ AsmAsm=2
+ PublicsOnly=2
+ StopCode=11
+ CustArgs ()
+ LibMods ()
+ BankNo=0
+ C51FL=177119914
+ C51VA=0
+ C51MSC ()
+ C51DEF ()
+ C51UDF ()
+ INCC5 ()
+ AX51FL=170
+ AX51MSC ()
+ AX51SET ()
+ AX51RST ()
+ INCA5 ()
+EndOpt
+
+Options 1,17,0  // Group 'Jpeg'
+ PropFld { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ IncBld=2
+ AlwaysBuild=2
+ GenAsm=2
+ AsmAsm=2
+ PublicsOnly=2
+ StopCode=11
+ CustArgs ()
+ LibMods ()
+ BankNo=8
+ C51FL=177119914
+ C51VA=0
+ C51MSC ()
+ C51DEF ()
+ C51UDF ()
+ INCC5 ()
+ AX51FL=170
+ AX51MSC ()
+ AX51SET ()
+ AX51RST ()
+ INCA5 ()
+EndOpt
+
+Options 1,18,0  // Group 'Mjpeg'
+ PropFld { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ IncBld=2
+ AlwaysBuild=2
+ GenAsm=2
+ AsmAsm=2
+ PublicsOnly=2
+ StopCode=11
+ CustArgs ()
+ LibMods ()
+ BankNo=8
+ C51FL=177119914
+ C51VA=0
+ C51MSC ()
+ C51DEF ()
+ C51UDF ()
+ INCC5 ()
+ AX51FL=170
+ AX51MSC ()
+ AX51SET ()
+ AX51RST ()
+ INCA5 ()
+EndOpt
+
+Options 1,2,10  // File 'usbComm.C'
+ PropFld { 2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ IncBld=2
+ AlwaysBuild=2
+ GenAsm=2
+ AsmAsm=2
+ PublicsOnly=2
+ StopCode=11
+ CustArgs ()
+ LibMods ()
+ BankNo=9
+ C51FL=177119914
+ C51VA=0
+ C51MSC ()
+ C51DEF ()
+ C51UDF ()
+ INCC5 ()
+EndOpt
+
+Options 1,6,24  // File 'St_cmds.c'
+ PropFld { 2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ IncBld=2
+ AlwaysBuild=2
+ GenAsm=2
+ AsmAsm=2
+ PublicsOnly=2
+ StopCode=11
+ CustArgs ()
+ LibMods ()
+ BankNo=5
+ C51FL=177119914
+ C51VA=0
+ C51MSC ()
+ C51DEF ()
+ C51UDF ()
+ INCC5 ()
+EndOpt
+
+Options 1,6,25  // File 'const_timer_init.c'
+ PropFld { 2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ IncBld=2
+ AlwaysBuild=2
+ GenAsm=2
+ AsmAsm=2
+ PublicsOnly=2
+ StopCode=11
+ CustArgs ()
+ LibMods ()
+ BankNo=1
+ C51FL=177119914
+ C51VA=0
+ C51MSC ()
+ C51DEF ()
+ C51UDF ()
+ INCC5 ()
+EndOpt
+
+Options 1,6,26  // File 'init.c'
+ PropFld { 2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ IncBld=2
+ AlwaysBuild=2
+ GenAsm=2
+ AsmAsm=2
+ PublicsOnly=2
+ StopCode=11
+ CustArgs ()
+ LibMods ()
+ BankNo=1
+ C51FL=177119914
+ C51VA=0
+ C51MSC ()
+ C51DEF ()
+ C51UDF ()
+ INCC5 ()
+EndOpt
+
+Options 1,8,40  // File 'mcu_dspinit.c'
+ PropFld { 2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ IncBld=2
+ AlwaysBuild=2
+ GenAsm=2
+ AsmAsm=2
+ PublicsOnly=2
+ StopCode=11
+ CustArgs ()
+ LibMods ()
+ BankNo=2
+ C51FL=177119914
+ C51VA=0
+ C51MSC ()
+ C51DEF ()
+ C51UDF ()
+ INCC5 ()
+EndOpt
+
+Options 1,16,54  // File 'TFT_display.c'
+ PropFld { 2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ IncBld=2
+ AlwaysBuild=2
+ GenAsm=2
+ AsmAsm=2
+ PublicsOnly=2
+ StopCode=11
+ CustArgs ()
+ LibMods ()
+ BankNo=4
+ C51FL=177119914
+ C51VA=0
+ C51MSC ()
+ C51DEF ()
+ C51UDF ()
+ INCC5 ()
+EndOpt
+
+Options 1,16,55  // File 'TFT_displayB7.c'
+ PropFld { 2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ IncBld=2
+ AlwaysBuild=2
+ GenAsm=2
+ AsmAsm=2
+ PublicsOnly=2
+ StopCode=11
+ CustArgs ()
+ LibMods ()
+ BankNo=8
+ C51FL=177119914
+ C51VA=0
+ C51MSC ()
+ C51DEF ()
+ C51UDF ()
+ INCC5 ()
+EndOpt
+
+Options 1,16,56  // File 'LCM_init.c'
+ PropFld { 2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ IncBld=2
+ AlwaysBuild=2
+ GenAsm=2
+ AsmAsm=2
+ PublicsOnly=2
+ StopCode=11
+ CustArgs ()
+ LibMods ()
+ BankNo=8
+ C51FL=177119914
+ C51VA=0
+ C51MSC ()
+ C51DEF ()
+ C51UDF ()
+ INCC5 ()
+EndOpt
+

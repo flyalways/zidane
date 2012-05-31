@@ -1,0 +1,1174 @@
+C51 COMPILER V7.10   FM                                                                    02/28/2011 10:30:43 PAGE 1   
+
+
+C51 COMPILER V7.10, COMPILATION OF MODULE FM
+OBJECT MODULE PLACED IN .\obj\FM.obj
+COMPILER INVOKED BY: F:\Keil C 7.10\chengxu\C51\BIN\C51.EXE IR\FM.c LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDIR(..\libs
+                    -ource\header) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\FM.lst) OBJECT(.\obj\FM.obj)
+
+line level    source
+
+   1          #include "..\Header\SPDA2K.h"
+   2          #include "..\header\PROTOTYP.h"
+   3          #include "..\header\dos\fs_struct.h"
+   4          #include "..\IR\remote.h"
+   5          #include "..\IR\FM.h"
+   6          #include "..\header\variables.h"
+   7          
+   8          //void  FM_FREQ_CHG(U8 tc_UP_DOWN,U8 offset);
+   9          void    FM_drive(void);
+  10          void    FM_initial(void);
+  11          void    I2C_ZI2020_Send_data(U8 add,U8 dat);
+  12          void    I2C_ZI2020_SendByte(U8 dat);
+  13          void    I2C_ZI2020_StartBit(void);
+  14          void    I2C_ZI2020_StopBit(void);
+  15          void    IIC_Start(void);
+  16          void    IIC_Stop(void);
+  17          void    IIC_SendAck(bit k);
+  18          void    AS6200_init(void);
+  19          void    AS6200_Write_Data(U8 Reg,U16 Reg_val);
+  20          void    AS6200_Set_Freq(U16 frq);
+  21          void    AS6200_Read_Freq(void);
+  22          void    I2C_Wait(U16 tt); //chiayen0805
+  23          void    FM_FREQ_CHG(U8 tc_UP_DOWN,U8 offset);
+  24          U8              IIC_WriteByte(U8 addr);
+  25          U8              IIC_ReadByte(U8 ack);
+  26          U16             AS6200_Read_Data(U8 Reg); //AS6200 read data according to Reg
+  27          unsigned int I2C_ZI2020_read_data(U8 add);
+  28          //===================8027Home======================
+  29          xdata   U8 qnd_i2c;
+  30          xdata   U8 qnd_i2c_timeout;
+  31          //====================================================
+  32          
+  33          
+  34          void FM_FREQ_CHG(U8 tc_UP_DOWN,U8 offset)       // 1=UP  0=DOWN
+  35          {
+  36   1              gb_Frequency_Song=0;    // 0=Show Frequency    1=Show Song Number/EQ
+  37   1              gc_SelectVol=0;                 // 1=Show Vol
+  38   1              gb_SelectEQ=0;                  // 0=Show Song Number  1=Show EQ
+  39   1              gc_ShowTimer=0;
+  40   1              gb_ChannelSet=0;
+  41   1              gc_TuneVolFreqStatus=2;
+  42   1              gc_ShowTimer=72;
+  43   1      
+  44   1              if(tc_UP_DOWN==1)
+  45   1              {
+  46   2                      gw_FM_frequency+=offset;
+  47   2                      if(gw_FM_frequency>1080)
+  48   2                      {
+  49   3                              gw_FM_frequency=gw_FM_frequency-206;
+  50   3                      }
+  51   2              }
+  52   1              else
+  53   1              {
+  54   2                      gw_FM_frequency-=offset;
+C51 COMPILER V7.10   FM                                                                    02/28/2011 10:30:43 PAGE 2   
+
+  55   2                      if(gw_FM_frequency<875)
+  56   2                      {
+  57   3                              gw_FM_frequency=206+gw_FM_frequency;
+  58   3                      }
+  59   2              }
+  60   1              FM_drive();
+  61   1              gw_IR_Setting_Timer=120;
+  62   1              gb_IR_Setting=1;
+  63   1      }
+  64          
+  65          
+  66          void FM_drive(void)
+  67          {
+  68   1              U8  tc_FMModule_Type;
+  69   1              U16     tw_FM_frequency;
+  70   1      
+  71   1              gw_LogData_Timer=60; //chiayen0812
+  72   1              tc_FMModule_Type=FM_MODULE;
+  73   1      
+  74   1      //      if(tc_FMModule_Type==FM_ZI2020) // ZI2020
+  75   1              {
+  76   2                  tw_FM_frequency=0xF000|gw_FM_frequency;
+  77   2      
+  78   2                  I2C_ZI2020_Send_data(0x00,(U8)tw_FM_frequency);
+  79   2              I2C_ZI2020_Send_data(0x01,tw_FM_frequency>>8);
+  80   2              }
+  81   1      
+  82   1      //      else if(tc_FMModule_Type==FM_AS6300)    // AS6300
+  83   1              {
+  84   2                      AS6200_Set_Freq(gw_FM_frequency);
+  85   2                      AS6200_Read_Freq();
+  86   2              }
+  87   1      //      else if(tc_FMModule_Type==FM_QN8027)    // QN8027
+  88   1              {
+  89   2              QND_TuneToCH(gw_FM_frequency);
+  90   2              }
+  91   1      //      else if(tc_FMModule_Type==FM_BK1085)    // BK1085
+  92   1              {
+  93   2                      SetFrequency(gw_FM_frequency);
+  94   2              }
+  95   1      
+  96   1      }
+  97          
+  98          
+  99          void FM_initial(void)
+ 100          {
+ 101   1              U8  tc_FMModule_Type,REG1,REG2;
+ 102   1      
+ 103   1              tc_FMModule_Type=FM_MODULE;
+ 104   1      //      if(tc_FMModule_Type==FM_AS6300)// AS6300 //chiayen0805
+ 105   1              {
+ 106   2                      AS6200_init();
+ 107   2              }
+ 108   1      //      else if(tc_FMModule_Type==FM_ZI2020)    // ZI2020
+ 109   1              {
+ 110   2                      /*FM_SCL=1;
+ 111   2                      FM_DAT=1;
+ 112   2                      // ZI2020 RESET
+ 113   2                      FM_RSTB=0;
+ 114   2                      I2C_Wait(300);
+ 115   2                      FM_RSTB=1;
+ 116   2                      I2C_Wait(300);
+C51 COMPILER V7.10   FM                                                                    02/28/2011 10:30:43 PAGE 3   
+
+ 117   2                      // Initial ZI2020
+ 118   2                      I2C_ZI2020_Send_data(0x00,0x81);
+ 119   2                      I2C_Wait(10);
+ 120   2                      I2C_ZI2020_Send_data(0x01,0x03);
+ 121   2                      I2C_Wait(10);
+ 122   2                      I2C_ZI2020_Send_data(0x02,0x00);
+ 123   2                      I2C_Wait(10);
+ 124   2                      I2C_ZI2020_Send_data(0x13,0x80);
+ 125   2                      I2C_Wait(10);*/
+ 126   2      
+ 127   2                      //共12M晶振//KT0803L 
+ 128   2                      REG1=I2C_ZI2020_read_data(0x17);
+ 129   2                      I2C_ZI2020_Send_data(0x17,REG1|0x08);
+ 130   2                      I2C_ZI2020_Send_data(0x1E,0x43);
+ 131   2                      REG2=I2C_ZI2020_read_data(0x0D);
+ 132   2                      I2C_ZI2020_Send_data(0x0D,REG2|0x02);
+ 133   2                      I2C_Wait(50);
+ 134   2              }
+ 135   1      //      else if(tc_FMModule_Type==FM_QN8027)    // QN8027
+ 136   1              {   
+ 137   2                      QND_Init();   
+ 138   2              }
+ 139   1      //      else if(tc_FMModule_Type==FM_BK1085)    // BK1085
+ 140   1              {
+ 141   2                      Chip_initialization();
+ 142   2              }
+ 143   1      
+ 144   1      }
+ 145          
+ 146          unsigned int I2C_ZI2020_read_data(U8 add) //AS6200 read data according to Reg
+ 147          {
+ 148   1              unsigned char  value_l,value_h;
+ 149   1              unsigned int temp;
+ 150   1      //      addr =  ((Reg)<<1)|0x81;
+ 151   1      
+ 152   1          I2C_ZI2020_StartBit();              // I2C start
+ 153   1              I2C_ZI2020_SendByte(0x7c);      // I2C WR command
+ 154   1              I2C_ZI2020_SendByte(add);       // I2C address
+ 155   1      //    I2C_ZI2020_StopBit();             // I2C stop
+ 156   1      
+ 157   1              I2C_ZI2020_StartBit();          // I2C start
+ 158   1              I2C_ZI2020_SendByte(0x7D);      // I2C WR command
+ 159   1          value_l = IIC_ReadByte(1);
+ 160   1              value_h = IIC_ReadByte(1);
+ 161   1          I2C_ZI2020_StopBit();               // I2C stop
+ 162   1      
+ 163   1              temp = (unsigned int)(value_h<<8)+value_l;
+ 164   1      //      dbprintf("add==%bx\n",add);
+ 165   1      //      dbprintf("temp==%x\n",temp);
+ 166   1              return temp;
+ 167   1              
+ 168   1      }
+ 169          void I2C_ZI2020_Send_data(U8 add,U8 dat)
+ 170          {
+ 171   1              I2C_ZI2020_StartBit();          // I2C start
+ 172   1              I2C_ZI2020_SendByte(0x7C);      // I2C WR command
+ 173   1              I2C_ZI2020_SendByte(add);       // I2C address
+ 174   1              I2C_ZI2020_SendByte(dat);       // I2C data
+ 175   1              I2C_ZI2020_StopBit();           // I2C stop
+ 176   1      }
+ 177          
+ 178          
+C51 COMPILER V7.10   FM                                                                    02/28/2011 10:30:43 PAGE 4   
+
+ 179          void I2C_ZI2020_StartBit(void)
+ 180          {
+ 181   1              FM_SCL=1;       // clk=1
+ 182   1              I2C_Wait(3);
+ 183   1              FM_SDA=1;       // dat=1
+ 184   1              I2C_Wait(3);
+ 185   1              FM_SDA=0;       // dat=0
+ 186   1              I2C_Wait(3);
+ 187   1              FM_SCL=0;       // clk=0
+ 188   1              I2C_Wait(3);
+ 189   1      }
+ 190          
+ 191          
+ 192          void I2C_ZI2020_StopBit(void)
+ 193          {
+ 194   1              FM_SDA=0;       // dat=0
+ 195   1              I2C_Wait(3);
+ 196   1              FM_SCL=1;       // clk=1
+ 197   1              I2C_Wait(3);
+ 198   1              FM_SDA=1;       // dat=1
+ 199   1              I2C_Wait(3);
+ 200   1      }
+ 201          
+ 202          
+ 203          void I2C_ZI2020_SendByte(U8 dat)
+ 204          {
+ 205   1              U8 i;
+ 206   1              for(i=0;i<8;i++)
+ 207   1              {
+ 208   2                      if(dat&0x80)
+ 209   2                      {
+ 210   3                              FM_SDA=1;       // dat=1
+ 211   3                      }
+ 212   2                      else 
+ 213   2                      {
+ 214   3                              FM_SDA=0;       // dat=0
+ 215   3                      }
+ 216   2                      dat<<=1;
+ 217   2                      I2C_Wait(3);
+ 218   2                      FM_SCL=1;               // clk=1
+ 219   2                      I2C_Wait(3);
+ 220   2                      FM_SCL=0;               // clk=0
+ 221   2                      I2C_Wait(3);
+ 222   2              }
+ 223   1              XBYTE[0xB102]&=0xFD;// P1.1=Input
+ 224   1              FM_SDA=1;                       // dat=1
+ 225   1              I2C_Wait(3);
+ 226   1      
+ 227   1              // Wait ACK
+ 228   1              FM_SCL=1;               // clk=0
+ 229   1              I2C_Wait(3);
+ 230   1              FM_SCL=0;               // clk=1
+ 231   1              I2C_Wait(3);
+ 232   1      
+ 233   1              XBYTE[0xB102]|=0x02;// P1.1=Output
+ 234   1      }
+ 235          
+ 236          
+ 237          U16     AS6200_Write_BUFF[20] =
+ 238          {
+ 239                  0x2E00,
+ 240                  0x01D8,
+C51 COMPILER V7.10   FM                                                                    02/28/2011 10:30:43 PAGE 5   
+
+ 241                  0x27D3,
+ 242                  0x01C5,
+ 243                  0x4E03,
+ 244                  0x9CA0,                 //R5
+ 245                  0x8803,                 //R6
+ 246                  0x592C,
+ 247                  0x0881,                 //0x1881
+ 248                  0x0246,
+ 249                  0x0028,
+ 250                  0x0018,
+ 251                  0x1001,
+ 252                  0x0600,
+ 253                  0xE6DB,
+ 254                  0x0000,
+ 255                  0x0000,
+ 256                  0x0000,
+ 257                  0x0000,
+ 258                  0x0000,
+ 259          };
+ 260          
+ 261          unsigned int idata AS6200_Freq;
+ 262          unsigned char idata AS6200_Powc;
+ 263          unsigned char idata AS6200_Pc;
+ 264          
+ 265          
+ 266          void AS6200_init(void)
+ 267          {
+ 268   1              U8      cnt;
+ 269   1              for(cnt = 0; cnt < 20; cnt++)
+ 270   1              {
+ 271   2                      AS6200_Write_Data(cnt, AS6200_Write_BUFF[cnt]);
+ 272   2              }       
+ 273   1      
+ 274   1              //Set to Stereo
+ 275   1              AS6200_Write_BUFF[13]|=TX_MASK_ST;
+ 276   1              AS6200_Write_Data(13,AS6200_Write_BUFF[13]);
+ 277   1      
+ 278   1              AS6200_Powc=10;  //Set POWC to 5.6dB
+ 279   1              AS6200_Write_BUFF[10] = (AS6200_Write_BUFF[10] & TX_MSK_POWC) | AS6200_Powc;
+ 280   1              AS6200_Write_Data(10,AS6200_Write_BUFF[10]);
+ 281   1      
+ 282   1              AS6200_Freq = AS6200_Default_Freq;      //Set to Default Freq
+ 283   1              AS6200_Set_Freq(AS6200_Freq);
+ 284   1      
+ 285   1              AS6200_Powc=(unsigned char)(AS6200_Read_Data(10)&TX_MASK_POWC);   //Read Powc
+ 286   1              AS6200_Pc=(unsigned char)(AS6200_Read_Data(9)&TX_MASK_PC);              //Read Pc       
+ 287   1      }
+ 288          
+ 289          
+ 290          void AS6200_Write_Data(unsigned char Reg, unsigned int Reg_val)  //AS6200 send data according to Reg
+ 291          {
+ 292   1              U8      ack,addr;
+ 293   1      
+ 294   1              addr = ((Reg)<<1)|0x80;
+ 295   1              IIC_Start();
+ 296   1              ack = IIC_WriteByte(addr);
+ 297   1              ack |= IIC_WriteByte(Reg_val >> 8);
+ 298   1              ack |= IIC_WriteByte(Reg_val & 0xff);
+ 299   1              IIC_Stop();
+ 300   1      }
+ 301          
+ 302          
+C51 COMPILER V7.10   FM                                                                    02/28/2011 10:30:43 PAGE 6   
+
+ 303          U16 AS6200_Read_Data(unsigned char Reg) //AS6200 read data according to Reg
+ 304          {
+ 305   1              U8      addr, value_l,value_h;
+ 306   1              U16     temp;
+ 307   1      
+ 308   1              addr =  ((Reg)<<1)|0x81;
+ 309   1              IIC_Start();
+ 310   1              IIC_WriteByte(addr);
+ 311   1              value_h = IIC_ReadByte(1);
+ 312   1              value_l = IIC_ReadByte(1);
+ 313   1              IIC_Stop();
+ 314   1              temp = (unsigned int)(value_h<<8)+value_l;
+ 315   1              return temp;
+ 316   1              
+ 317   1      }
+ 318          
+ 319          
+ 320          void AS6200_Set_Freq(U16 frq)
+ 321          {  
+ 322   1              U8      data    rfpll_pb;
+ 323   1              U8      data    rfpll_sb;
+ 324   1              U16     data    temp;
+ 325   1      
+ 326   1              temp = frq-4;
+ 327   1              rfpll_sb  = temp % 15;
+ 328   1              rfpll_pb = (temp - rfpll_sb) / 15 - 1;
+ 329   1              AS6200_Write_BUFF[5] = (rfpll_pb << REGPOS_RFPLL_PB) | (AS6200_Write_BUFF[5] & TX_MSK_RFPLL_PB);
+ 330   1      
+ 331   1              AS6200_Write_BUFF[5] = ((rfpll_sb ) << REGPOS_RFPLL_SB_L) | (AS6200_Write_BUFF[5] & TX_MSK_RFPLL_SB_L);
+ 332   1              AS6200_Write_BUFF[6] = ((rfpll_sb ) >> REGPOS_RFPLL_SB_H) | (AS6200_Write_BUFF[6] & TX_MSK_RFPLL_SB_H);
+ 333   1      
+ 334   1              AS6200_Write_Data(5, AS6200_Write_BUFF[5]);
+ 335   1              AS6200_Write_Data(6, AS6200_Write_BUFF[6]);
+ 336   1      }
+ 337          
+ 338          
+ 339          void AS6200_Read_Freq(void)
+ 340          {
+ 341   1              U16     data    temp1,temp2;
+ 342   1              U8      data    rfpll_p,rfpll_s;
+ 343   1      
+ 344   1              temp1 = AS6200_Read_Data(5);
+ 345   1              temp2 = AS6200_Read_Data(6);
+ 346   1              rfpll_p = (unsigned char)(temp1 >> REGPOS_RFPLL_PB);    
+ 347   1              rfpll_s = (unsigned char)(AS6200_Read_Data(5) >> REGPOS_RFPLL_SB_L) | ((unsigned char) (AS6200_Read_Data(
+             -6)&0x0007)<<REGPOS_RFPLL_SB_H);
+ 348   1              AS6200_Freq = 15*(rfpll_p+1)+rfpll_s+4;
+ 349   1      }
+ 350          
+ 351          
+ 352          void IIC_Delay(unsigned int t)
+ 353          {
+ 354   1              while(0 != t)
+ 355   1              {       
+ 356   2                      t--;
+ 357   2              }
+ 358   1      }
+ 359          
+ 360          
+ 361          void IIC_Start()                                //IIC start command
+ 362          {
+ 363   1              IIC_SDA_High;    /*发送起始条件的数据信号*/
+C51 COMPILER V7.10   FM                                                                    02/28/2011 10:30:43 PAGE 7   
+
+ 364   1              IIC_Delay(IIC_Delay_Time); 
+ 365   1              IIC_SCL_High;             /*起始条件建立时间大于4.7us,延时*/
+ 366   1             
+ 367   1              IIC_Delay(IIC_Delay_Time); 
+ 368   1              IIC_SDA_Low;    /*发送起始信号*/         /* 起始条件锁定时间大于4μs*/
+ 369   1            
+ 370   1              IIC_Delay(IIC_Delay_Time);        
+ 371   1              IIC_SCL_Low;    /*钳住IIC总线，准备发送或接收数据 */
+ 372   1              IIC_Delay(IIC_Delay_Time);  
+ 373   1      }
+ 374          
+ 375          
+ 376          void IIC_Stop()                         //IIC stop command
+ 377          {
+ 378   1              IIC_SDA_Low;    /*发送结束条件的数据信号*/
+ 379   1                              /*发送结束条件的时钟信号*/
+ 380   1              IIC_Delay(IIC_Delay_Time); 
+ 381   1              IIC_SCL_High;   /*结束条件建立时间大于4μs*/
+ 382   1              IIC_Delay(IIC_Delay_Time); 
+ 383   1              IIC_SDA_High;   /*发送IIC总线结束信号*/
+ 384   1              IIC_Delay(IIC_Delay_Time); 
+ 385   1      }
+ 386          
+ 387          
+ 388          unsigned char IIC_WriteByte(unsigned char c)            //IIC send a byte data, return ack signal(0:无应答，1:有应答
+             -)
+ 389          {
+ 390   1              U8      ack, i;
+ 391   1      
+ 392   1              XBYTE[0xB102]|=0x20;
+ 393   1              for(i = 0; i < 8; i++)
+ 394   1              {
+ 395   2                      if((c << i) & 0x80)
+ 396   2                              IIC_SDA_High;
+ 397   2                      else
+ 398   2                              IIC_SDA_Low;
+ 399   2                      IIC_Delay(IIC_Delay_Time);
+ 400   2                      IIC_SCL_High;
+ 401   2                      IIC_Delay(IIC_Delay_Time);
+ 402   2                      IIC_SCL_Low;
+ 403   2              }
+ 404   1              IIC_Delay(IIC_Delay_Time);
+ 405   1              IIC_SDA_Set_Input;                      /*8位发送完后释放数据线，准备接收应答位*/
+ 406   1              IIC_Delay(IIC_Delay_Time);
+ 407   1              IIC_SCL_High;                           //????
+ 408   1              IIC_Delay(IIC_Delay_Time);
+ 409   1              if(IIC_SDA_Test)                         /*判断是否接收到应答信号*/
+ 410   1                      ack = 0;                        ////
+ 411   1              else
+ 412   1                      ack = 1;
+ 413   1              IIC_SCL_Low;
+ 414   1              IIC_Delay(IIC_Delay_Time);
+ 415   1              IIC_SDA_Set_Output;
+ 416   1              return ack;
+ 417   1      }
+ 418          
+ 419          
+ 420          unsigned char IIC_ReadByte(unsigned char ack)           //IIC read a byte data, if ack = 1 ,send ack signal, if ack
+             - = 0, no send ack signal  
+ 421          {
+ 422   1              unsigned char i, bits;
+ 423   1              bits = 0;
+C51 COMPILER V7.10   FM                                                                    02/28/2011 10:30:43 PAGE 8   
+
+ 424   1              IIC_SDA_Set_Input;
+ 425   1              for(i = 0; i < 8; i++)
+ 426   1                      {
+ 427   2                      IIC_SCL_Low;
+ 428   2                      IIC_Delay(IIC_Delay_Time);
+ 429   2                      IIC_SCL_High;
+ 430   2                      IIC_Delay(IIC_Delay_Time);
+ 431   2                      bits <<= 1;
+ 432   2                      if(IIC_SDA_Test)
+ 433   2                              bits += 1;
+ 434   2                      IIC_Delay(IIC_Delay_Time);
+ 435   2                      }
+ 436   1              IIC_SCL_Low;
+ 437   1              IIC_Delay(IIC_Delay_Time);
+ 438   1              IIC_SDA_Set_Output;
+ 439   1              if(ack == 1)
+ 440   1                      IIC_SendAck(0);
+ 441   1              else
+ 442   1                      IIC_SendAck(1);
+ 443   1              return bits;
+ 444   1                      
+ 445   1      }
+ 446          
+ 447          
+ 448          void IIC_SendAck(bit k)
+ 449          {
+ 450   1              if(k == 0)
+ 451   1                      IIC_SDA_Low;
+ 452   1              else
+ 453   1                      IIC_SDA_High;
+ 454   1              IIC_Delay(IIC_Delay_Time);
+ 455   1              IIC_SCL_High;
+ 456   1              IIC_Delay(IIC_Delay_Time);
+ 457   1              IIC_SCL_Low;
+ 458   1              IIC_Delay(IIC_Delay_Time);
+ 459   1      }
+ 460          
+ 461          
+ 462          void I2C_Wait(U16 tt)
+ 463          {
+ 464   1              while(tt>0)
+ 465   1              {
+ 466   2                      tt--;
+ 467   2              }
+ 468   1      }
+ 469          //========================================================================================================
+             -==========
+ 470          //              fmtx fuction end
+ 471          //========================================================================================================
+             -==========
+ 472          
+ 473          //==========QN8027================
+ 474          /////////////////////////////////////////////////////////////////////////
+ 475          
+ 476          
+ 477          ///////////////////////////////////8027zhanggw//////////////////////////////////////
+ 478          
+ 479          
+ 480          void Start(void)               
+ 481          { 
+ 482   1          IIC_Delay(1);
+ 483   1          IIC_SCL_High;
+C51 COMPILER V7.10   FM                                                                    02/28/2011 10:30:43 PAGE 9   
+
+ 484   1          IIC_Delay(1);
+ 485   1          IIC_SDA_High;
+ 486   1          IIC_Delay(1);
+ 487   1          IIC_SDA_Low;
+ 488   1          IIC_Delay(2);
+ 489   1          IIC_SCL_Low;
+ 490   1      }
+ 491          
+ 492          void Stop(void)              
+ 493          {
+ 494   1          IIC_Delay(1);
+ 495   1          IIC_SDA_Low;
+ 496   1          IIC_Delay(1);
+ 497   1          IIC_SCL_High;
+ 498   1          IIC_Delay(2);
+ 499   1          IIC_SDA_High;
+ 500   1      }
+ 501          
+ 502          void Send_ACK(U8 i) //i=0 for ACK and i=1 for Nack
+ 503          {
+ 504   1          if(i == 0)
+ 505   1                      IIC_SDA_Low;
+ 506   1              else
+ 507   1                      IIC_SDA_High;
+ 508   1          IIC_Delay(1);
+ 509   1          IIC_SCL_High;
+ 510   1          IIC_Delay(1);
+ 511   1          IIC_SCL_Low;
+ 512   1          IIC_Delay(1);
+ 513   1          IIC_SDA_High;
+ 514   1      }
+ 515           
+ 516          void Check_ACK(void)
+ 517          {
+ 518   1          IIC_SDA_Set_Input;
+ 519   1          IIC_Delay(1);
+ 520   1          IIC_SCL_High;
+ 521   1          qnd_i2c_timeout = (U8) Read_SDA;
+ 522   1          IIC_Delay(1);
+ 523   1          IIC_SCL_Low;
+ 524   1          IIC_SDA_Set_Output;
+ 525   1      }
+ 526          
+ 527          void Write_Bit(U8 i)
+ 528          {
+ 529   1          IIC_Delay(1);
+ 530   1          if(i == 0)
+ 531   1                      IIC_SDA_Low;
+ 532   1              else
+ 533   1                      IIC_SDA_High;
+ 534   1          IIC_Delay(1);
+ 535   1          IIC_SCL_High;
+ 536   1          IIC_Delay(2);
+ 537   1          IIC_SCL_Low;
+ 538   1      }
+ 539          
+ 540          void Write_Byte(U8 Data)
+ 541          {
+ 542   1          U8 i;
+ 543   1          for( i = 0;i < 8;i++)
+ 544   1          {
+ 545   2              Write_Bit(Data>>7);
+C51 COMPILER V7.10   FM                                                                    02/28/2011 10:30:43 PAGE 10  
+
+ 546   2              Data<<=1;
+ 547   2          }
+ 548   1      }
+ 549          
+ 550          U8 Read_Byte(void)
+ 551          {
+ 552   1          U8 Data1=0x00;
+ 553   1          U8 j;
+ 554   1          IIC_SDA_Set_Input;
+ 555   1          for( j = 0;j < 8;j++)
+ 556   1          {
+ 557   2              IIC_Delay(1);
+ 558   2              IIC_SCL_High;
+ 559   2              Data1 = (Data1<<1) | ((U8) Read_SDA & 0x01);
+ 560   2              IIC_Delay(1);
+ 561   2                  IIC_SCL_Low;
+ 562   2              }
+ 563   1          IIC_SDA_Set_Output;
+ 564   1          return Data1;
+ 565   1      }
+ 566           
+ 567          /*********************************************************************************************************
+             -***
+ 568          ** Name: I2C_Write_1byte                         
+ 569          ** Funcation:write a data to a desired            
+ 570          **           register through i2c bus 
+ 571          ** Description: Slave---------device address
+ 572          **              Regis_Addr----register address
+ 573          **********************************************************************************************************
+             -***/
+ 574          U8 I2C_Write_1byte(U8 Slave,U8 Regis_Addr,U8 Data)
+ 575          {
+ 576   1          U8 temp;
+ 577   1          temp=Slave;
+ 578   1      
+ 579   1          Start();
+ 580   1          Write_Byte(temp);
+ 581   1          Check_ACK();
+ 582   1          if (!qnd_i2c_timeout) 
+ 583   1          {
+ 584   2              Write_Byte(Regis_Addr);
+ 585   2              Check_ACK();
+ 586   2              if (!qnd_i2c_timeout) 
+ 587   2              {
+ 588   3                  Write_Byte(Data);
+ 589   3                  Check_ACK();
+ 590   3              }
+ 591   2          }
+ 592   1          Stop();
+ 593   1          return !qnd_i2c_timeout;
+ 594   1      }
+ 595          
+ 596          /*********************************************************************************************************
+             -**
+ 597          ** Name: I2C_Read_1byte                          
+ 598          ** Function: Read a data from a desired register 
+ 599          **           through i2c bus 
+ 600          ** Description: Slave---------device address
+ 601          **              Regis_Addr----register address
+ 602          **********************************************************************************************************
+             -**/
+ 603          U8 I2C_Read_1byte(U8 Slave,U8 Regis_Addr)
+C51 COMPILER V7.10   FM                                                                    02/28/2011 10:30:43 PAGE 11  
+
+ 604          { 
+ 605   1          U8 Data=0x00;
+ 606   1          U8 temp;
+ 607   1          temp =Slave | 0x01;
+ 608   1      
+ 609   1          Start();
+ 610   1          Write_Byte(Slave);
+ 611   1          Check_ACK();
+ 612   1          if (!qnd_i2c_timeout) 
+ 613   1          {
+ 614   2              Write_Byte(Regis_Addr);
+ 615   2              Check_ACK();
+ 616   2              if(!qnd_i2c_timeout) 
+ 617   2              {
+ 618   3                  //stop();
+ 619   3                  Start();
+ 620   3                  Write_Byte(temp);
+ 621   3                  Check_ACK();
+ 622   3                  if (!qnd_i2c_timeout) 
+ 623   3                  {
+ 624   4                      Data = Read_Byte();
+ 625   4                      Send_ACK(1);
+ 626   4                  }
+ 627   3              }
+ 628   2          }
+ 629   1          Stop();
+ 630   1          return Data;
+ 631   1      }
+ 632          
+ 633          
+ 634          void QN_ChipInitialization()
+ 635          {
+ 636   1              I2C_Write_1byte(I2C_DEV0_ADDRESS,0x00,0x81);// reset all registers to the default value
+ 637   1          QND_Delay(20);
+ 638   1          I2C_Write_1byte(I2C_DEV0_ADDRESS, 0x03,0x10);
+ 639   1              I2C_Write_1byte(I2C_DEV0_ADDRESS, 0x04,0x41);//fm-vol
+ 640   1              I2C_Write_1byte(I2C_DEV0_ADDRESS, 0x00,0x41);
+ 641   1              I2C_Write_1byte(I2C_DEV0_ADDRESS, 0x00,0x01);
+ 642   1          QND_Delay(20);
+ 643   1              I2C_Write_1byte(I2C_DEV0_ADDRESS, 0x18,0xe4);
+ 644   1              I2C_Write_1byte(I2C_DEV0_ADDRESS, 0x1b,0xf0);
+ 645   1              I2C_Write_1byte(I2C_DEV0_ADDRESS, 0x11,0x50);//
+ 646   1              I2C_Write_1byte(I2C_DEV0_ADDRESS, 0x01,0x7e);
+ 647   1              I2C_Write_1byte(I2C_DEV0_ADDRESS, 0x02,0xb9);
+ 648   1              I2C_Write_1byte(I2C_DEV0_ADDRESS, 0x00,0x22);
+ 649   1      }
+ 650          
+ 651          void QND_Delay(U16 ms) 
+ 652          {
+ 653   1              U16 i,k;
+ 654   1          for(i=0; i<3000;i++) {    
+ 655   2                          for(k=0; k<ms; k++) {
+ 656   3                      }
+ 657   2          }
+ 658   1      }
+ 659          /**********************************************************************
+ 660          int QND_Init()
+ 661          **********************************************************************
+ 662          Description: Initialize device to make it ready to have all functionality ready for use.
+ 663          
+ 664          Parameters:
+ 665          None
+C51 COMPILER V7.10   FM                                                                    02/28/2011 10:30:43 PAGE 12  
+
+ 666          Return Value:
+ 667          1: Device is ready to use.
+ 668          0: Device is not ready to serve function.
+ 669          **********************************************************************/
+ 670          BYTE QND_Init() 
+ 671          {    
+ 672   1      /*  BYTE timeout;
+ 673   1          BYTE openTmp,chkflag;
+ 674   1              timeout = 100;
+ 675   1              chkflag = 1;
+ 676   1              while(timeout--) 
+ 677   1              {
+ 678   1                      QND_Delay(100);
+ 679   1                  openTmp = I2C_Read_1byte(I2C_DEV0_ADDRESS, CID2);
+ 680   1                      openTmp &=0xf0;  //for A1 and B1
+ 681   1                  if(openTmp == CHIPID_QN8027)
+ 682   1                      {
+ 683   1                  timeout = 0;
+ 684   1                  chkflag = 0;
+ 685   1                  }
+ 686   1              }
+ 687   1          if(chkflag) 
+ 688   1              {
+ 689   1              return 0;
+ 690   1          }
+ 691   1         
+ 692   1      */
+ 693   1          QN_ChipInitialization();
+ 694   1          I2C_Write_1byte(I2C_DEV0_ADDRESS,  00,  0x01); //resume original status of chip /* 2008 06 13 */
+ 695   1      //    qnd_Band = BAND_FM;
+ 696   1          return 1;
+ 697   1      }
+ 698          
+ 699          
+ 700          /**********************************************************************
+ 701          void QND_TuneToCH(UINT16 ch)
+ 702          **********************************************************************
+ 703          Description:    Tune to the specified channel. Before use this function
+ 704          make sure the QND_SetSysMode() has been called. If system is working 
+ 705          on FM&TX mode,it will turn FM to ch, and start Transmit; If system is
+ 706          working on FM&RX mode,it will turn FM to ch, and start FM play.
+ 707          Parameters:
+ 708          ch
+ 709          Set the frequency (10kHz) to be tuned,
+ 710          eg: 101.30MHz will be set to 10130.
+ 711          Return Value:
+ 712              None
+ 713          **********************************************************************/
+ 714          void QND_TuneToCH(U16 ch) 
+ 715          {
+ 716   1          QNF_SetCh(ch);
+ 717   1      //  QND_Delay(3);
+ 718   1      }
+ 719          
+ 720          
+ 721          /**********************************************************************
+ 722          UINT8 QNF_SetCh(UINT16 freq)
+ 723          **********************************************************************
+ 724          Description: set specified frequency 
+ 725          
+ 726          Parameters:
+ 727                  freq:  specified frequency that is set
+C51 COMPILER V7.10   FM                                                                    02/28/2011 10:30:43 PAGE 13  
+
+ 728          Return Value:
+ 729                   1: set success
+ 730          **********************************************************************/
+ 731          U8 QNF_SetCh(U16 freq) 
+ 732          {
+ 733   1          // calculate ch para
+ 734   1          U8 tStep;
+ 735   1          U8 tCh;
+ 736   1          U16 f; 
+ 737   1              freq=freq*10;
+ 738   1              f = FREQ2CHREG(freq); 
+ 739   1              // set to reg: CH
+ 740   1              tCh = (U8) f;
+ 741   1              I2C_Write_1byte(I2C_DEV0_ADDRESS,  CH, tCh);            
+ 742   1              // set to reg: CH_STEP
+ 743   1              tStep = I2C_Read_1byte(I2C_DEV0_ADDRESS,  CH_STEP);
+ 744   1              tStep &= ~CH_CH;
+ 745   1              tStep |= ((U8) (f >> 8) & CH_CH);
+ 746   1                      tStep |= 0x20;  //设置为发射模式，寄存器00H的bit5设置为1
+ 747   1              I2C_Write_1byte(I2C_DEV0_ADDRESS,  CH_STEP, tStep);
+ 748   1      
+ 749   1          return 1;
+ 750   1      }
+ 751          //========================================BK1085==============================
+ 752          //========================================BK1085==============================
+ 753          #if 0  //32768晶振
+              code U32 HW_Reg[]=
+              {
+              0x02e286bd,//MSB// reg1 high byte(0x02); reg1 low byte(0xe2);reg0 high byte(0x86); reg0 low byte(0xbd);//L
+             -SB//  frequency*2^21 /3.8=reg1,reg0
+              0x000782e3,//MSB// reg3 high byte(0x00); reg3 low byte(0x07);reg2 high byte(0x82); reg2 low byte(0xe3);//L
+             -SB//
+              0x10c0800c,//MSB// reg4/reg5 byte1(0x10); reg4/reg5 byte0(0xc0); reg4/reg5 byte3(0x80); reg4/reg5 byte2(0x
+             -0e);//LSB//
+              0x00402398,//MSB// reg6/reg7 byte1(0x23); reg6/reg7 byte0(0x98); reg6/reg7 byte3(0x00); reg6/reg7 byte2(0x
+             -40);//LSB//
+              0X00402388,
+              };
+              #endif 
+ 763          //12M晶振
+ 764          code U32 HW_Reg[]=
+ 765          {
+ 766          0x02e286bd,//MSB// reg1 high byte(0x02); reg1 low byte(0xe2);reg0 high byte(0x86); reg0 low byte(0xbd);//L
+             -SB//  frequency*2^21 /3.8=reg1,reg0
+ 767          0x000782e3,//MSB// reg3 high byte(0x00); reg3 low byte(0x07);reg2 high byte(0x82); reg2 low byte(0xe3);//L
+             -SB//
+ 768          0x00c0f00c,//0x00c0800c,//0x10c0800c独立晶体//MSB// reg4/reg5 byte1(0x10); reg4/reg5 byte0(0xc0); reg4/reg
+             -5 byte3(0x80); reg4/reg5 byte2(0x0e);//LSB//
+ 769          0x5b8e2198,//MSB// reg6/reg7 byte1(0x23); reg6/reg7 byte0(0x98); reg6/reg7 byte3(0x00); reg6/reg7 byte2(0x
+             -40);//LSB//
+ 770          0x5b8e2188,
+ 771          0x80000008,
+ 772          };
+ 773          
+ 774          /**************************************************
+ 775          Function: Delay1us
+ 776          Description:
+ 777                  Delay 1 us
+ 778          Parameter:
+ 779                  None
+ 780          Return:
+ 781                  None
+C51 COMPILER V7.10   FM                                                                    02/28/2011 10:30:43 PAGE 14  
+
+ 782          **************************************************/
+ 783          void Delay1us()//please revise this function according to your system
+ 784          {
+ 785   1              U16 i,j;
+ 786   1              for(i=0;i<4;i++)
+ 787   1                      for(j=0;j<4;j++);
+ 788   1      }
+ 789          
+ 790          
+ 791          void Delay1us_50ms()//please revise this function according to your system
+ 792          {
+ 793   1              U16 i,j;
+ 794   1              for(i=0;i<4000;i++)
+ 795   1                      for(j=0;j<200;j++);
+ 796   1      }
+ 797          
+ 798          /*************************************************
+ 799            Function:       BEKEN_I2C_init
+ 800            Description:    BEKEN I2C initialize
+ 801            Input:          None
+ 802                                    
+ 803            Output:         None
+ 804            Return:         None
+ 805          *************************************************/
+ 806          void BEKEN_I2C_init(void)
+ 807          {
+ 808   1          SDADIROUT();                  //SDA output
+ 809   1          SCLDIROUT();                  //SCL output
+ 810   1          BK_CLK_HIGH();
+ 811   1          BK_DATA_HIGH();
+ 812   1      }
+ 813          
+ 814          /*************************************************
+ 815            Function:       BEKEN_I2C_Start
+ 816            Description:    BEKEN I2C transaction start
+ 817            Input:          None
+ 818                                    
+ 819            Output:         None
+ 820            Return:         None
+ 821          *************************************************/
+ 822          void BEKEN_I2C_Start(void)
+ 823          {
+ 824   1          BEKEN_I2C_init();
+ 825   1          Delay1us();
+ 826   1          BK_DATA_LOW();
+ 827   1          Delay1us();
+ 828   1          BK_CLK_LOW();
+ 829   1          Delay1us();
+ 830   1          BK_DATA_HIGH();
+ 831   1      }
+ 832          
+ 833          /*************************************************
+ 834            Function:       BEKEN_I2C_Stop
+ 835            Description:    BEKEN I2C transaction end
+ 836            Input:          None
+ 837                                    
+ 838            Output:         None
+ 839            Return:         None
+ 840          *************************************************/
+ 841          void BEKEN_I2C_Stop(void)
+ 842          {
+ 843   1          SDADIROUT();
+C51 COMPILER V7.10   FM                                                                    02/28/2011 10:30:43 PAGE 15  
+
+ 844   1          BK_DATA_LOW();
+ 845   1          Delay1us();
+ 846   1          BK_CLK_HIGH();
+ 847   1          Delay1us();
+ 848   1          BK_DATA_HIGH();
+ 849   1          Delay1us();
+ 850   1      }
+ 851          
+ 852          /*************************************************
+ 853            Function:       BEKEN_I2C_ack
+ 854            Description:    send ACK,accomplish a operation
+ 855            Input:          None
+ 856                                    
+ 857            Output:         None
+ 858            Return:         None
+ 859          *************************************************/
+ 860          void BEKEN_I2C_ack(void)
+ 861          {
+ 862   1          SDADIROUT();
+ 863   1      
+ 864   1          BK_CLK_LOW();
+ 865   1          BK_DATA_LOW();
+ 866   1          Delay1us();
+ 867   1      
+ 868   1          BK_CLK_HIGH();
+ 869   1          Delay1us();
+ 870   1          BK_CLK_LOW();
+ 871   1      }      
+ 872          
+ 873          /*************************************************
+ 874            Function:       BEKEN_I2C_nack
+ 875            Description:    send NACK,accomplish a operation
+ 876            Input:          None
+ 877                                    
+ 878            Output:         None
+ 879            Return:         None
+ 880          *************************************************/
+ 881          void BEKEN_I2C_nack(void)
+ 882          {
+ 883   1          SDADIROUT();
+ 884   1      
+ 885   1          BK_CLK_LOW();
+ 886   1          BK_DATA_HIGH();
+ 887   1          Delay1us();
+ 888   1      
+ 889   1          BK_CLK_HIGH();
+ 890   1          Delay1us();
+ 891   1          BK_CLK_LOW();
+ 892   1      }
+ 893          
+ 894          /*************************************************
+ 895            Function:       BEKEN_I2C_ReceiveACK
+ 896            Description:    wait ACK,accomplish a operation
+ 897            Input:          None
+ 898                                    
+ 899            Output:         None
+ 900            Return:         ack flag
+ 901          *************************************************/
+ 902          U8 BEKEN_I2C_ReceiveACK(void)
+ 903          {
+ 904   1          U32 ackflag;
+ 905   1          SDADIRIN();
+C51 COMPILER V7.10   FM                                                                    02/28/2011 10:30:43 PAGE 16  
+
+ 906   1          Delay1us();
+ 907   1          BK_CLK_HIGH();
+ 908   1          Delay1us();
+ 909   1          ackflag = (U8)BK_DATA_READ();
+ 910   1          BK_CLK_LOW();
+ 911   1          Delay1us();
+ 912   1          return ackflag;
+ 913   1      }
+ 914          
+ 915          /*************************************************
+ 916            Function:       BEKEN_I2C_sendbyte
+ 917            Description:    write a byte
+ 918            Input:          a byte written
+ 919                                    
+ 920            Output:         None
+ 921            Return:         None
+ 922          *************************************************/
+ 923          void BEKEN_I2C_sendbyte(U8 I2CSendData)
+ 924          {
+ 925   1         
+ 926   1          U8  i;
+ 927   1          SDADIROUT();
+ 928   1          Delay1us();
+ 929   1          for(i = 0;i < 8;i++)
+ 930   1          {
+ 931   2              if(I2CSendData & 0x80)
+ 932   2              {
+ 933   3                  BK_DATA_HIGH();     //if high bit is 1,SDA= 1
+ 934   3              }
+ 935   2              else
+ 936   2                  BK_DATA_LOW();                               //else SDA=0
+ 937   2      
+ 938   2              Delay1us();
+ 939   2              BK_CLK_HIGH();
+ 940   2              Delay1us();
+ 941   2              I2CSendData <<= 1;                          //shift left 1 bit
+ 942   2              BK_CLK_LOW();
+ 943   2          }                       
+ 944   1      }
+ 945          
+ 946          /*************************************************
+ 947            Function:       BEKEN_I2C_readbyte
+ 948            Description:    read a byte
+ 949            Input:          None
+ 950                                    
+ 951            Output:         None
+ 952            Return:         a byte read
+ 953          *************************************************/
+ 954          U8 BEKEN_I2C_readbyte(void)
+ 955          {
+ 956   1          U8 i;
+ 957   1          U8 ucRDData = 0;                     //return value
+ 958   1          
+ 959   1          SDADIRIN();
+ 960   1          Delay1us();;
+ 961   1          for(i = 0;i < 8;i++)
+ 962   1          {
+ 963   2              BK_CLK_HIGH();
+ 964   2              ucRDData <<= 1;
+ 965   2              Delay1us();
+ 966   2              if(BK_DATA_READ())
+ 967   2                  ucRDData|=0x01;
+C51 COMPILER V7.10   FM                                                                    02/28/2011 10:30:43 PAGE 17  
+
+ 968   2              BK_CLK_LOW();
+ 969   2              Delay1us();
+ 970   2          }
+ 971   1          return(ucRDData);
+ 972   1      }
+ 973          
+ 974          /**************************************************
+ 975          Function: Wire2_Spi0_Write_32Bit
+ 976          Description:
+ 977                  write a 32 bit register.
+ 978          
+ 979          Parameter:
+ 980                  addr:  register address*2
+ 981                  value: register value
+ 982          Return:
+ 983                  None
+ 984          **************************************************/
+ 985          void Wire2_Spi0_Write_32Bit(U8 addr,U32 value)
+ 986          {
+ 987   1        
+ 988   1      
+ 989   1          BEKEN_I2C_Start();
+ 990   1      
+ 991   1          BEKEN_I2C_sendbyte(DEV_ADDR);
+ 992   1          BEKEN_I2C_ReceiveACK();
+ 993   1      
+ 994   1          addr=addr<<1;
+ 995   1          BEKEN_I2C_sendbyte(addr);
+ 996   1          BEKEN_I2C_ReceiveACK();
+ 997   1               
+ 998   1          BEKEN_I2C_sendbyte((value>>8)&0xff);
+ 999   1          BEKEN_I2C_ReceiveACK();
+1000   1      
+1001   1          BEKEN_I2C_sendbyte((value)&0xff);
+1002   1          BEKEN_I2C_ReceiveACK();
+1003   1      
+1004   1          BEKEN_I2C_sendbyte((value>>24)&0xff);
+1005   1          BEKEN_I2C_ReceiveACK();
+1006   1      
+1007   1          BEKEN_I2C_sendbyte((value>>16)&0xff);
+1008   1          BEKEN_I2C_ReceiveACK();
+1009   1      
+1010   1          BEKEN_I2C_Stop();
+1011   1      }
+1012          
+1013          
+1014          
+1015          /**************************************************
+1016          Function: Chip_initialization
+1017          Description:    
+1018                  BK1085 chip initialize
+1019          Parameter:
+1020                  none
+1021          Return:
+1022                  None
+1023          **************************************************/
+1024          void Chip_initialization()
+1025          {
+1026   1              Wire2_Spi0_Write_32Bit(2*2,HW_Reg[2]);//reg2
+1027   1              Wire2_Spi0_Write_32Bit(1*2,HW_Reg[1]);//reg1
+1028   1              Wire2_Spi0_Write_32Bit(3*2,HW_Reg[3]);//reg3
+1029   1              USER_DelayDTms(300);//300ms
+C51 COMPILER V7.10   FM                                                                    02/28/2011 10:30:43 PAGE 18  
+
+1030   1              Wire2_Spi0_Write_32Bit(3*2,HW_Reg[4]);//reg3
+1031   1              USER_DelayDTms(1);
+1032   1              Wire2_Spi0_Write_32Bit(3*2,HW_Reg[3]);//reg3
+1033   1              USER_DelayDTms(1);
+1034   1              Wire2_Spi0_Write_32Bit(5*2,HW_Reg[5]);//reg10//解决蹼趾的声音
+1035   1      }
+1036          
+1037          /**************************************************
+1038          Function: SetFrequency
+1039          Description:
+1040                  ser a frequency
+1041          Parameter:
+1042                  freq:real frequency*10;such as 1077,977,
+1043          Return:
+1044                  None
+1045          **************************************************/
+1046          void SetFrequency(U16 freq_2)
+1047          {
+1048   1      //(frequency*10) *2^21 /38
+1049   1              
+1050   1              U32 freq; 
+1051   1              
+1052   1              freq=(U32)freq_2; 
+1053   1                
+1054   1              freq=freq<<21; 
+1055   1              freq=freq/38; 
+1056   1              Wire2_Spi0_Write_32Bit(0,freq); 
+1057   1      }
+1058          /**************************************************
+1059          Function: AudioGain
+1060          Description:
+1061                  change voice volume
+1062          Parameter:
+1063                  volume:0-3
+1064          Return:
+1065                  None
+1066          **************************************************/
+1067          void AudioGain(U8 volume)
+1068          {       
+1069   1              U32 value;
+1070   1              value=HW_Reg[2]&0xffffffcf; //clear bit5:bit4
+1071   1      //reg4<21:20>
+1072   1              volume=volume<<4;
+1073   1              value|=volume;
+1074   1              
+1075   1              Wire2_Spi0_Write_32Bit(2*2,value);
+1076   1      
+1077   1      }
+1078          
+1079          /**************************************************
+1080          Function: Chip_powerdown
+1081          Description:
+1082                  Power down chip,
+1083                  Please call AudioGain to set volume again when the next power up.
+1084                  
+1085          Parameter:
+1086                  none
+1087          Return:
+1088                  None
+1089          **************************************************/
+1090          void Chip_powerdown(void)
+1091          {       
+C51 COMPILER V7.10   FM                                                                    02/28/2011 10:30:43 PAGE 19  
+
+1092   1              U32 value;
+1093   1              value=0x10F3830E; 
+1094   1              
+1095   1              Wire2_Spi0_Write_32Bit(2*2,value);
+1096   1      
+1097   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   2328    ----
+   CONSTANT SIZE    =     24    ----
+   XDATA SIZE       =     42      45
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      10
+   IDATA SIZE       =      4    ----
+   BIT SIZE         =   ----       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

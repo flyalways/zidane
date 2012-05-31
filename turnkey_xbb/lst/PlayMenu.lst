@@ -1,0 +1,1287 @@
+C51 COMPILER V7.10   PLAYMENU                                                              02/28/2011 10:30:51 PAGE 1   
+
+
+C51 COMPILER V7.10, COMPILATION OF MODULE PLAYMENU
+OBJECT MODULE PLACED IN .\obj\PlayMenu.obj
+COMPILER INVOKED BY: F:\Keil C 7.10\chengxu\C51\BIN\C51.EXE Play\PlayMenu.C LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDIR
+                    -(..\libsource\header) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\PlayMenu.lst) OBJECT(.\obj\PlayMenu.obj)
+
+line level    source
+
+   1          #include "..\Header\SPDA2K.h"
+   2          #include "..\header\dos\fs_struct.h"
+   3          #include "..\header\Memalloc.h"
+   4          #include "PlayMenu.h" 
+   5          #include "..\IR\remote.h"  
+   6          #include "..\header\variables.h"
+   7          #include "..\header\host_init.h"
+   8          
+   9          #include "..\UI_Display\common_UI_disp_func.c"
+  10          #include "..\LCM\TFT_display.h"         // TFT  
+  11          #include "..\LCM\TFT_config.h"          // TFT  
+  12          
+  13          
+  14          void PlayMenuProcess();
+  15          void PlayMenuProcess_IR();
+  16          void PlayModeMenuProcess_IR();
+  17          void LanguageMenuProcess_IR();
+  18          void EQMenuProcess_IR();
+  19          void Play_SourceDetect_Process_Mainmenu();
+  20          void IR_Service_Process_Menu_1(void);
+  21          extern  void    ir_service_menu(void);
+  22          extern void IR_Service_Process_Menu();
+  23          extern  void    TFT_ShowMenu();
+  24          xdata U8 LanguageTable[]={2,1,0,3,4,6,5,7,11,12,8,9,10,13,14,15};
+  25          
+  26          extern  xdata   U8      gc_ShowMenuTimer;
+  27          extern  U8              gc_clock_mode;  //20090526 chiayen add
+  28          xdata   U8      gc_LanguageSel;
+  29          extern xdata    U16     gw_Disp_CurrentSecBak;
+  30          extern  U8   USER_LogFile_ReadWrite(U8 tbt_ReadOrWrite);//use reserveblock for log
+  31          extern  xdata   U8      gc_MenuItemCount;
+  32          extern  data    bit     gb_TFT_refresh;
+  33          extern  xdata   U8 gc_ContrastSaveOrNot;
+  34          extern  void TFT_Contrast_SET(U8 Contrast);
+  35          #define SetupMenuTpye 41
+  36          #define LanguageMenuTpye 42
+  37          #define MemeryTitleType 43
+  38          #define FWVerTitleType 44
+  39          
+  40          #ifdef Contrast_Set
+  41          #define ContrastTitleType 45
+  42          #endif
+  43          
+  44          
+  45          void LanguageMenuProcess()
+  46          {
+  47   1              bit     tc_Confirm=0;
+  48   1      
+  49   1              gc_PhaseInx = 0;
+  50   1              gc_MenuItem=gc_LanguageSel;
+  51   1              //TFT_LanguageMenu();
+  52   1          Menu_Disp_Item_Other(LanguageMenuTpye,gc_MenuItem,REFRESH_ALL);
+  53   1              while(1)
+  54   1          {
+C51 COMPILER V7.10   PLAYMENU                                                              02/28/2011 10:30:51 PAGE 2   
+
+  55   2                      if(gc_PhaseInx)
+  56   2                      {
+  57   3                      switch(gc_PhaseInx)
+  58   3                      {
+  59   4                          case C_PlayMenu:
+  60   4                                              gc_refresh_type = REFRESH_ALL;
+  61   4                                              tc_Confirm=1;
+  62   4                          break;
+  63   4      
+  64   4                          case C_PlayNext:
+  65   4                                              gc_refresh_type = REFRESH_NEXT;
+  66   4                                              if(gc_MenuItem==16)
+  67   4                                              {
+  68   5                                                      gc_MenuItem=0;
+  69   5                                              }
+  70   4                                              else
+  71   4                                              {
+  72   5                                                      gc_MenuItem++;
+  73   5                                              }
+  74   4                                              //TFT_LanguageMenu();
+  75   4                                          Menu_Disp_Item_Other(LanguageMenuTpye,gc_MenuItem,gc_refresh_type);
+  76   4                          break;
+  77   4      
+  78   4                          case C_PlayPrev:
+  79   4                                              gc_refresh_type = REFRESH_PREV;
+  80   4                                              if(gc_MenuItem==0)
+  81   4                                              {
+  82   5                                                      gc_MenuItem=16;
+  83   5                                              }
+  84   4                                              else
+  85   4                                              {
+  86   5                                                      gc_MenuItem--;
+  87   5                                              }
+  88   4                                              //TFT_LanguageMenu();
+  89   4                                          Menu_Disp_Item_Other(LanguageMenuTpye,gc_MenuItem,gc_refresh_type);
+  90   4                          break;
+  91   4      
+  92   4                                      case C_MainMenu: //Long key mode
+  93   4                                              gc_Task_Next=C_Task_Menu;
+  94   4                                              return;
+  95   4                                      break;  
+  96   4                      }
+  97   3      
+  98   3                              if(tc_Confirm==1) //enter child dir or confirm selected item
+  99   3                              {
+ 100   4                  /*  if(gc_MenuItem>4)      //Terry 20090518
+ 101   4                          {
+ 102   4                        gc_MenuItem=0;
+ 103   4                          }
+ 104   4                                      gc_LanguageSel=gc_MenuItem;
+ 105   4                                      gc_MenuHZK=LanguageTable[gc_MenuItem];
+ 106   4                              //      dbprintf("gc_MenuHZK=%bx\n",gc_MenuHZK);
+ 107   4                                      USER_LogFile_ReadWrite(1);
+ 108   4                                      gc_MenuItem=0;
+ 109   4                                      TFT_SetupMenu();
+ 110   4                                      return;
+ 111   4                              */
+ 112   4                                      gc_LanguageSel=gc_MenuItem;
+ 113   4                                      gc_MenuHZK=gc_LanguageSel;//LanguageTable[gc_MenuItem];
+ 114   4                              //      dbprintf("gc_MenuHZK=%bx\n",gc_MenuHZK);
+ 115   4                                      USER_LogFile_ReadWrite(1);
+ 116   4                                      gc_MenuItem=0;
+C51 COMPILER V7.10   PLAYMENU                                                              02/28/2011 10:30:51 PAGE 3   
+
+ 117   4                                      //TFT_SetupMenu();
+ 118   4                                      Menu_Disp_Item_Other(SetupMenuTpye,gc_MenuItem,REFRESH_ALL);
+ 119   4                                      return;
+ 120   4                              }
+ 121   3                      }
+ 122   2                      gc_PhaseInx=0;          
+ 123   2                      Polling_TaskEvents();
+ 124   2                       IR_Service_Process_Menu_1(); 
+ 125   2                      if(gc_Task_Next==C_Task_PowerOff)
+ 126   2                      {
+ 127   3                              return;
+ 128   3                      }
+ 129   2              }       
+ 130   1      }
+ 131          
+ 132          void TFT_ShowContrastAdj(void)
+ 133          {
+ 134   1          data        U8 tc_Contrast[3];
+ 135   1          data        U8 i;
+ 136   1              xdata   U8 tc_DisplayContrast;
+ 137   1      
+ 138   1          tc_DisplayContrast=gc_Contrast;   
+ 139   1      
+ 140   1          tc_Contrast[0]=tc_DisplayContrast/100;
+ 141   1          tc_Contrast[1]=(tc_DisplayContrast%100)/10;
+ 142   1              tc_Contrast[2]=tc_DisplayContrast-tc_Contrast[0]*100-tc_Contrast[1]*10;
+ 143   1          for(i=0;i<3;i++)
+ 144   1                      {
+ 145   2              LCM_set_view(TFT_IconDispDir,VOLAdj_X_Pos+(VOLAdj_H_Size+2)*i-2,VOLAdj_Y_Pos,VOLAdj_H_Size,VOLAdj_
+             -V_Size);
+ 146   2              LCD_DisplayIcon(VOLAdjID,tc_Contrast[i]);
+ 147   2                      }
+ 148   1              }       
+ 149          
+ 150          void ContrastMenuProcess()
+ 151          {
+ 152   1              bit     tc_Confirm=0;
+ 153   1              xdata U8 tc_Contrast;
+ 154   1      
+ 155   1              gc_PhaseInx = 0; 
+ 156   1              
+ 157   1              
+ 158   1              Menu_Disp_Item_Other(ContrastTitleType,gc_MenuItem,REFRESH_ALL);
+ 159   1              TFT_Contrast_SET(gc_Contrast);//sunzhk add 
+ 160   1              gc_Contrast_bak = gc_Contrast;
+ 161   1              TFT_ShowContrastAdj();
+ 162   1              
+ 163   1              while(1)
+ 164   1          {
+ 165   2                      if(gc_PhaseInx)
+ 166   2                      {
+ 167   3                      switch(gc_PhaseInx)
+ 168   3                      {
+ 169   4                          case C_PlayMenu:
+ 170   4                                              gc_refresh_type = REFRESH_ALL;
+ 171   4                                              tc_Confirm=1;
+ 172   4                          break;
+ 173   4      
+ 174   4                          case C_PlayNext:
+ 175   4                                              if(gc_Contrast == 0xff)
+ 176   4                                              {
+ 177   5                                                      gc_Contrast = 1;
+C51 COMPILER V7.10   PLAYMENU                                                              02/28/2011 10:30:51 PAGE 4   
+
+ 178   5                                              }
+ 179   4                                              else
+ 180   4                                              {
+ 181   5                                                      gc_Contrast++;
+ 182   5                                              }
+ 183   4                                              TFT_ShowContrastAdj();
+ 184   4                                              TFT_Contrast_SET(gc_Contrast);
+ 185   4                          break;
+ 186   4      
+ 187   4                          case C_PlayPrev:
+ 188   4                                              if(gc_Contrast == 1)
+ 189   4                                              {
+ 190   5                                                      gc_Contrast = 0xff;
+ 191   5                                              }
+ 192   4                                              else
+ 193   4                                              {
+ 194   5                                                      gc_Contrast--;
+ 195   5                                              }
+ 196   4                                              TFT_ShowContrastAdj();
+ 197   4                                              TFT_Contrast_SET(gc_Contrast);
+ 198   4                          break;
+ 199   4      
+ 200   4                                      case C_MainMenu: //Long key mode
+ 201   4                                              gc_Task_Next=C_Task_Menu;
+ 202   4                                              gc_Contrast =gc_Contrast_bak;
+ 203   4                                              TFT_Contrast_SET(gc_Contrast_bak);
+ 204   4                                               gc_ContrastSaveOrNot=1; 
+ 205   4                           USER_LogFile_ReadWrite(1); 
+ 206   4      
+ 207   4                                              return;
+ 208   4                                      break;  
+ 209   4                      }
+ 210   3                              if(tc_Confirm==1)
+ 211   3                              {
+ 212   4      
+ 213   4                                      TFT_Contrast_SET(gc_Contrast);
+ 214   4                                      gc_ContrastSaveOrNot=1;
+ 215   4                                      USER_LogFile_ReadWrite(1);
+ 216   4                                      
+ 217   4                                      gc_MenuItem=1;
+ 218   4                                      Menu_Disp_Item_Other(SetupMenuTpye,gc_MenuItem,REFRESH_ALL);
+ 219   4                                      return;
+ 220   4                              }
+ 221   3                      }
+ 222   2                      gc_PhaseInx=0;          
+ 223   2                      Polling_TaskEvents();
+ 224   2              IR_Service_Process_Menu_1();
+ 225   2                      if(gc_Task_Next==C_Task_PowerOff)
+ 226   2                      {
+ 227   3                              return;
+ 228   3                      }
+ 229   2              }
+ 230   1      }
+*** WARNING C280 IN LINE 153 OF PLAY\PLAYMENU.C: 'tc_Contrast': unreferenced local variable
+ 231          void count_free_cluster_fat16(U8 xdata * p, U8 size1, U8 size2)
+ 232          {
+ 233   1              gdw_TotalFreeClusNumber += count_free_cluster_in_fat16_sector(p, size1);
+ 234   1              gdw_TotalFreeClusNumber += count_free_cluster_in_fat16_sector(p+size1*2, size2);
+ 235   1      }
+ 236          
+ 237          //! Search or count free clusters in FAT.
+ 238          /*!
+C51 COMPILER V7.10   PLAYMENU                                                              02/28/2011 10:30:51 PAGE 5   
+
+ 239           * \param tc_SearchMode 
+ 240           *                      - 0 is to search free clusters.
+ 241           *                      - 1 is to count number of free clusters.
+ 242           * \return Return 0 on success. Otherwise a nonzero number is returned.
+ 243           */
+ 244          U8 DOS_SearchFreeCluster(U8 tc_SearchMode)
+ 245          {
+ 246   1              U32 tdw_FreeClusterNum;
+ 247   1              U32 tdw_FAT_sect_address; //Ching 081111
+ 248   1              U32     tdw_last_FAT_sector;
+ 249   1              U8      tc_loop1_counter;
+ 250   1              U8      tc_loop2_counter;
+ 251   1              U8      tc_temp;
+ 252   1              U16     tw_size;
+ 253   1              U32 tdw_end;
+ 254   1              U8 xdata * p_buf;
+ 255   1              U8      tc_local_cluster_count_minus_1;
+ 256   1              U8      tc_log2_local_cluster_count;
+ 257   1              U8      tc_is_fat16 = (gc_DOS_FileSystemType == 1);
+ 258   1              U8  tc_status; //Ching 081111
+ 259   1              U32 tdw_DOS_SectorPerFAT=0; //Ching 081111
+ 260   1      
+ 261   1              if (tc_SearchMode==0 && gc_ClusBufValidSize >= 8)
+ 262   1                              return 0;
+ 263   1              // if cluster buffer not full, search free clusters first before counting the number.
+ 264   1              if (gc_ClusBufValidSize < 8 && gdw_FreeClusterNum[0]<(gdw_DOS_FatMaxCluster-1))
+ 265   1                              tc_SearchMode = 0;
+ 266   1              tdw_FreeClusterNum = gdw_FreeClusterNum[tc_SearchMode]+1;
+ 267   1              gb_ReadWriteDataArea = 1; // set read target for DOS_Read_LogicSector().
+ 268   1              if (gc_DOS_FileSystemType == 1) // FAT16
+ 269   1              {
+ 270   2                      tc_local_cluster_count_minus_1 = 256-1;
+ 271   2                      tc_log2_local_cluster_count = 8;
+ 272   2              }
+ 273   1              else
+ 274   1              {
+ 275   2                      tc_local_cluster_count_minus_1 = 128-1;
+ 276   2                      tc_log2_local_cluster_count = 7;
+ 277   2              }
+ 278   1      
+ 279   1              if(gdw_DOS_Fat2Addr!=gdw_DOS_Fat1Addr) tdw_DOS_SectorPerFAT=gdw_DOS_SectorPerFAT; //Ching 081111
+ 280   1      
+ 281   1              tdw_FAT_sect_address = gdw_DOS_Fat1Addr + (tdw_FreeClusterNum>>tc_log2_local_cluster_count); // tdw_FreeC
+             -lusterNum must be a multiple of 256/128.
+ 282   1              tdw_last_FAT_sector = gdw_DOS_Fat1Addr + ((gdw_DOS_FatMaxCluster+tc_local_cluster_count_minus_1)>>tc_log2
+             -_local_cluster_count) - 1;
+ 283   1              tdw_end = gdw_DOS_FatMaxCluster-((WORD)tc_local_cluster_count_minus_1+1);
+ 284   1              while (tdw_FreeClusterNum < gdw_DOS_FatMaxCluster)
+ 285   1              {
+ 286   2                      tc_status = DOS_Read_LogicSector(tdw_FAT_sect_address, 1);
+ 287   2                      if(tc_status) DOS_Read_LogicSector(tdw_FAT_sect_address+tdw_DOS_SectorPerFAT, 1); //Ching 081111
+ 288   2      
+ 289   2                      tc_temp  = ((UBYTE)tdw_FreeClusterNum) & tc_local_cluster_count_minus_1; // get the index of cluster ent
+             -ry to search yet.
+ 290   2      
+ 291   2                      if (tc_temp != 0) // If not start from the beginning of sector buffer.
+ 292   2                      { // to deal with the case that doesn't search from gc_UserDataBuf[0]
+ 293   3                              if (tc_is_fat16)
+ 294   3                                      p_buf = gc_UserDataBuf + (tc_temp*2);
+ 295   3                              else
+ 296   3                                      p_buf = gc_UserDataBuf + (tc_temp*4);
+ 297   3      
+C51 COMPILER V7.10   PLAYMENU                                                              02/28/2011 10:30:51 PAGE 6   
+
+ 298   3      
+ 299   3                              if (tdw_FAT_sect_address == tdw_last_FAT_sector)
+ 300   3                                      tw_size = (WORD)(gdw_DOS_FatMaxCluster - tdw_FreeClusterNum);
+ 301   3                              else
+ 302   3                                      tw_size = (tc_local_cluster_count_minus_1+1)-tc_temp;
+ 303   3                      }
+ 304   2                      else
+ 305   2                      {
+ 306   3                              p_buf = gc_UserDataBuf;
+ 307   3                              if (tdw_FAT_sect_address == tdw_last_FAT_sector)//(JC)tdw_FreeClusterNum is in the last FAT sector, as 
+             -the same sector with gdw_DOS_FatMaxCluster
+ 308   3                                              tw_size = (WORD)(gdw_DOS_FatMaxCluster - tdw_FreeClusterNum);
+ 309   3                              else
+ 310   3                                              tw_size = (tc_local_cluster_count_minus_1+1);
+ 311   3                      }
+ 312   2                      if (tw_size > 128)
+ 313   2                      {
+ 314   3                              tc_loop1_counter = 128;
+ 315   3                              tc_loop2_counter = tw_size - 128;
+ 316   3                      }
+ 317   2                      else
+ 318   2                      {
+ 319   3                              tc_loop1_counter = (UBYTE)tw_size;
+ 320   3                              tc_loop2_counter = 0;
+ 321   3                      }
+ 322   2      
+ 323   2                      if (tc_SearchMode == 0) // search free clusters
+ 324   2                      {
+ 325   3                              if (tc_is_fat16) // FAT16
+ 326   3                              {
+ 327   4                                      if (free_clusters_in_sector(p_buf, tc_loop1_counter, 2, tdw_FreeClusterNum))
+ 328   4                                      {
+ 329   5                                              return 0;
+ 330   5                                      }
+ 331   4                                      tdw_FreeClusterNum += tc_loop1_counter;
+ 332   4                                      if (free_clusters_in_sector(p_buf+tc_loop1_counter*2, tc_loop2_counter, 2, tdw_FreeClusterNum))
+ 333   4                                      {
+ 334   5                                              return 0;
+ 335   5                                      }
+ 336   4                                      tdw_FreeClusterNum += tc_loop2_counter;
+ 337   4                              }
+ 338   3                              else // FAT32
+ 339   3                              {
+ 340   4                                      if (free_clusters_in_sector(p_buf, tc_loop1_counter, 4, tdw_FreeClusterNum))
+ 341   4                                      {
+ 342   5                                              return 0;
+ 343   5                                      }
+ 344   4                                      tdw_FreeClusterNum += tc_loop1_counter;
+ 345   4                              }
+ 346   3                      }
+ 347   2                      else // count free clusters
+ 348   2                      {
+ 349   3                              tdw_FreeClusterNum += tw_size;
+ 350   3                              if (tc_is_fat16) // FAT16
+ 351   3                              {
+ 352   4                                      count_free_cluster_fat16(p_buf, tc_loop1_counter, tc_loop2_counter);
+ 353   4                              }
+ 354   3                              else
+ 355   3                              {
+ 356   4                                      gdw_TotalFreeClusNumber += count_free_cluster_in_fat32_sector(p_buf, tc_loop1_counter);
+ 357   4                              }
+ 358   3                      }
+C51 COMPILER V7.10   PLAYMENU                                                              02/28/2011 10:30:51 PAGE 7   
+
+ 359   2                      if (((UBYTE)tdw_FAT_sect_address & 0x0f) == 0) // return after every 16 sector analysis
+ 360   2                              break;
+ 361   2                      tdw_FAT_sect_address++;
+ 362   2              }
+ 363   1              gdw_FreeClusterNum[tc_SearchMode] = tdw_FreeClusterNum-1;
+ 364   1              return 0;
+ 365   1      }
+ 366          
+ 367          UBYTE fat16_free_cluster_offset(UBYTE xdata * p, UBYTE size);
+ 368          UBYTE fat32_free_cluster_offset(UBYTE xdata * p, UBYTE size);
+ 369          
+ 370          //! \internal
+ 371          /*! \internal
+ 372           *      \param  p                                       Buffer for FAT.
+ 373           *      \param  size                            Should be equal to or less than 128.
+ 374           *      \param  cluster_entry_size      2 for FAT16 and 4 for FAT32.
+ 375           *      \param  tdw_FreeClusterNum      The cluster entry number at the address p.
+ 376           *      \return 1 if cluster buffer full. 0 otherwise.
+ 377           */
+ 378          // All size and index variables in this function are in unit of cluster_entry_size.
+ 379          U8 free_clusters_in_sector(U8 xdata * p, U8 size, U8 cluster_entry_size, U32 tdw_FreeClusterNum)
+ 380          {
+ 381   1              U8  search_index;
+ 382   1              search_index = 0;
+ 383   1      
+ 384   1              while(1)
+ 385   1              {
+ 386   2                      if (cluster_entry_size == 2)
+ 387   2                      {
+ 388   3                              search_index += fat16_free_cluster_offset(p+search_index*cluster_entry_size, size-search_index);
+ 389   3                      }
+ 390   2                      else
+ 391   2                      {
+ 392   3                              search_index += fat32_free_cluster_offset(p+search_index*cluster_entry_size, size-search_index);
+ 393   3                      }
+ 394   2                      if (search_index < size)
+ 395   2                      {
+ 396   3                              UBYTE uTemp, i;
+ 397   3                              //dbprintf("%lx %bx\n", tdw_FreeClusterNum, search_index);
+ 398   3                              i = gc_ClusBufValidSize;
+ 399   3                              uTemp = (gc_ClusBufValidPoint+i) & 0x07; // (gc_ClusBufValidPoint+gc_ClusBufValidSize)%8        
+ 400   3                              gdw_ClusterBuffer[uTemp] = tdw_FreeClusterNum + search_index;
+ 401   3                              gdw_FreeClusterNum[0]    = tdw_FreeClusterNum + search_index;
+ 402   3                              i++;
+ 403   3                              gc_ClusBufValidSize = i;
+ 404   3                              if (i==8)
+ 405   3                              {
+ 406   4                                      return 1;
+ 407   4                              }
+ 408   3                              search_index++;
+ 409   3                              continue;
+ 410   3                      }
+ 411   2                      else
+ 412   2                      {
+ 413   3                              // end is reached. searched_size should equals to size
+ 414   3                              return 0;
+ 415   3                      }
+ 416   2              }//while(1)
+ 417   1              return 0;
+ 418   1      }
+ 419          
+ 420          
+C51 COMPILER V7.10   PLAYMENU                                                              02/28/2011 10:30:51 PAGE 8   
+
+ 421          
+ 422          
+ 423          void new_DOS_SearchFreeCluster_loop(void) 
+ 424          { 
+ 425   1              while(gdw_FreeClusterNum[1] < (gdw_DOS_FatMaxCluster - 1)) 
+ 426   1              {         
+ 427   2                      DOS_SearchFreeCluster(1); 
+ 428   2              } 
+ 429   1      }
+ 430          
+ 431          
+ 432          U32 User_GetFreeMemorySize_REC()
+ 433          {
+ 434   1          new_DOS_SearchFreeCluster_loop();
+ 435   1              return(gdw_TotalFreeClusNumber*gc_DOS_SectorPerCluster);
+ 436   1      }
+ 437          
+ 438          
+ 439          void Menu_GetDiskCap()
+ 440          {
+ 441   1          U32 tdw_TotalFreeSectorNumber;
+ 442   1              U8  tc_clock_mode_backup;  //20090526 chiayen add
+ 443   1      
+ 444   1              tc_clock_mode_backup=gc_clock_mode;
+ 445   1              set_clock_mode(CLOCK_MODE_MJPEG);  //20090526 chiayen add
+ 446   1      
+ 447   1              if(gc_CurrentCard==2)
+ 448   1              {
+ 449   2                      gdw_CARD_TotalSizeMB = (SD_Capacity.LW>>11);
+ 450   2                      gdw_CARD_TotalSizeMB=gdw_CARD_TotalSizeMB-1-gdw_CARD_TotalSizeMB/512;           
+ 451   2              }
+ 452   1              else if(gc_CurrentCard==0)
+ 453   1              {
+ 454   2                      // maxliao-20090602
+ 455   2                      if(gbt_Support_Dummy_Capacity)
+ 456   2                      {
+ 457   3                              gdw_CARD_TotalSizeMB = Dummy_Capacity.LW >> 11;
+ 458   3                      }
+ 459   2                      else
+ 460   2                      {
+ 461   3                              gdw_CARD_TotalSizeMB = Capacity.LW >> 11;
+ 462   3                      }
+ 463   2                      gdw_CARD_TotalSizeMB=gdw_CARD_TotalSizeMB-1-gdw_CARD_TotalSizeMB/512;
+ 464   2              }
+ 465   1              else if(gc_CurrentCard==5)
+ 466   1              {
+ 467   2                      gdw_CARD_TotalSizeMB=gdw_CARD_TotalSizeMB;      
+ 468   2              }
+ 469   1              
+ 470   1              tdw_TotalFreeSectorNumber = User_GetFreeMemorySize_REC();
+ 471   1              gdw_Dos_FreeMemorySizeMB = tdw_TotalFreeSectorNumber >> 11;
+ 472   1              set_clock_mode(tc_clock_mode_backup);  //20090526 chiayen add
+ 473   1      }
+ 474          
+ 475          
+ 476          void SetupMenuProcess()
+ 477          {
+ 478   1              bit     tc_Confirm=0;
+ 479   1              U8  tc_clock_mode_backup;  //20090526 chiayen add
+ 480   1              tc_clock_mode_backup=gc_clock_mode;
+ 481   1      
+ 482   1              gc_PhaseInx = 0;
+C51 COMPILER V7.10   PLAYMENU                                                              02/28/2011 10:30:51 PAGE 9   
+
+ 483   1              gc_MenuItem=0;
+ 484   1              //TFT_SetupMenu();
+ 485   1              Menu_Disp_Item_Other(SetupMenuTpye,gc_MenuItem,REFRESH_ALL);
+ 486   1      
+ 487   1      #ifdef Contrast_Set
+ 488   1              while(1)
+ 489   1          {
+ 490   2                      if(gc_PhaseInx)
+ 491   2                      {
+ 492   3                      switch(gc_PhaseInx)
+ 493   3                      {
+ 494   4                          case C_PlayMenu:
+ 495   4                                              gc_refresh_type = REFRESH_ALL;
+ 496   4                                              tc_Confirm=1;
+ 497   4                          break;
+ 498   4      
+ 499   4                          case C_PlayNext:
+ 500   4                                              gc_refresh_type = REFRESH_NEXT;
+ 501   4                                              if(gc_MenuItem==4)
+ 502   4                                              {
+ 503   5                                                      gc_MenuItem=0;
+ 504   5                                              }
+ 505   4                                              else
+ 506   4                                              {
+ 507   5                                                      gc_MenuItem++;
+ 508   5                                              }
+ 509   4                                              //TFT_SetupMenu();
+ 510   4                                              Menu_Disp_Item_Other(SetupMenuTpye,gc_MenuItem,gc_refresh_type);
+ 511   4                          break;
+ 512   4      
+ 513   4                          case C_PlayPrev:
+ 514   4                                              gc_refresh_type = REFRESH_PREV;
+ 515   4                                              if(gc_MenuItem==0)
+ 516   4                                              {
+ 517   5                                                      gc_MenuItem=4;
+ 518   5                                              }
+ 519   4                                              else
+ 520   4                                              {
+ 521   5                                                      gc_MenuItem--;
+ 522   5                                              }
+ 523   4                                              //TFT_SetupMenu();
+ 524   4                                              Menu_Disp_Item_Other(SetupMenuTpye,gc_MenuItem,gc_refresh_type);
+ 525   4                          break;
+ 526   4      
+ 527   4                                      case C_MainMenu: //Long key mode
+ 528   4                                              gc_Task_Next=C_Task_Menu;
+ 529   4                                      break;
+ 530   4                      }
+ 531   3      
+ 532   3                              if(tc_Confirm==1) //enter child dir or confirm selected item
+ 533   3                              {
+ 534   4                                      gc_PhaseInx=0;
+ 535   4                                      if(gc_MenuItem==0)  //language setting
+ 536   4                                      {
+ 537   5                                              LanguageMenuProcess();
+ 538   5                                              gc_MenuItem=0;
+ 539   5                                              tc_Confirm=0;
+ 540   5                                      }
+ 541   4                                      else if(gc_MenuItem==1)
+ 542   4                                      {       
+ 543   5                                              ContrastMenuProcess();
+ 544   5                                              gc_MenuItem=1;
+C51 COMPILER V7.10   PLAYMENU                                                              02/28/2011 10:30:51 PAGE 10  
+
+ 545   5                                              tc_Confirm=0;
+ 546   5                                      }
+ 547   4                                      else if(gc_MenuItem==2)  //memory info
+ 548   4                                      {
+ 549   5                                      //      TFT_MemoryInfo();       // Show Wait... 
+ 550   5                                      //      TFT_ShowMediaIcon_M();
+ 551   5                                              set_clock_mode(CLOCK_MODE_MJPEG);
+ 552   5                                              Menu_GetDiskCap();
+ 553   5                                              set_clock_mode(tc_clock_mode_backup);  //20090526 chiayen add
+ 554   5                                              TFT_MemoryInfo();                 
+ 555   5                                              TFT_ShowMediaIcon_M();
+ 556   5      
+ 557   5                                              gc_ShowMenuTimer=150;
+ 558   5                                              while((gc_ShowMenuTimer!=0))
+ 559   5                                              {
+ 560   6                                                      Polling_TaskEvents();
+ 561   6                              IR_Service_Process_Menu_1(); 
+ 562   6                                                      if(gc_PhaseInx!=0)
+ 563   6                                                      {
+ 564   7                                                              break;
+ 565   7                                                      }
+ 566   6                                              }
+ 567   5                                              gc_MenuItem=2;
+ 568   5                                              tc_Confirm=0;
+ 569   5                                              //TFT_SetupMenu();
+ 570   5                                              Menu_Disp_Item_Other(SetupMenuTpye,gc_MenuItem,gc_refresh_type);
+ 571   5                                              gc_ShowMenuTimer=0;
+ 572   5                                      }
+ 573   4                                      else if(gc_MenuItem==3)  //firmware version
+ 574   4                                      {
+ 575   5                                              //TFT_FWVERSION();
+ 576   5                                          Menu_Disp_Item_Other(FWVerTitleType,0,REFRESH_ALL);
+ 577   5                                              gc_ShowMenuTimer=150;
+ 578   5                                              while((gc_ShowMenuTimer!=0))
+ 579   5                                              {
+ 580   6                                                      Polling_TaskEvents();
+ 581   6                              IR_Service_Process_Menu_1(); 
+ 582   6                                                      if(gc_PhaseInx!=0)
+ 583   6                                                      {
+ 584   7                                                              break;
+ 585   7                                                      }
+ 586   6                                              }
+ 587   5                                              gc_MenuItem=3;
+ 588   5                                              //TFT_SetupMenu();
+ 589   5                                              Menu_Disp_Item_Other(SetupMenuTpye,gc_MenuItem,gc_refresh_type);
+ 590   5                                              tc_Confirm=0;
+ 591   5                                              gc_ShowMenuTimer=0;
+ 592   5                                      }
+ 593   4                                      else if(gc_MenuItem==4)  //EXIT
+ 594   4                                      {
+ 595   5                                              gc_Task_Next=C_Task_Menu;
+ 596   5                                      }
+ 597   4                              }
+ 598   3                      }
+ 599   2                      gc_PhaseInx=0;
+ 600   2                      gc_CurrentCard_backup=gc_CurrentCard;           
+ 601   2                      Polling_TaskEvents();
+ 602   2              IR_Service_Process_Menu_1();
+ 603   2      
+ 604   2                      Play_SourceDetect_Process_Mainmenu(); 
+ 605   2      
+ 606   2              if(gc_Task_Current!=gc_Task_Next)
+C51 COMPILER V7.10   PLAYMENU                                                              02/28/2011 10:30:51 PAGE 11  
+
+ 607   2              {
+ 608   3                              gc_Task_Current=gc_Task_Next;
+ 609   3                  break;  
+ 610   3              }
+ 611   2              }
+ 612   1      #else
+                      while(1)
+                  {
+                              if(gc_PhaseInx)
+                              {
+                              switch(gc_PhaseInx)
+                              {
+                                  case C_PlayMenu:
+                                                      gc_refresh_type = REFRESH_ALL;
+                                                      tc_Confirm=1;
+                                  break;
+              
+                                  case C_PlayNext:
+                                                      gc_refresh_type = REFRESH_NEXT;
+                                                      if(gc_MenuItem==3)
+                                                      {
+                                                              gc_MenuItem=0;
+                                                      }
+                                                      else
+                                                      {
+                                                              gc_MenuItem++;
+                                                      }
+                                                      //TFT_SetupMenu();
+                                                      Menu_Disp_Item_Other(SetupMenuTpye,gc_MenuItem,gc_refresh_type);
+                                  break;
+              
+                                  case C_PlayPrev:
+                                                      gc_refresh_type = REFRESH_PREV;
+                                                      if(gc_MenuItem==0)
+                                                      {
+                                                              gc_MenuItem=3;
+                                                      }
+                                                      else
+                                                      {
+                                                              gc_MenuItem--;
+                                                      }
+                                                      //TFT_SetupMenu();
+                                                      Menu_Disp_Item_Other(SetupMenuTpye,gc_MenuItem,gc_refresh_type);
+                                  break;
+              
+                                              case C_MainMenu: //Long key mode
+                                                      gc_Task_Next=C_Task_Menu;
+                                              break;
+                              }
+              
+                                      if(tc_Confirm==1) //enter child dir or confirm selected item
+                                      {
+                                              gc_PhaseInx=0;
+                                              if(gc_MenuItem==0)  //language setting
+                                              {
+                                                      LanguageMenuProcess();
+                                                      gc_MenuItem=0;
+                                                      tc_Confirm=0;
+                                              }
+                                              else if(gc_MenuItem==1)  //memory info
+                                              {
+                                              //      TFT_MemoryInfo();       // Show Wait... 
+C51 COMPILER V7.10   PLAYMENU                                                              02/28/2011 10:30:51 PAGE 12  
+
+                                              //      TFT_ShowMediaIcon_M();
+                                                      set_clock_mode(CLOCK_MODE_MJPEG);
+                                                      Menu_GetDiskCap();
+                                                      set_clock_mode(tc_clock_mode_backup);  //20090526 chiayen add
+                                                      TFT_MemoryInfo();                 
+                                                      TFT_ShowMediaIcon_M();
+              
+                                                      gc_ShowMenuTimer=150;
+                                                      while((gc_ShowMenuTimer!=0))
+                                                      {
+                                                              Polling_TaskEvents();
+                                      IR_Service_Process_Menu_1(); 
+                                                              if(gc_PhaseInx!=0)
+                                                              {
+                                                                      break;
+                                                              }
+                                                      }
+                                                      gc_MenuItem=1;
+                                                      tc_Confirm=0;
+                                                      //TFT_SetupMenu();
+                                                      Menu_Disp_Item_Other(SetupMenuTpye,gc_MenuItem,gc_refresh_type);
+                                                      gc_ShowMenuTimer=0;
+                                              }
+                                              else if(gc_MenuItem==2)  //firmware version
+                                              {
+                                                      //TFT_FWVERSION();
+                                                  Menu_Disp_Item_Other(FWVerTitleType,0,REFRESH_ALL);
+                                                      gc_ShowMenuTimer=150;
+                                                      while((gc_ShowMenuTimer!=0))
+                                                      {
+                                                              Polling_TaskEvents();
+                                      IR_Service_Process_Menu_1(); 
+                                                              if(gc_PhaseInx!=0)
+                                                              {
+                                                                      break;
+                                                              }
+                                                      }
+                                                      gc_MenuItem=2;
+                                                      //TFT_SetupMenu();
+                                                      Menu_Disp_Item_Other(SetupMenuTpye,gc_MenuItem,gc_refresh_type);
+                                                      tc_Confirm=0;
+                                                      gc_ShowMenuTimer=0;
+                                              }
+                                              else if(gc_MenuItem==3)  //EXIT
+                                              {
+                                                      gc_Task_Next=C_Task_Menu;
+                                              }
+                                      }
+                              }
+                              gc_PhaseInx=0;
+                              gc_CurrentCard_backup=gc_CurrentCard;           
+                              Polling_TaskEvents();
+                      IR_Service_Process_Menu_1();
+              
+                              Play_SourceDetect_Process_Mainmenu(); 
+              
+                      if(gc_Task_Current!=gc_Task_Next)
+                      {
+                                      gc_Task_Current=gc_Task_Next;
+                          break;  
+                      }
+                      }       
+C51 COMPILER V7.10   PLAYMENU                                                              02/28/2011 10:30:51 PAGE 13  
+
+              #endif  
+ 732   1      }
+ 733          
+ 734          
+ 735          void Play_SDFlash_DosInit_Mainmenu()
+ 736          {
+ 737   1              gb_FindFlag = 0;
+ 738   1              gc_PhaseInx=0;
+ 739   1              gw_init_needed=0xFFFF;
+ 740   1              if (DOS_Initialize())
+ 741   1              {
+ 742   2              }
+ 743   1              else
+ 744   1              {
+ 745   2                      gc_ShowTimer=0;  //20090331
+ 746   2                      gc_DispWallpaper=1;
+ 747   2                      gc_TuneVolFreqStatus=0;
+ 748   2                      gb_FindFlag = 0;
+ 749   2                      gc_PhaseInx=0;
+ 750   2                      gw_init_needed=0xFFFF;
+ 751   2      
+ 752   2                      gc_TaskMode_BkUp=C_Task_Play;//(JC)I0304 for back to rite TASK from Dir-list
+ 753   2                      gc_Task_Next=C_Task_Play;
+ 754   2      
+ 755   2                      gs_System_State.c_FileHandle=0;
+ 756   2                      gc_MenuItemCount=0;     
+ 757   2                      gs_File_FCB[0].dw_FDB_StartCluster = gdw_DOS_RootDirClus;           
+ 758   2                      DOS_Search_File(C_File_All|C_Cnt_FileNo, C_MusicFileType, C_CmpExtName|C_Next);//(JC)count music file no
+             -. in root
+ 759   2                      gc_PhaseInx=0;
+ 760   2                      gb_TFT_refresh=1;
+ 761   2                      gc_DispWallpaper=0xFF;
+ 762   2              }
+ 763   1      }
+ 764          
+ 765          
+ 766          void Play_SourceDetect_Process_Mainmenu()
+ 767          {
+ 768   1              gb_SD_Exist_pre=gb_SD_Exist;
+ 769   1              if(!SD_Detect)  //SD exist
+ 770   1          {
+ 771   2              gb_SD_Exist=1;
+ 772   2          }
+ 773   1              else
+ 774   1              {
+ 775   2                      gb_SD_Exist=0;
+ 776   2                      gb_SDNoFileflag=0;
+ 777   2              }
+ 778   1      #if 1//(USB_HOST==1)
+ 779   1              gb_Host_Exist_pre=gb_Host_Exist;
+ 780   1              if(!Host_DetectDevice())
+ 781   1              {
+ 782   2                      gb_Host_Exist=1;        //host_exist            
+ 783   2              }
+ 784   1              else
+ 785   1              {
+ 786   2                      gb_Host_Exist=0;
+ 787   2                      gc_HostNoFileflag=0;
+ 788   2              }
+ 789   1      #endif
+ 790   1      
+ 791   1              if((gc_CurrentCard==0) && ((gb_Host_Exist_pre!=gb_Host_Exist)||(gb_SD_Exist_pre!=gb_SD_Exist)))
+C51 COMPILER V7.10   PLAYMENU                                                              02/28/2011 10:30:51 PAGE 14  
+
+ 792   1              {
+ 793   2                      if((gb_Host_Exist_pre!=gb_Host_Exist) && (gb_Host_Exist==1))
+ 794   2                      {
+ 795   3                              gc_CurrentCard=5;
+ 796   3                      }
+ 797   2                      else if((gb_SD_Exist_pre!=gb_SD_Exist) && (gb_SD_Exist==1))
+ 798   2                      {
+ 799   3                              gc_CurrentCard=2;       
+ 800   3                      }
+ 801   2                      else
+ 802   2                      {
+ 803   3                              gc_CurrentCard=0;       
+ 804   3                      }
+ 805   2              }
+ 806   1              else
+ 807   1              {
+ 808   2                      if(gc_CurrentCard==2)
+ 809   2                      {
+ 810   3                              if(gc_Dosinitfail==0)  //20090803 chiayen add
+ 811   3                              {
+ 812   4                                      if((gb_Host_Exist_pre!=gb_Host_Exist) && (gb_Host_Exist==1))
+ 813   4                                      {
+ 814   5                                              gc_CurrentCard=5;
+ 815   5                                      }
+ 816   4                                      else if(((gb_SD_Exist==0) || (gb_SDNoFileflag==1)) && (gb_Host_Exist==1))
+ 817   4                                      {
+ 818   5                                              gc_CurrentCard=5;
+ 819   5                                              if(gc_HostNoFileflag==1)
+ 820   5                                              {
+ 821   6                                                      gc_CurrentCard=0;       
+ 822   6                                              }
+ 823   5                                      }
+ 824   4                                      else if((gb_SD_Exist==0) || (gb_SDNoFileflag==1))
+ 825   4                                      {
+ 826   5                                              gc_CurrentCard=0;       
+ 827   5                                      }
+ 828   4                              }
+ 829   3                              else //20090803 chiayen add for SD Dos initial fail
+ 830   3                              {
+ 831   4                                      if((gb_Host_Exist==1) && (gc_HostNoFileflag==0))
+ 832   4                                      {
+ 833   5                                              gc_CurrentCard=5;
+ 834   5                                      }
+ 835   4                                      else
+ 836   4                                      {
+ 837   5                                              gc_CurrentCard=0;
+ 838   5                                      }
+ 839   4                                      gc_Dosinitfail=0;                               
+ 840   4                              }
+ 841   3                      }
+ 842   2                      #if 1//(USB_HOST==1)
+ 843   2                      if(gc_CurrentCard==5)
+ 844   2                      {
+ 845   3                              if(gc_Dosinitfail==0)  //20090803 chiayen add
+ 846   3                              {
+ 847   4                                      if((gb_SD_Exist_pre!=gb_SD_Exist) && (gb_SD_Exist==1))
+ 848   4                                      {
+ 849   5                                              gc_CurrentCard=2;
+ 850   5                                      }
+ 851   4                                      else if(((gb_Host_Exist==0) || (gc_HostNoFileflag==1)) && (gb_SD_Exist==1))
+ 852   4                                      {
+ 853   5                                              gc_CurrentCard=2;
+C51 COMPILER V7.10   PLAYMENU                                                              02/28/2011 10:30:51 PAGE 15  
+
+ 854   5                                              if(gb_SDNoFileflag==1)
+ 855   5                                              {
+ 856   6                                                      gc_CurrentCard=0;       
+ 857   6                                              }
+ 858   5                                      }
+ 859   4                                      else if((gb_Host_Exist==0) || (gc_HostNoFileflag==1))
+ 860   4                                      {
+ 861   5                                              gc_CurrentCard=0;       
+ 862   5                                      }
+ 863   4                              }
+ 864   3                              else //host dos initial fail  //20090803 chiayen add
+ 865   3                              {
+ 866   4                                      if((gb_SD_Exist==1) && (gb_SDNoFileflag==0))
+ 867   4                                      {
+ 868   5                                              gc_CurrentCard=2;
+ 869   5                                      }
+ 870   4                                      else
+ 871   4                                      {
+ 872   5                                              gc_CurrentCard=0;
+ 873   5                                      }
+ 874   4                                      gc_Dosinitfail=0;
+ 875   4                              }
+ 876   3                      }
+ 877   2                      #endif
+ 878   2              }
+ 879   1      
+ 880   1      
+ 881   1          if(gc_CurrentCard_backup!=gc_CurrentCard)
+ 882   1          {
+ 883   2                      gc_CurrentCard_backup=gc_CurrentCard;
+ 884   2                      set_clock_mode(CLOCK_MODE_MP3); //20090803 chiayen add for media change
+ 885   2      
+ 886   2                      if(gc_CurrentCard==2)
+ 887   2              {           
+ 888   3                  if(SD_Identification_Flow())
+ 889   3                  {
+ 890   4                      gc_CardExist |=0x02;
+ 891   4                  }
+ 892   3                  else if((gb_Host_Exist==1) && (gc_HostNoFileflag==0)) //20090730 chiayen modify
+ 893   3                  {
+ 894   4                                      DEVICE_REG[0x00]= 0x01;  //20090730 chiayen add
+ 895   4                                      if(!Host_Initial())
+ 896   4                                      {
+ 897   5                                              gc_CurrentCard = CURRENT_MEDIA_HOST;
+ 898   5                                              gb_FindFlag = 0;
+ 899   5                      }
+ 900   4                          else
+ 901   4                          {
+ 902   5                                              gc_CurrentCard=0;
+ 903   5                                              gc_CardExist &=0xFD;
+ 904   5                                              gb_FindFlag = 0;
+ 905   5                                              InitFlash();                                
+ 906   5                          }
+ 907   4                      }
+ 908   3                              else 
+ 909   3                      {
+ 910   4                                      DEVICE_REG[0x00]= 0x01;  //20090730 chiayen add
+ 911   4                                      gc_CurrentCard=0;
+ 912   4                                      gc_CardExist &=0xFD;
+ 913   4                                      gb_FindFlag = 0;
+ 914   4                                      InitFlash();
+ 915   4                              }
+C51 COMPILER V7.10   PLAYMENU                                                              02/28/2011 10:30:51 PAGE 16  
+
+ 916   3                              Play_SDFlash_DosInit_Mainmenu();
+ 917   3              }
+ 918   2                      else if(gc_CurrentCard==CURRENT_MEDIA_HOST)
+ 919   2                      {
+ 920   3                              DEVICE_REG[0x00]= 0x01;  //20090803 chiayen add                 
+ 921   3                              if(!Host_Initial())
+ 922   3                              {
+ 923   4                                      gc_CurrentCard = CURRENT_MEDIA_HOST;
+ 924   4                                      gb_FindFlag = 0;
+ 925   4                              }
+ 926   3                              else if((gb_SD_Exist==1) && (gb_SDNoFileflag==0)) //20090730 chiayen add
+ 927   3                              {
+ 928   4                          if(SD_Identification_Flow())
+ 929   4                          { 
+ 930   5                              gc_CardExist |=0x02;
+ 931   5                                              gc_CurrentCard=2;      
+ 932   5                                      }
+ 933   4                                      else
+ 934   4                                      {
+ 935   5                                              DEVICE_REG[0x00]= 0x01;
+ 936   5                                              gc_CurrentCard=0;
+ 937   5                                              gc_CardExist &=0xFD;
+ 938   5                                              gb_FindFlag = 0;
+ 939   5                                              InitFlash();
+ 940   5                                      }
+ 941   4                              }
+ 942   3                              else 
+ 943   3                      {
+ 944   4                                      DEVICE_REG[0x00]= 0x01;
+ 945   4                                      gc_CurrentCard=0;
+ 946   4                                      gb_FindFlag = 0;
+ 947   4                                      InitFlash();
+ 948   4                              }
+ 949   3                              Play_SDFlash_DosInit_Mainmenu();
+ 950   3                      }
+ 951   2                      else if(gc_CurrentCard==0)
+ 952   2              {
+ 953   3                              DEVICE_REG[0x00]= 0x01;
+ 954   3                              gc_CardExist &=0xFD;
+ 955   3                              InitFlash();
+ 956   3                              Play_SDFlash_DosInit_Mainmenu();
+ 957   3                      }
+ 958   2      
+ 959   2                      #if 0
+                              if(gc_CurrentCard==2)
+                      {           
+                          if(SD_Identification_Flow())
+                          {
+                              gc_CardExist |=0x02;
+                                              Play_SDFlash_DosInit_Mainmenu();      
+                          }
+                          else
+                          {
+                                              XBYTE[0xB400]= 0x01;
+                                              gc_CurrentCard=0;
+                                              gc_CardExist &=0xFD;
+                                              gb_FindFlag = 0;
+                                              InitFlash();
+                                              Play_SDFlash_DosInit_Mainmenu();                                            
+                          }
+                      }
+                      else if(gc_CurrentCard==0)
+C51 COMPILER V7.10   PLAYMENU                                                              02/28/2011 10:30:51 PAGE 17  
+
+                      {
+                                      XBYTE[0xB400]= 0x01;
+                                      gc_CardExist &=0xFD;
+                                      InitFlash();
+                                      Play_SDFlash_DosInit_Mainmenu();
+                      }
+                              else if(gc_CurrentCard==CURRENT_MEDIA_HOST)
+                              {
+                                      if(!Host_Initial())
+                                      {
+                                              gc_CurrentCard = CURRENT_MEDIA_HOST;
+                                              gb_FindFlag = 0;
+                                      }
+                                      else
+                                      {
+                                              XBYTE[0xB400]= 0x01;
+                                              gc_CurrentCard=0;
+                                              gb_FindFlag = 0;
+                                              InitFlash();
+                                              gc_CurrentCard=0;
+                                      }
+                                      Play_SDFlash_DosInit_Mainmenu();
+                              }
+                              #endif
+1002   2          }
+1003   1      }
+1004          
+1005          
+1006          void MainMenuProcess()
+1007          {
+1008   1              bit     tc_Confirm=0;
+1009   1              ClearIRBuffer();
+1010   1              gc_PhaseInx = 0;
+1011   1              
+1012   1              
+1013   1              gc_MenuItem=gc_MenuItemCount;
+1014   1      
+1015   1              while(1)
+1016   1          {
+1017   2                      if(gc_ShowMenuTimer==0)
+1018   2                      {
+1019   3                              gc_ShowMenuTimer=10;
+1020   3                              TFT_ShowMenu();
+1021   3                      }
+1022   2      
+1023   2                      if(gc_PhaseInx)
+1024   2                      {
+1025   3                      switch(gc_PhaseInx)
+1026   3                      {
+1027   4                          case C_PlayMenu:
+1028   4                                              tc_Confirm=1;
+1029   4                          break;
+1030   4              
+1031   4                          case C_PlayNext:
+1032   4                                              gc_ShowMenuTimer=0;
+1033   4                                              if(gc_MenuItem==3)
+1034   4                                              {
+1035   5                                                      gc_MenuItem=0;
+1036   5                                              }
+1037   4                                              else
+1038   4                                              {
+1039   5                                                      gc_MenuItem++;
+C51 COMPILER V7.10   PLAYMENU                                                              02/28/2011 10:30:51 PAGE 18  
+
+1040   5                                              }
+1041   4                          break;
+1042   4              
+1043   4                          case C_PlayPrev:
+1044   4                                              gc_ShowMenuTimer=0;
+1045   4                                              if(gc_MenuItem==0)
+1046   4                                              {
+1047   5                                                      gc_MenuItem=3;
+1048   5                                              }
+1049   4                                              else
+1050   4                                              {
+1051   5                                                      gc_MenuItem--;
+1052   5                                              }
+1053   4                          break;      
+1054   4      
+1055   4                          case C_PowerOff:
+1056   4                                              gc_Task_Next=C_Task_PowerOff;                                           
+1057   4                          break;      
+1058   4                      }
+1059   3      
+1060   3                              if(tc_Confirm==1) //enter child dir or confirm selected item
+1061   3                              {
+1062   4                                      gc_MenuItemCount=gc_MenuItem;
+1063   4                                      if(gc_MenuItem==0)
+1064   4                                      {
+1065   5                                              gc_ShowTimer=0;  //20090331
+1066   5                                              gc_DispWallpaper=1;
+1067   5                                              gc_TuneVolFreqStatus=0;
+1068   5                                              gb_FindFlag = 0;
+1069   5                                              gc_PhaseInx=0;
+1070   5                                              gw_init_needed=0xFFFF;
+1071   5      
+1072   5                                              gc_TaskMode_BkUp=C_Task_Play;//(JC)I0304 for back to rite TASK from Dir-list
+1073   5                                              gc_Task_Next=C_Task_Play;
+1074   5                                      }
+1075   4                                      else if(gc_MenuItem==1)
+1076   4                                      {
+1077   5                                                      dbprintf("*C_Task_Mjpeg*\n");
+1078   5                                                      gb_FindFlag = 0;  //20090331
+1079   5                                                      gw_FileIndex[2]=0;
+1080   5                                                      gs_str_scroll_state.c_str_1st_char=0;
+1081   5                                              gs_str_scroll_state.c_shift_in_1st_char=0;
+1082   5                                                      gw_init_needed=0xFFFF;
+1083   5              
+1084   5                                                      gc_TaskMode_BkUp=C_Task_Mjpeg;//(JC)I0304 for back to rite TASK from Dir-list
+1085   5                                                      gc_Task_Next=C_Task_Mjpeg;
+1086   5                                              }
+1087   4                                      else if(gc_MenuItem==2)
+1088   4                                      {
+1089   5                                              gc_TaskMode_BkUp=C_Task_Jpeg;//(JC)I0304 for back to rite TASK from Dir-list                                    
+1090   5                                              gw_init_needed=0xFFFF;
+1091   5                                              gb_FindFlag = 0;
+1092   5                                              gc_Task_Next=C_Task_Jpeg;
+1093   5                                      }
+1094   4                                      else if(gc_MenuItem==3)  //setting
+1095   4                                      {
+1096   5                                              gc_Task_Next=C_Task_Setting;
+1097   5                                      }
+1098   4                              }
+1099   3                      }
+1100   2      
+1101   2                      gc_PhaseInx=0;
+C51 COMPILER V7.10   PLAYMENU                                                              02/28/2011 10:30:51 PAGE 19  
+
+1102   2                      gc_CurrentCard_backup=gc_CurrentCard;           
+1103   2                      Polling_TaskEvents();
+1104   2              IR_Service_Process_Menu_1(); 
+1105   2                      Play_SourceDetect_Process_Mainmenu();
+1106   2      
+1107   2              if(gc_Task_Current!=gc_Task_Next)
+1108   2              {
+1109   3                              gc_LCM_Media=0xff;
+1110   3                              gc_DisplayEQIcon=0xFF;
+1111   3                              gw_DisplayBitRate=0xFFFF;
+1112   3                              gc_DisplayPlayMode=0xFF;
+1113   3                              gw_DispSongNum1=0xFF;
+1114   3                              gc_DispPlayStatus=0xFF;
+1115   3                              gw_DispTotalTime=0xFFFF;
+1116   3                              gc_DisplayVol=0xFF;
+1117   3                              gc_SelectVol=1;
+1118   3                              if((gc_TaskMode_BkUp==C_Task_Jpeg) ||(gc_TaskMode_BkUp==C_Task_Mjpeg))  //20090331
+1119   3                              {
+1120   4                                      gc_PhaseInx=1;  
+1121   4                              }
+1122   3                              gc_Task_Current=gc_Task_Next;
+1123   3                  break;  
+1124   3              }
+1125   2              }       
+1126   1      }
+1127          
+1128          
+1129          void PowerOffProcess()
+1130          {
+1131   1              U16 tw_temp;
+1132   1      
+1133   1              gc_PhaseInx=0;
+1134   1              set_clock_mode(CLOCK_MODE_MP3);
+1135   1      
+1136   1              TFT_PowerOfflogo();
+1137   1              LCD_BACKLIGHT_OFF;
+1138   1      
+1139   1              gc_VolumeMute=0;
+1140   1      
+1141   1              while(1)
+1142   1              {
+1143   2                      if(gc_PhaseInx==C_PowerOff)             
+1144   2                      {               
+1145   3                              gc_ShowTimer=0;  //20090331                     
+1146   3                              gc_TuneVolFreqStatus=0;                 
+1147   3                              gb_FindFlag = 0;                        
+1148   3                              gw_init_needed=0xFFFF;                                                                  
+1149   3                              gc_Task_Next=C_Task_Play;                                                                              
+             -                              
+1150   3                  gc_MenuItemCount=0;                         //add home
+1151   3                      }
+1152   2      
+1153   2                      Polling_TaskEvents();
+1154   2      
+1155   2      //=========================================================
+1156   2      //=========================================================
+1157   2      
+1158   2                      if(gc_IRCmdStatus!=0)
+1159   2                      {
+1160   3                              tw_temp=(IR_REG[0x1b]<<8)+IR_REG[0x1a];
+1161   3                              
+1162   3                              if(tw_temp==IR_21_Key)
+C51 COMPILER V7.10   PLAYMENU                                                              02/28/2011 10:30:51 PAGE 20  
+
+1163   3                              {
+1164   4                                      if((IR_REG[0x1c]+IR_REG[0x1d])==0xFF)
+1165   4                                      {
+1166   5                                              if(IR_REG[0x1c] == 0x00)  //Power ON
+1167   5                                              {
+1168   6                                                      if(gc_IRCmdStatus==1)
+1169   6                                                      gc_PhaseInx = C_PowerOff;
+1170   6                                              }
+1171   5                                      }
+1172   4                              }
+1173   3                              else if(tw_temp==IR_21_1_Key)
+1174   3                              {
+1175   4                                      if((IR_REG[0x1c]+IR_REG[0x1d])==0xFF)
+1176   4                                      {
+1177   5                                              if(IR_REG[0x1c] == 0x45)  //Power ON
+1178   5                                              {
+1179   6                                                      if(gc_IRCmdStatus==1)
+1180   6                                                      gc_PhaseInx = C_PowerOff;
+1181   6                                              }
+1182   5                                      }                               
+1183   4                              }
+1184   3                              gc_IRCmdStatus=0;
+1185   3                      }
+1186   2      
+1187   2      //=========================================================
+1188   2      
+1189   2      //========================================================
+1190   2      
+1191   2              
+1192   2                      if(gc_Task_Current!=gc_Task_Next)
+1193   2                      {
+1194   3                      gc_Vrefinit_Timer=60;
+1195   3                      gc_PhaseInx=0;
+1196   3                      gw_Disp_CurrentSecBak=0xFFFF;
+1197   3                      gw_Disp_CurrentSec=0;
+1198   3                      gc_Task_Current=gc_Task_Next;                         
+1199   3                      break;  
+1200   3                      }
+1201   2              }
+1202   1      
+1203   1              TFT_PowerOnlogo();
+1204   1              USER_DelayDTms(2500);
+1205   1      }
+1206          
+1207          
+1208          void IR_Service_Process_Menu_1(void)
+1209          {
+1210   1          if(gc_IRCmdStatus==1)
+1211   1          {
+1212   2      //              gc_PlayMenu_Timeout=160;
+1213   2              ir_service_menu();
+1214   2          }
+1215   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   3199    ----
+   CONSTANT SIZE    =     16    ----
+   XDATA SIZE       =     17      49
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       4
+   IDATA SIZE       =   ----    ----
+C51 COMPILER V7.10   PLAYMENU                                                              02/28/2011 10:30:51 PAGE 21  
+
+   BIT SIZE         =   ----       4
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)

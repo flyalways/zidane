@@ -1,0 +1,1070 @@
+C51 COMPILER V7.10   DIR_PROCESS1                                                          02/28/2011 10:30:48 PAGE 1   
+
+
+C51 COMPILER V7.10, COMPILATION OF MODULE DIR_PROCESS1
+OBJECT MODULE PLACED IN .\obj\Dir_process1.obj
+COMPILER INVOKED BY: F:\Keil C 7.10\chengxu\C51\BIN\C51.EXE DIR\Dir_process1.c LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INC
+                    -DIR(..\libsource\header) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\Dir_process1.lst) OBJECT(.\obj\Dir_process
+                    -1.obj)
+
+line level    source
+
+   1          #include "..\Header\SPDA2K.h"
+   2          #include "..\header\dos\fs_struct.h"
+   3          #include "..\header\Memalloc.h"
+   4          #include "Dir_process.h"
+   5          #include "..\header\variables.h"
+   6          #include "PROTOTYP.h"
+   7          
+   8          extern  U8   Find_Fdb(SearchFdb *p_mp);
+   9          extern  U8      xdata EXT_NameC[];
+  10          void    DOS_Count_All_Dir(void);
+  11          
+  12          U8 GetCurrentDirInfo(void)
+  13          {
+  14   1              U32 tdw_Addr, tdw_TagetCluster, tdw_StartCluster;
+  15   1              SearchFdb ptr;
+  16   1      
+  17   1              DOS_Count_All_Dir();
+  18   1              if(gs_File_FCB[0].dw_FDB_StartCluster == gdw_DOS_RootDirClus) //root dir
+  19   1              {
+  20   2                      gs_DIR_FCB[0].dw_FDB_Cluster = gdw_DOS_RootDirClus;
+  21   2                      gs_DIR_FCB[0].dw_FDB_StartCluster = gdw_DOS_RootDirClus;
+  22   2                      gs_DIR_FCB[0].dw_File_StartCluster = gdw_DOS_RootDirClus;
+  23   2                      gs_DIR_FCB[0].dw_FDB_LogAdd = gdw_DOS_RootDirAddr;
+  24   2                      gs_DIR_FCB[0].w_FDB_Offset = 0;
+  25   2                      return 0;
+  26   2              }
+  27   1      
+  28   1              tdw_Addr = DOS_ClusterLogicAddr(gs_File_FCB[0].dw_FDB_StartCluster); //DIR Current Cluster
+  29   1              gb_ReadWriteDataArea=1;
+  30   1              if(DOS_Read_LogicSector(tdw_Addr,1))    return 0xff;
+  31   1              // .
+  32   1              ((UBYTE *)(&tdw_TagetCluster))[0]=gc_UserDataBuf[0x15];
+  33   1              ((UBYTE *)(&tdw_TagetCluster))[1]=gc_UserDataBuf[0x14];
+  34   1              ((UBYTE *)(&tdw_TagetCluster))[2]=gc_UserDataBuf[0x1b];
+  35   1              ((UBYTE *)(&tdw_TagetCluster))[3]=gc_UserDataBuf[0x1a];
+  36   1              // ..
+  37   1              ((UBYTE *)(&tdw_StartCluster))[0]=gc_UserDataBuf[0x35];
+  38   1              ((UBYTE *)(&tdw_StartCluster))[1]=gc_UserDataBuf[0x34];
+  39   1              ((UBYTE *)(&tdw_StartCluster))[2]=gc_UserDataBuf[0x3b];
+  40   1              ((UBYTE *)(&tdw_StartCluster))[3]=gc_UserDataBuf[0x3a];
+  41   1              gw_DirIndex[0]=0;
+  42   1              ptr.c_Search_Mode = K_SPECIFIC_STARTCLUSTER;
+  43   1              ptr.Compare.dw_StartCluster = tdw_TagetCluster;
+  44   1              ptr.dw_FDB_StartCluster = tdw_StartCluster;
+  45   1              ptr.c_type=0;
+  46   1              ptr.c_Search_Attribute = 1;  
+  47   1              ptr.c_Search_Direction = 0; //search next
+  48   1              if(!Find_Fdb(&ptr))
+  49   1              {
+  50   2                      gw_DirIndex[1] = 0;
+  51   2                      gs_DIR_FCB[0].dw_FDB_Cluster = ptr.dw_FDB_Cluster;
+  52   2                      gs_DIR_FCB[0].dw_FDB_LogAdd = ptr.dw_FDB_LogAdd;
+  53   2                      gs_DIR_FCB[0].w_FDB_Offset = ptr.w_FDB_Offset;
+C51 COMPILER V7.10   DIR_PROCESS1                                                          02/28/2011 10:30:48 PAGE 2   
+
+  54   2                      gs_DIR_FCB[0].dw_FDB_StartCluster = tdw_TagetCluster;
+  55   2                      gs_DIR_FCB[0].dw_File_StartCluster = tdw_TagetCluster;
+  56   2                      return 0;
+  57   2              }
+  58   1              else
+  59   1                      return 1;
+  60   1      }
+  61          
+  62          
+  63          U8      DOS_Search_DIR_Next_test(U8 tc_Mode)
+  64          {
+  65   1              U8 tc_sts;
+  66   1              U8 tc_FindDir,tc_FindFile;      //whether search file or search dir flag
+  67   1              U8 tc_SearchTime;
+  68   1              U32 tdw_SectorAdd,tdw_CurrentDirCluster,tdw_PrevDirCluster,tdw_NextDirCluster;
+  69   1              SearchFdb ptr;
+  70   1              
+  71   1              tc_sts=1;       
+  72   1              ptr.w_DirTotalNum=0;
+  73   1              gb_ReadWriteDataArea=1;
+  74   1              if((tc_Mode&0x0f)==1)
+  75   1              {//if search file by time, please search by order
+  76   2                      tc_Mode|=0x03;  
+  77   2              }       
+  78   1              ptr.pc_LongFileName = gc_FileLongName;
+  79   1              ptr.c_Search_Mode=(tc_Mode&0x0f);
+  80   1              ptr.c_EXTSelect = 0; //the directory doesn't need to compare ExtName, default value
+  81   1      
+  82   1              if((tc_Mode&0x0f)==0x0b)
+  83   1                      gw_DirTotalNumber=0;
+  84   1      
+  85   1              ptr.c_Search_Direction=0; //Next
+  86   1              ptr.Compare.dw_BubbleFlag = gdw_CurrFlag;
+  87   1              ptr.dw_File_StartCluster = gdw_StartCluster2;
+  88   1              ptr.c_type=0;
+  89   1              tc_SearchTime=2; 
+  90   1              while(tc_SearchTime)
+  91   1              {
+  92   2                      if((tc_Mode&0x0f0)==0x20 || (tc_Mode&0x0f0)==0x30)
+  93   2                      {//find dir 
+  94   3                              tc_FindFile=0;
+  95   3                              tc_FindDir=1;
+  96   3                              ptr.dw_FDB_StartCluster=gs_DIR_FCB[0].dw_FDB_StartCluster;
+  97   3                      }
+  98   2                      else
+  99   2                      {//find file
+ 100   3                              return(1); //this function isn't used to find file
+ 101   3                      }
+ 102   2                      
+ 103   2                      if(!(gb_FindFlag))
+ 104   2                      {//have not searched                   
+ 105   3                              ptr.dw_File_StartCluster = gdw_DOS_RootDirClus;
+ 106   3                              gs_DIR_FCB[0].dw_FDB_StartCluster = gdw_DOS_RootDirClus;
+ 107   3                              gs_DIR_FCB[0].dw_File_StartCluster = gdw_DOS_RootDirClus;
+ 108   3                              if(ptr.c_Search_Direction) //find pre
+ 109   3                              {
+ 110   4                                      if(((tc_Mode&0x0f)==K_NAME_FINDFDB)||((tc_Mode&0x0f)==K_TIME_FINDFDB)) //modify by Ching
+ 111   4                                      {
+ 112   5                                              ptr.Compare.dw_BubbleFlag=0xffffffff;
+ 113   5                                      }
+ 114   4                                      tc_FindDir=1;
+ 115   4                                      gw_DirIndex[0]=0xffff;     //gw_DirIndex1 used to save the index of the fdb which find just now     li
+C51 COMPILER V7.10   DIR_PROCESS1                                                          02/28/2011 10:30:48 PAGE 3   
+
+             -zhn 040927 add
+ 116   4                                      gw_DirIndex[1]=0xffff;     //gw_DirIndex0 used to save the index of the last fdb                                        
+ 117   4                              }
+ 118   3                              else //find next
+ 119   3                              {
+ 120   4                                      if(((tc_Mode&0x0f)==K_NAME_FINDFDB)||((tc_Mode&0x0f)==K_TIME_FINDFDB)) //modify by Ching
+ 121   4                                      {
+ 122   5                                              ptr.Compare.dw_BubbleFlag=0x00;
+ 123   5                                      }
+ 124   4                                      gw_DirIndex[0] = 0;    
+ 125   4                                      gw_DirIndex[1] = 0;
+ 126   4                              }       
+ 127   3                      }
+ 128   2      
+ 129   2                      if((tc_Mode&0x0f0)==0x30)
+ 130   2                      {//find dir in one dir
+ 131   3                              ptr.c_Search_Attribute=1; //find dir
+ 132   3                              if((tc_Mode&0x0f)==0x0b)
+ 133   3                                      tc_sts=Count_Dir_Fdb(&ptr);
+ 134   3                              else
+ 135   3                                      tc_sts=Find_Fdb(&ptr);
+ 136   3                              
+ 137   3                              gb_ReadWriteDataArea=1;
+ 138   3                              if(DOS_Read_LogicSector(ptr.dw_FDB_LogAdd,1))
+ 139   3                                      return 0xff;
+ 140   3      
+ 141   3                              ((U8 *)(&ptr.dw_File_StartCluster))[3]=gc_UserDataBuf[ptr.w_FDB_Offset+0x1a];
+ 142   3                              ((U8 *)(&ptr.dw_File_StartCluster))[2]=gc_UserDataBuf[ptr.w_FDB_Offset+0x1b];
+ 143   3                              ((U8 *)(&ptr.dw_File_StartCluster))[1]=gc_UserDataBuf[ptr.w_FDB_Offset+0x14];
+ 144   3                              ((U8 *)(&ptr.dw_File_StartCluster))[0]=gc_UserDataBuf[ptr.w_FDB_Offset+0x15];
+ 145   3                      }
+ 146   2                      else //(tc_Mode&0x0f0)==0x20
+ 147   2                      {//find in all dir
+ 148   3                              {//find next
+ 149   4                                      while(1)
+ 150   4                                      { 
+ 151   5                                              ptr.c_Search_Mode = (tc_Mode&0x0f);
+ 152   5                                              if(tc_FindDir==1 && ptr.c_Search_Mode==0x0b)
+ 153   5                                              {//count dir number in all directories
+ 154   6                                                      //ptr.c_Search_Attribute=1;//find dir
+ 155   6                                                      tc_sts=Count_Dir_Fdb(&ptr);
+ 156   6                                                      gw_DirTotalNumber += ptr.w_DirTotalNum; //Ching 090204
+ 157   6                                                      tc_sts=1; //Ching 090204
+ 158   6                                              }
+ 159   5                                              if(tc_sts) //Here, tc_sts=1
+ 160   5                                              {//have not found the specific file in one dir or count dir number in one dir
+ 161   6                                                      ptr.c_Search_Mode=0x03;  //if count filenum now,please search dir by order
+ 162   6      
+ 163   6                                                      if((tc_Mode&0xf0)==0x20 && (tc_Mode&0x0f)!=0x0b) //for tc_Mode=0x28, 
+ 164   6                                                              ptr.c_Search_Mode=(tc_Mode&0x0f);                     //it has counted in this dir. Then it must be
+             - searching new dir to count overall directories
+ 165   6      
+ 166   6                                                      ptr.c_Search_Attribute=1;
+ 167   6                                                      tc_sts=Find_Fdb(&ptr);   //look for dir in the dir
+ 168   6                                                      if(tc_sts)
+ 169   6                                                      {//not find dir
+ 170   7                                                              if(ptr.dw_FDB_StartCluster!=gdw_DOS_RootDirClus)                 //not rootdir
+ 171   7                                                              {
+ 172   8                                                                      tdw_SectorAdd = DOS_ClusterLogicAddr(ptr.dw_FDB_StartCluster);
+ 173   8                                                                      gb_ReadWriteDataArea=1;
+ 174   8                                                                      if(DOS_Read_LogicSector(tdw_SectorAdd,1))
+ 175   8                                                                              return 0xff;
+C51 COMPILER V7.10   DIR_PROCESS1                                                          02/28/2011 10:30:48 PAGE 4   
+
+ 176   8      
+ 177   8                                                                      ((U8 *)(&tdw_PrevDirCluster))[3]=gc_UserDataBuf[32+0x1a];
+ 178   8                                                                      ((U8 *)(&tdw_PrevDirCluster))[2]=gc_UserDataBuf[32+0x1b];
+ 179   8                                                                      ((U8 *)(&tdw_PrevDirCluster))[1]=gc_UserDataBuf[32+0x14];
+ 180   8                                                                      ((U8 *)(&tdw_PrevDirCluster))[0]=gc_UserDataBuf[32+0x15];
+ 181   8                                                                  if(!(tdw_PrevDirCluster))
+ 182   8                                                                      {//predir is rootdir
+ 183   9                                                                              tdw_PrevDirCluster=gdw_DOS_RootDirClus;
+ 184   9                                                                      }
+ 185   8                                                                      ptr.dw_File_StartCluster=ptr.dw_FDB_StartCluster;
+ 186   8                                                                      ptr.dw_FDB_StartCluster=tdw_PrevDirCluster;                   //return to predir
+ 187   8      
+ 188   8                                                                      if((tc_Mode&0x0f)==0x0b) //add by Ching 051220
+ 189   8                                                                              tc_FindDir=0;
+ 190   8                                                                      
+ 191   8                                                                      tc_FindFile=0;
+ 192   8      
+ 193   8                                                                      if(ptr.c_Search_Mode==0x03)
+ 194   8                                                                      {//find by order
+ 195   9                                                                              gw_DirIndex[1] = 0;
+ 196   9                                                                              ptr.c_Search_Mode = K_SPECIFIC_STARTCLUSTER;
+ 197   9                                                                              ptr.Compare.dw_StartCluster =ptr.dw_File_StartCluster;
+ 198   9                                                                              ptr.c_Search_Attribute=1;
+ 199   9                                                                              if(Find_Fdb(&ptr))
+ 200   9                                                                                      break;
+ 201   9                                                                      }
+ 202   8                                                              }
+ 203   7                                                              else
+ 204   7                                                              {//not find dir in rootdir
+ 205   8                                                                      gs_DIR_FCB[0].dw_FDB_StartCluster=ptr.dw_FDB_StartCluster;
+ 206   8                                                                      break; 
+ 207   8                                                              }
+ 208   7                                                      }
+ 209   6                                                      else
+ 210   6                                                      {//have found dir
+ 211   7                                                              gb_ReadWriteDataArea=1;
+ 212   7                                                              if(DOS_Read_LogicSector(ptr.dw_FDB_LogAdd,1))
+ 213   7                                                                      return 0xff;
+ 214   7      
+ 215   7                                                              tdw_CurrentDirCluster=ptr.dw_FDB_StartCluster; //save current dir
+ 216   7                                                              ((U8 *)(&ptr.dw_FDB_StartCluster))[3]=gc_UserDataBuf[ptr.w_FDB_Offset+0x1a];
+ 217   7                                                              ((U8 *)(&ptr.dw_FDB_StartCluster))[2]=gc_UserDataBuf[ptr.w_FDB_Offset+0x1b];
+ 218   7                                                              ((U8 *)(&ptr.dw_FDB_StartCluster))[1]=gc_UserDataBuf[ptr.w_FDB_Offset+0x14];
+ 219   7                                                              ((U8 *)(&ptr.dw_FDB_StartCluster))[0]=gc_UserDataBuf[ptr.w_FDB_Offset+0x15];    //next dir cluster
+ 220   7      
+ 221   7                                                              tdw_SectorAdd = DOS_ClusterLogicAddr(ptr.dw_FDB_StartCluster);
+ 222   7                                                              if(DOS_Read_LogicSector((tdw_SectorAdd),1))
+ 223   7                                                                      return 0xff; 
+ 224   7      
+ 225   7                                                              ((U8 *)(&tdw_PrevDirCluster))[3]=gc_UserDataBuf[32+0x1a];
+ 226   7                                                              ((U8 *)(&tdw_PrevDirCluster))[2]=gc_UserDataBuf[32+0x1b];
+ 227   7                                                              ((U8 *)(&tdw_PrevDirCluster))[1]=gc_UserDataBuf[32+0x14];
+ 228   7                                                              ((U8 *)(&tdw_PrevDirCluster))[0]=gc_UserDataBuf[32+0x15];       //current dir
+ 229   7              
+ 230   7                                                              ((U8 *)(&tdw_NextDirCluster))[3]=gc_UserDataBuf[0x1a];
+ 231   7                                                              ((U8 *)(&tdw_NextDirCluster))[2]=gc_UserDataBuf[0x1b];
+ 232   7                                                              ((U8 *)(&tdw_NextDirCluster))[1]=gc_UserDataBuf[0x14];
+ 233   7                                                              ((U8 *)(&tdw_NextDirCluster))[0]=gc_UserDataBuf[0x15];  //next dir
+ 234   7      
+ 235   7                                                              if((tdw_PrevDirCluster!=tdw_CurrentDirCluster)&&(tdw_CurrentDirCluster!=gdw_DOS_RootDirClus)||(tdw_
+             -NextDirCluster!=ptr.dw_FDB_StartCluster))
+ 236   7                                                              {//dos error 
+C51 COMPILER V7.10   DIR_PROCESS1                                                          02/28/2011 10:30:48 PAGE 5   
+
+ 237   8                                                                      ptr.dw_FDB_StartCluster=tdw_CurrentDirCluster; 
+ 238   8                                                                      tc_FindFile=0; 
+ 239   8                                                              }
+ 240   7                                                              else
+ 241   7                                                              {
+ 242   8                                                                      gw_DirIndex[0] = 0;
+ 243   8                                                                      if((tc_Mode&0x0f0)==0x20)
+ 244   8                                                                      {//put the line in here is to make dw_FDB_StartCluster equal dw_File_StartCluster 
+ 245   9                                                                              tc_FindDir=1; //for tc_Mode=0x28,it has been changed. Here it's to re-changed
+ 246   9                                                                          gw_DirIndex[1] = 0; 
+ 247   9                                                                              ptr.dw_File_StartCluster = ptr.dw_FDB_StartCluster;
+ 248   9                                                                              tc_sts=0;
+ 249   9                                                                              if((tc_Mode&0x0f)!=0x0b)  //for tc_Mode=0x2b, it must continus counting
+ 250   9                                                                                      break;                                                                  
+ 251   9                                                                      } 
+ 252   8                                                                      ptr.Compare.dw_BubbleFlag=0x0000;
+ 253   8                                                                      tc_FindFile=1; 
+ 254   8                                                              }
+ 255   7                                                              tc_sts=1; 
+ 256   7                                                      }//have find dir 
+ 257   6                                              }
+ 258   5                                              else
+ 259   5                                              {//have find the file --> this line does not occur Here!
+ 260   6                                                      break;
+ 261   6                                              }
+ 262   5                                      }//whileB 
+ 263   4                              }//find next 
+ 264   3                      }//find in all dir
+ 265   2                      if(!tc_sts)
+ 266   2                      {//find the file/dir
+ 267   3                              gb_FindFlag=1;
+ 268   3                              if((tc_Mode&0x0f0)==0x20 || (tc_Mode&0x0f0)==0x30)
+ 269   3                              {//dir
+ 270   4                                      gs_DIR_FCB[0].dw_File_StartCluster=ptr.dw_File_StartCluster; 
+ 271   4                                  gs_DIR_FCB[0].dw_FDB_StartCluster=ptr.dw_FDB_StartCluster;
+ 272   4                                      gs_DIR_FCB[0].dw_LongFDB_LogAdd1=ptr.dw_LongFDB_LogAdd1;
+ 273   4                                      gs_DIR_FCB[0].dw_LongFDB_LogAdd0=ptr.dw_LongFDB_LogAdd0;
+ 274   4                                      gs_DIR_FCB[0].dw_FDB_Cluster=ptr.dw_FDB_Cluster;
+ 275   4                                      gs_DIR_FCB[0].dw_FDB_LogAdd=ptr.dw_FDB_LogAdd;
+ 276   4                                      gs_DIR_FCB[0].w_FDB_Offset=ptr.w_FDB_Offset;
+ 277   4                              }
+ 278   3                              return(tc_sts); 
+ 279   3                      }
+ 280   2                      else if((tc_Mode&0x0f)==0x0b)
+ 281   2                      {//Count dir total number
+ 282   3                              gw_DirTotalNumber += ptr.w_DirTotalNum; //Ching 090204
+ 283   3                              //dbprintf("Search----gw_DirTotalNumber=%x\n",gw_DirTotalNumber);
+ 284   3                              return(1);
+ 285   3                      }
+ 286   2                      else
+ 287   2                      { 
+ 288   3                              gs_File_FCB[0].dw_FDB_StartCluster=ptr.dw_FDB_StartCluster;
+ 289   3                              gs_DIR_FCB[0].dw_FDB_StartCluster=ptr.dw_FDB_StartCluster;
+ 290   3                              tc_SearchTime--;
+ 291   3                              if(((tc_Mode&0x0f)==1)||((tc_Mode&0x0f)==2)||((tc_Mode&0x0f)==3))
+ 292   3                                      gb_FindFlag=0; 
+ 293   3                      } 
+ 294   2              }//while
+ 295   1              return(1); 
+ 296   1      }
+ 297          
+ 298          
+C51 COMPILER V7.10   DIR_PROCESS1                                                          02/28/2011 10:30:48 PAGE 6   
+
+ 299          U8      DOS_Search_DIR_Prev_test(U8 tc_Mode)
+ 300          {
+ 301   1              U8 tc_sts;
+ 302   1              U8 tc_FindDir,tc_FindFile;      //whether search file or search dir flag
+ 303   1              SearchFdb ptr;
+ 304   1              bit tbt_checkAddr=0;
+ 305   1              
+ 306   1              tc_sts=1;       
+ 307   1              //tbt_IniFlag=0;
+ 308   1              ptr.w_DirTotalNum=0;
+ 309   1              gb_ReadWriteDataArea=1;
+ 310   1              if((tc_Mode&0x0f)==1)
+ 311   1              {//if search file by time, please search by order
+ 312   2                      tc_Mode|=0x03;  
+ 313   2              }       
+ 314   1              ptr.pc_LongFileName = gc_FileLongName;
+ 315   1              ptr.c_Search_Mode=(tc_Mode&0x0f);
+ 316   1              //ptr.c_EXTSelect = (tc_PrevOrNext >> 4);//need to compare ExtName;
+ 317   1              ptr.c_EXTSelect = 0; //the directory doesn't need to compare ExtName, default value
+ 318   1              if((tc_Mode&0x0f)==0||(tc_Mode&0x0f)==4||(tc_Mode&0x0f)==5 ||(tc_Mode&0x0f)==0x0b)
+ 319   1              {//count filenum/dirnum , find next
+ 320   2                      tc_sts = DOS_Search_DIR_Next_test(tc_Mode);
+ 321   2                      return tc_sts;
+ 322   2              }                                               
+ 323   1              ptr.c_Search_Direction=1;
+ 324   1              ptr.Compare.dw_BubbleFlag = gdw_CurrFlag;
+ 325   1              ptr.dw_File_StartCluster = gdw_StartCluster2;
+ 326   1              ptr.c_type=0;
+ 327   1              //tc_SearchTime=1; 
+ 328   1              //while(tc_SearchTime)
+ 329   1              {
+ 330   2                      if((tc_Mode&0x020)==0x20)
+ 331   2                      {//find dir 
+ 332   3                              tc_FindFile=0;
+ 333   3                              tc_FindDir=1;
+ 334   3                              ptr.dw_FDB_StartCluster=gs_DIR_FCB[0].dw_FDB_StartCluster;
+ 335   3                      }
+ 336   2                      else
+ 337   2                      {//find file
+ 338   3                              return(1); //this function isn't used to find file
+ 339   3                      }
+ 340   2      
+ 341   2                      //if(tc_PrevOrNext && ((tc_Mode&0x0f)==0x03)) //find prev dir
+ 342   2                      {
+ 343   3                              U32 tdw_StartCluster, tdw_TagetCluster, tdw_CurrentCluster, tdw_TempCluster=0xffffffff, tdw_TempCluster
+             -1=0xffffffff, tdw_MomFDB_StartClus;
+ 344   3                              U32 tdw_1stSectorOfCluster, tdw_LogAddr;
+ 345   3                              U16 tw_FdbOffset;
+ 346   3      
+ 347   3                              if(gs_DIR_FCB[0].w_FDB_Offset == 0)
+ 348   3                              {
+ 349   4                                      if(gs_DIR_FCB[0].dw_FDB_LogAdd != gdw_DOS_RootDirAddr)
+ 350   4                                      {
+ 351   5                                              tw_FdbOffset = 0x1E0;
+ 352   5                                              tbt_checkAddr = 1;
+ 353   5                                      }
+ 354   4                                      else
+ 355   4                                      {
+ 356   5                                              if((gs_DIR_FCB[0].dw_FDB_Cluster == gdw_DOS_RootDirClus) && (gs_DIR_FCB[0].dw_File_StartCluster != gd
+             -w_DOS_RootDirClus)) //1st dir
+ 357   5                                              {//1st dir of root dir
+ 358   6                                                      if((tc_Mode&0x0f0)==0x30) //find dir in one dir
+C51 COMPILER V7.10   DIR_PROCESS1                                                          02/28/2011 10:30:48 PAGE 7   
+
+ 359   6                                                      {
+ 360   7                                                              ptr.c_Search_Mode = K_COUNTER_DIRNUM;
+ 361   7                                                              ptr.dw_FDB_StartCluster = gs_DIR_FCB[0].dw_FDB_Cluster;
+ 362   7                                                              ptr.c_Search_Attribute = 1; //find dir
+ 363   7                                                              ptr.c_Search_Direction = 0; //search next
+ 364   7                                                              Count_Dir_Fdb(&ptr);
+ 365   7                                                                                      
+ 366   7                                                              gw_FileSkipNumber = ptr.w_DirTotalNum;
+ 367   7                      
+ 368   7                                                              if(gw_FileSkipNumber>1)
+ 369   7                                                              {
+ 370   8                                                                      ptr.c_Search_Mode = K_ORDER_FINDFDB;
+ 371   8                                                                      ptr.dw_FDB_StartCluster = gs_DIR_FCB[0].dw_FDB_Cluster;
+ 372   8                                                                      ptr.c_Search_Attribute = 1; //find dir
+ 373   8                                                                      ptr.c_Search_Direction = 0; //search next
+ 374   8                                                                      gw_DirIndex[1] = 0;
+ 375   8                      
+ 376   8                                                                      gb_TriggerFileSkip = 1;
+ 377   8                                                                      tc_sts = Find_Fdb(&ptr);
+ 378   8                                                                      gb_TriggerFileSkip = 0;
+ 379   8                                                                      if(!tc_sts)
+ 380   8                                                                      {
+ 381   9                                                                              //gs_DIR_FCB[0].dw_FDB_StartCluster = ptr.dw_FDB_StartCluster;
+ 382   9                                                                              gs_DIR_FCB[0].dw_LongFDB_LogAdd1 = ptr.dw_LongFDB_LogAdd1;
+ 383   9                                                                              gs_DIR_FCB[0].dw_LongFDB_LogAdd0 = ptr.dw_LongFDB_LogAdd0;
+ 384   9                                                                              gs_DIR_FCB[0].dw_FDB_Cluster = ptr.dw_FDB_Cluster;
+ 385   9                                                                              gs_DIR_FCB[0].dw_FDB_LogAdd = ptr.dw_FDB_LogAdd;
+ 386   9                                                                              gs_DIR_FCB[0].w_FDB_Offset = ptr.w_FDB_Offset;
+ 387   9                      
+ 388   9                                                                              if(DOS_Read_LogicSector(gs_DIR_FCB[0].dw_FDB_LogAdd,1)) return 0xff;
+ 389   9                                                                              ((UBYTE *)(&tdw_StartCluster))[0] = gc_UserDataBuf[gs_DIR_FCB[0].w_FDB_Offset+0x15];
+ 390   9                                                                              ((UBYTE *)(&tdw_StartCluster))[1] = gc_UserDataBuf[gs_DIR_FCB[0].w_FDB_Offset+0x14];
+ 391   9                                                                              ((UBYTE *)(&tdw_StartCluster))[2] = gc_UserDataBuf[gs_DIR_FCB[0].w_FDB_Offset+0x1b];
+ 392   9                                                                              ((UBYTE *)(&tdw_StartCluster))[3] = gc_UserDataBuf[gs_DIR_FCB[0].w_FDB_Offset+0x1a];
+ 393   9                      
+ 394   9                                                                              gs_DIR_FCB[0].dw_File_StartCluster = tdw_StartCluster;
+ 395   9                                                                              gs_DIR_FCB[0].dw_FDB_StartCluster  = tdw_StartCluster;
+ 396   9      
+ 397   9                                                                              return 0;
+ 398   9                                                                      }
+ 399   8                                                                      else    return 1;
+ 400   8                                                              }
+ 401   7                                                              else if(gw_FileSkipNumber==1)   return 0; //the dir itself is what we want to get
+ 402   7                                                              else    return 1;
+ 403   7                                                      }
+ 404   6                                                      else //find in all dir
+ 405   6                                                      {
+ 406   7                                                              gs_DIR_FCB[0].dw_FDB_StartCluster = gdw_DOS_RootDirClus;
+ 407   7                                                              gs_DIR_FCB[0].dw_File_StartCluster = gdw_DOS_RootDirClus;
+ 408   7                                                              gs_DIR_FCB[0].dw_FDB_Cluster = gdw_DOS_RootDirClus;
+ 409   7                                                              gs_DIR_FCB[0].dw_FDB_LogAdd = gdw_DOS_RootDirAddr;
+ 410   7                                                              gs_DIR_FCB[0].w_FDB_Offset = 0;
+ 411   7                                                              gs_DIR_FCB[0].dw_LongFDB_LogAdd0 = 0;
+ 412   7                                                              return 0;
+ 413   7                                                      }
+ 414   6                                              }
+ 415   5                                              tw_FdbOffset = 0x1E0;
+ 416   5                                              tbt_checkAddr = 1;
+ 417   5                                      }
+ 418   4                              }
+ 419   3                              else
+ 420   3                                      tw_FdbOffset = gs_DIR_FCB[0].w_FDB_Offset-32;
+C51 COMPILER V7.10   DIR_PROCESS1                                                          02/28/2011 10:30:48 PAGE 8   
+
+ 421   3      
+ 422   3                              if((gs_DIR_FCB[0].dw_FDB_Cluster <= 2) && (gs_DIR_FCB[0].dw_File_StartCluster <= 2))
+ 423   3                              {//root dir
+ 424   4                                      if((tc_Mode&0x0f0)==0x30) //find dir in one dir -- no dir to get
+ 425   4                                      {
+ 426   5                                              return 1;
+ 427   5                                      }
+ 428   4                                      else //find in all dir -- the last dir is what we want to get
+ 429   4                                      {
+ 430   5                                              U16 tw_count;
+ 431   5      
+ 432   5                                              ptr.c_Search_Mode = K_ORDER_FINDFDB;
+ 433   5                                              ptr.dw_FDB_StartCluster = gs_DIR_FCB[0].dw_File_StartCluster;
+ 434   5                                              ptr.c_Search_Attribute = 1; //find dir
+ 435   5                                              ptr.c_Search_Direction = 0; //search next
+ 436   5                                              gw_DirIndex[1] = 0;
+ 437   5                                              gb_FindFlag = 0;
+ 438   5                              
+ 439   5                                              for(tw_count=0; tw_count<gw_DirOverallNumber; tw_count++)
+ 440   5                                              {
+ 441   6                                                      tc_sts = DOS_Search_DIR_Next_test(0x23);
+ 442   6                                                      if(tc_sts) return 1;
+ 443   6                                              }
+ 444   5                                              return 0;
+ 445   5                                      }
+ 446   4                              }
+ 447   3                              //tdw_MomFDB_StartClus
+ 448   3                              tdw_TempCluster = gs_DIR_FCB[0].dw_File_StartCluster;
+ 449   3                              tdw_1stSectorOfCluster = DOS_ClusterLogicAddr(tdw_TempCluster);
+ 450   3                              if(DOS_Read_LogicSector(tdw_1stSectorOfCluster,1))      return 0xff;
+ 451   3                              ((UBYTE *)(&tdw_MomFDB_StartClus))[0] = gc_UserDataBuf[0x35];
+ 452   3                              ((UBYTE *)(&tdw_MomFDB_StartClus))[1] = gc_UserDataBuf[0x34];
+ 453   3                              ((UBYTE *)(&tdw_MomFDB_StartClus))[2] = gc_UserDataBuf[0x3b];
+ 454   3                              ((UBYTE *)(&tdw_MomFDB_StartClus))[3] = gc_UserDataBuf[0x3a];
+ 455   3                              if(tdw_MomFDB_StartClus == 0) tdw_MomFDB_StartClus = gdw_DOS_RootDirClus;
+ 456   3      
+ 457   3                              tdw_TempCluster = gs_DIR_FCB[0].dw_FDB_Cluster;
+ 458   3                              tdw_LogAddr = gs_DIR_FCB[0].dw_FDB_LogAdd;
+ 459   3                              tdw_1stSectorOfCluster = DOS_ClusterLogicAddr(tdw_TempCluster);
+ 460   3      
+ 461   3                              if(tbt_checkAddr) //Ching 090213
+ 462   3                              {
+ 463   4                                      if(tdw_LogAddr != tdw_1stSectorOfCluster)
+ 464   4                                              tdw_LogAddr --;
+ 465   4                                      else
+ 466   4                                      {
+ 467   5                                              tdw_CurrentCluster = tdw_TempCluster;
+ 468   5                                              tdw_TempCluster1 = tdw_MomFDB_StartClus;
+ 469   5                                              tdw_TempCluster = tdw_TempCluster1;
+ 470   5                                              while(tdw_TempCluster1!=tdw_CurrentCluster)
+ 471   5                                              {
+ 472   6                                                      tdw_TempCluster1 = DOS_GetNextCluster(tdw_TempCluster1,1);
+ 473   6                                                      if(tdw_TempCluster1!=tdw_CurrentCluster)
+ 474   6                                                              tdw_TempCluster = tdw_TempCluster1;
+ 475   6                                              }
+ 476   5                                              tdw_1stSectorOfCluster = DOS_ClusterLogicAddr(tdw_TempCluster);
+ 477   5                                              tdw_LogAddr = tdw_1stSectorOfCluster + gc_DOS_SectorPerCluster - 1;
+ 478   5                                      }
+ 479   4                              }
+ 480   3      
+ 481   3                              if((tc_Mode&0x0f0)==0x30) //find dir in one dir
+ 482   3                              {
+C51 COMPILER V7.10   DIR_PROCESS1                                                          02/28/2011 10:30:48 PAGE 9   
+
+ 483   4                                      do //search in one directory
+ 484   4                                      {
+ 485   5                                              tdw_CurrentCluster = tdw_TempCluster;
+ 486   5                                              for(tdw_LogAddr; tdw_LogAddr >= tdw_1stSectorOfCluster; tdw_LogAddr--) //search in one cluster
+ 487   5                                              {
+ 488   6                                                      gb_ReadWriteDataArea=1;
+ 489   6                                                      if(DOS_Read_LogicSector(tdw_LogAddr,1)) return 0xff;
+ 490   6              
+ 491   6                                                      while(1) //search in one sector
+ 492   6                                                      {
+ 493   7                                                              if(gc_UserDataBuf[tw_FdbOffset+0x0b] & 0x10) //is dir (short FDB)
+ 494   7                                                              {
+ 495   8                                                                      if(gc_UserDataBuf[tw_FdbOffset]!=0xE5)
+ 496   8                                                                      {
+ 497   9                                                                              if(gc_UserDataBuf[tw_FdbOffset]==0x2E) //jump to the last dir in this dir
+ 498   9                                                                              {       // .
+ 499  10                                                                                      ptr.c_Search_Mode = K_COUNTER_DIRNUM;
+ 500  10                                                                                      ptr.dw_FDB_StartCluster = gs_DIR_FCB[0].dw_FDB_Cluster;
+ 501  10                                                                                      ptr.c_Search_Attribute = 1; //find dir
+ 502  10                                                                                      ptr.c_Search_Direction = 0; //search next
+ 503  10                                                                                      Count_Dir_Fdb(&ptr);
+ 504  10                                                                                                                      
+ 505  10                                                                                      gw_FileSkipNumber = ptr.w_DirTotalNum;
+ 506  10                                                      
+ 507  10                                                                                      if(gw_FileSkipNumber>1)
+ 508  10                                                                                      {
+ 509  11                                                                                              ptr.c_Search_Mode = K_ORDER_FINDFDB;
+ 510  11                                                                                              ptr.dw_FDB_StartCluster = gs_DIR_FCB[0].dw_FDB_Cluster;
+ 511  11                                                                                              ptr.c_Search_Attribute = 1; //find dir
+ 512  11                                                                                              ptr.c_Search_Direction = 0; //search next
+ 513  11                                                                                              gw_DirIndex[1] = 0;
+ 514  11      
+ 515  11                                                                                              gb_TriggerFileSkip = 1;
+ 516  11                                                                                              tc_sts = Find_Fdb(&ptr);
+ 517  11                                                                                              gb_TriggerFileSkip = 0;
+ 518  11                                                                                              if(!tc_sts)
+ 519  11                                                                                              {
+ 520  12                                                                                                  gs_DIR_FCB[0].dw_FDB_StartCluster = ptr.dw_FDB_StartCluster;
+ 521  12                                                                                                      gs_DIR_FCB[0].dw_LongFDB_LogAdd1 = ptr.dw_LongFDB_LogAdd1;
+ 522  12                                                                                                      gs_DIR_FCB[0].dw_LongFDB_LogAdd0 = ptr.dw_LongFDB_LogAdd0;
+ 523  12                                                                                                      gs_DIR_FCB[0].dw_FDB_Cluster = ptr.dw_FDB_Cluster;
+ 524  12                                                                                                      gs_DIR_FCB[0].dw_FDB_LogAdd = ptr.dw_FDB_LogAdd;
+ 525  12                                                                                                      gs_DIR_FCB[0].w_FDB_Offset = ptr.w_FDB_Offset;
+ 526  12                                                      
+ 527  12                                                                                                      if(DOS_Read_LogicSector(gs_DIR_FCB[0].dw_FDB_LogAdd,1)) return 0xff;
+ 528  12                                                                                                      ((UBYTE *)(&tdw_StartCluster))[0] = gc_UserDataBuf[gs_DIR_FCB[0].w_FDB_Offset+0x15];
+ 529  12                                                                                                      ((UBYTE *)(&tdw_StartCluster))[1] = gc_UserDataBuf[gs_DIR_FCB[0].w_FDB_Offset+0x14];
+ 530  12                                                                                                      ((UBYTE *)(&tdw_StartCluster))[2] = gc_UserDataBuf[gs_DIR_FCB[0].w_FDB_Offset+0x1b];
+ 531  12                                                                                                      ((UBYTE *)(&tdw_StartCluster))[3] = gc_UserDataBuf[gs_DIR_FCB[0].w_FDB_Offset+0x1a];
+ 532  12                                                      
+ 533  12                                                                                                      gs_DIR_FCB[0].dw_File_StartCluster = tdw_StartCluster; 
+ 534  12      
+ 535  12                                                                                                      return 0;
+ 536  12                                                                                              }
+ 537  11                                                                                              else if(gw_FileSkipNumber==1)   return 0; //the dir itself is what we want to get
+ 538  11                                                                                              else    return 1;
+ 539  11                                                                                      }
+ 540  10                                                                              }
+ 541   9                                                                              else //found dir
+ 542   9                                                                              {
+ 543  10                                                                                      ((UBYTE *)(&tdw_StartCluster))[0] = gc_UserDataBuf[tw_FdbOffset+0x15];
+ 544  10                                                                                      ((UBYTE *)(&tdw_StartCluster))[1] = gc_UserDataBuf[tw_FdbOffset+0x14];
+C51 COMPILER V7.10   DIR_PROCESS1                                                          02/28/2011 10:30:48 PAGE 10  
+
+ 545  10                                                                                      ((UBYTE *)(&tdw_StartCluster))[2] = gc_UserDataBuf[tw_FdbOffset+0x1b];
+ 546  10                                                                                      ((UBYTE *)(&tdw_StartCluster))[3] = gc_UserDataBuf[tw_FdbOffset+0x1a];
+ 547  10                      
+ 548  10                                                                                      gs_DIR_FCB[0].dw_FDB_Cluster = tdw_CurrentCluster;//gs_DIR_FCB[0].dw_FDB_Cluster;
+ 549  10                                                                                      gs_DIR_FCB[0].dw_FDB_LogAdd = tdw_LogAddr;//gs_DIR_FCB[0].dw_FDB_LogAdd;
+ 550  10                                                                                      gs_DIR_FCB[0].w_FDB_Offset = tw_FdbOffset;
+ 551  10                                                                                      gs_DIR_FCB[0].dw_FDB_StartCluster = tdw_StartCluster;
+ 552  10                                                                                      gs_DIR_FCB[0].dw_File_StartCluster = tdw_StartCluster;
+ 553  10                                                                                      //Ching 090212
+ 554  10                                                                                      if(tdw_LogAddr > tdw_1stSectorOfCluster) 
+ 555  10                                                                                              gs_DIR_FCB[0].dw_LongFDB_LogAdd0 = tdw_LogAddr - 1;
+ 556  10                                                                                      else //Prev Cluster's last sector
+ 557  10                                                                                      {
+ 558  11                                                                                              if(tdw_CurrentCluster == tdw_MomFDB_StartClus) //no prev cluster
+ 559  11                                                                                                      gs_DIR_FCB[0].dw_LongFDB_LogAdd0 = 0;
+ 560  11                                                                                              else
+ 561  11                                                                                              {//search prev cluster
+ 562  12                                                                                                      tdw_TempCluster1 = tdw_MomFDB_StartClus;
+ 563  12                                                                                                      tdw_TempCluster = tdw_TempCluster1;
+ 564  12              
+ 565  12                                                                                                      while(tdw_TempCluster1!=tdw_CurrentCluster)
+ 566  12                                                                                                      {
+ 567  13                                                                                                              tdw_TempCluster1 = DOS_GetNextCluster(tdw_TempCluster1,1);
+ 568  13                                                                                                              if(tdw_TempCluster1!=tdw_CurrentCluster)
+ 569  13                                                                                                                      tdw_TempCluster = tdw_TempCluster1;
+ 570  13                                                                                                      }
+ 571  12                                                                                                      tdw_1stSectorOfCluster = DOS_ClusterLogicAddr(tdw_TempCluster);
+ 572  12                                                                                                      gs_DIR_FCB[0].dw_LongFDB_LogAdd0 = tdw_1stSectorOfCluster + gc_DOS_SectorPerCluster - 1;
+ 573  12                                                                                              }
+ 574  11                                                                                      }
+ 575  10                                                                                      return 0;
+ 576  10                                                                              }
+ 577   9                                                                      }
+ 578   8                                                              }
+ 579   7                      
+ 580   7                                                              if(tw_FdbOffset==0) break; //break while(1);
+ 581   7                                                              tw_FdbOffset -= 32;
+ 582   7                                                      }//while(1) //search in one sector
+ 583   6                                                      tw_FdbOffset = 0x1E0;
+ 584   6                                              }//for(tdw_LogAddr) //search in one cluster
+ 585   5      
+ 586   5                                              tdw_TempCluster1 = tdw_MomFDB_StartClus;
+ 587   5                                              tdw_TempCluster = tdw_TempCluster1;
+ 588   5                                              while(tdw_TempCluster1!=tdw_CurrentCluster)
+ 589   5                                              {
+ 590   6                                                      tdw_TempCluster1 = DOS_GetNextCluster(tdw_TempCluster1,1);
+ 591   6                                                      if(tdw_TempCluster1!=tdw_CurrentCluster)
+ 592   6                                                              tdw_TempCluster = tdw_TempCluster1;
+ 593   6                                              }
+ 594   5                                              tdw_1stSectorOfCluster = DOS_ClusterLogicAddr(tdw_TempCluster);
+ 595   5                                              tdw_LogAddr = tdw_1stSectorOfCluster + gc_DOS_SectorPerCluster - 1;
+ 596   5                                      }while(tdw_CurrentCluster != tdw_MomFDB_StartClus); //search in one directory
+ 597   4      
+ 598   4                                      if(gs_DIR_FCB[0].dw_FDB_Cluster == gdw_DOS_RootDirClus) //no prev dir in root dir, then last dir in ro
+             -ot diris what we want to get
+ 599   4                                      {
+ 600   5                                              ptr.c_Search_Mode = K_COUNTER_DIRNUM;
+ 601   5                                              ptr.dw_FDB_StartCluster = gs_DIR_FCB[0].dw_FDB_Cluster;
+ 602   5                                              ptr.c_Search_Attribute=1; //find dir
+ 603   5                                              ptr.c_Search_Direction = 0; //search next
+ 604   5                                              Count_Dir_Fdb(&ptr);
+ 605   5                                                                                      
+C51 COMPILER V7.10   DIR_PROCESS1                                                          02/28/2011 10:30:48 PAGE 11  
+
+ 606   5                                              gw_FileSkipNumber=ptr.w_DirTotalNum;
+ 607   5                                              if(gw_FileSkipNumber>1)
+ 608   5                                              {
+ 609   6                                                      ptr.c_Search_Mode = K_ORDER_FINDFDB;
+ 610   6                                                      ptr.dw_FDB_StartCluster = gs_DIR_FCB[0].dw_FDB_Cluster;
+ 611   6                                                      ptr.c_Search_Attribute = 1; //find dir
+ 612   6                                                      ptr.c_Search_Direction = 0; //search next
+ 613   6                                                      gw_DirIndex[1] = 0;
+ 614   6                      
+ 615   6                                                      gb_TriggerFileSkip = 1;
+ 616   6                                                      tc_sts = Find_Fdb(&ptr);
+ 617   6                                                      gb_TriggerFileSkip = 0;
+ 618   6                                                      if(!tc_sts)
+ 619   6                                                      {
+ 620   7                                                          gs_DIR_FCB[0].dw_FDB_StartCluster = ptr.dw_FDB_StartCluster;
+ 621   7                                                              gs_DIR_FCB[0].dw_LongFDB_LogAdd1 = ptr.dw_LongFDB_LogAdd1;
+ 622   7                                                              gs_DIR_FCB[0].dw_LongFDB_LogAdd0 = ptr.dw_LongFDB_LogAdd0;
+ 623   7                                                              gs_DIR_FCB[0].dw_FDB_Cluster = ptr.dw_FDB_Cluster;
+ 624   7                                                              gs_DIR_FCB[0].dw_FDB_LogAdd = ptr.dw_FDB_LogAdd;
+ 625   7                                                              gs_DIR_FCB[0].w_FDB_Offset = ptr.w_FDB_Offset;
+ 626   7                      
+ 627   7                                                              if(DOS_Read_LogicSector(gs_DIR_FCB[0].dw_FDB_LogAdd,1)) return 0xff;
+ 628   7                                                              ((UBYTE *)(&tdw_StartCluster))[0] = gc_UserDataBuf[gs_DIR_FCB[0].w_FDB_Offset+0x15];
+ 629   7                                                              ((UBYTE *)(&tdw_StartCluster))[1] = gc_UserDataBuf[gs_DIR_FCB[0].w_FDB_Offset+0x14];
+ 630   7                                                              ((UBYTE *)(&tdw_StartCluster))[2] = gc_UserDataBuf[gs_DIR_FCB[0].w_FDB_Offset+0x1b];
+ 631   7                                                              ((UBYTE *)(&tdw_StartCluster))[3] = gc_UserDataBuf[gs_DIR_FCB[0].w_FDB_Offset+0x1a];
+ 632   7                      
+ 633   7                                                              gs_DIR_FCB[0].dw_File_StartCluster = tdw_StartCluster; 
+ 634   7      
+ 635   7                                                              return 0;
+ 636   7                                                      }
+ 637   6                                                      else    return 1;
+ 638   6                                              }
+ 639   5                                              else if(gw_FileSkipNumber==1)   return 0; //the dir itself is what we want to get
+ 640   5                                              else    return 1;
+ 641   5                                      }
+ 642   4                              }
+ 643   3                              else //(tc_Mode&0x0f0)==0x20 //find in all dir
+ 644   3                              {
+ 645   4                                      do //search in one directory
+ 646   4                                      {
+ 647   5                                              tdw_CurrentCluster = tdw_TempCluster;
+ 648   5                                              for(tdw_LogAddr; tdw_LogAddr >= tdw_1stSectorOfCluster; tdw_LogAddr--) //search in one cluster
+ 649   5                                              {
+ 650   6                                                      gb_ReadWriteDataArea=1;
+ 651   6                                                      if(DOS_Read_LogicSector(tdw_LogAddr,1)) return 0xff;
+ 652   6              
+ 653   6                                                      while(1) //search in one sector
+ 654   6                                                      {
+ 655   7                                                              if(gc_UserDataBuf[tw_FdbOffset+0x0b] & 0x10) //is dir (short FDB)
+ 656   7                                                              {
+ 657   8                                                                      if(gc_UserDataBuf[tw_FdbOffset]!=0xE5)
+ 658   8                                                                      {
+ 659   9                                                                              if(gc_UserDataBuf[tw_FdbOffset]==0x2E) //back to upper dir (upper dir is what we want to get)
+ 660   9                                                                              {       // .
+ 661  10                                                                                      ((UBYTE *)(&tdw_TagetCluster))[0]=gc_UserDataBuf[tw_FdbOffset-11]; //-32+0x15
+ 662  10                                                                                      ((UBYTE *)(&tdw_TagetCluster))[1]=gc_UserDataBuf[tw_FdbOffset-12]; //-32+0x14
+ 663  10                                                                                      ((UBYTE *)(&tdw_TagetCluster))[2]=gc_UserDataBuf[tw_FdbOffset-5]; //-32+0x1b
+ 664  10                                                                                      ((UBYTE *)(&tdw_TagetCluster))[3]=gc_UserDataBuf[tw_FdbOffset-6]; //-32+0x1a
+ 665  10                                                                                      // ..
+ 666  10                                                                                      ((UBYTE *)(&tdw_StartCluster))[0]=gc_UserDataBuf[tw_FdbOffset+0x15];
+ 667  10                                                                                      ((UBYTE *)(&tdw_StartCluster))[1]=gc_UserDataBuf[tw_FdbOffset+0x14];
+C51 COMPILER V7.10   DIR_PROCESS1                                                          02/28/2011 10:30:48 PAGE 12  
+
+ 668  10                                                                                      ((UBYTE *)(&tdw_StartCluster))[2]=gc_UserDataBuf[tw_FdbOffset+0x1b];
+ 669  10                                                                                      ((UBYTE *)(&tdw_StartCluster))[3]=gc_UserDataBuf[tw_FdbOffset+0x1a];
+ 670  10                                                                                      gw_DirIndex[0]=0;
+ 671  10                                                                                      ptr.c_Search_Mode = K_SPECIFIC_STARTCLUSTER;
+ 672  10                                                                                      ptr.Compare.dw_StartCluster = tdw_TagetCluster;
+ 673  10                                                                                      ptr.dw_FDB_StartCluster = tdw_StartCluster;
+ 674  10                                                                                      ptr.c_Search_Attribute = 1;  
+ 675  10                                                                                      ptr.c_Search_Direction = 0; //search next
+ 676  10                                                                                      if(!Find_Fdb(&ptr))
+ 677  10                                                                                      {
+ 678  11                                                                                              gw_DirIndex[1] = 0;
+ 679  11                                                                                              gs_DIR_FCB[0].dw_FDB_Cluster = ptr.dw_FDB_Cluster;
+ 680  11                                                                                              gs_DIR_FCB[0].dw_FDB_LogAdd = ptr.dw_FDB_LogAdd;
+ 681  11                                                                                              gs_DIR_FCB[0].w_FDB_Offset = ptr.w_FDB_Offset;
+ 682  11                                                                                              gs_DIR_FCB[0].dw_FDB_StartCluster = tdw_TagetCluster;
+ 683  11                                                                                              gs_DIR_FCB[0].dw_File_StartCluster = tdw_TagetCluster;
+ 684  11                                                                                              gs_DIR_FCB[0].dw_LongFDB_LogAdd1 = ptr.dw_LongFDB_LogAdd1;
+ 685  11                                                                                              gs_DIR_FCB[0].dw_LongFDB_LogAdd0 = ptr.dw_LongFDB_LogAdd0;
+ 686  11      
+ 687  11                                                                                              return 0;
+ 688  11                                                                                      }
+ 689  10                                                                                      else
+ 690  10                                                                                              return 1;
+ 691  10                                                                              }
+ 692   9                                                                              else //found dir -- check if it has dir
+ 693   9                                                                              {
+ 694  10                                                                                      ((UBYTE *)(&tdw_StartCluster))[0] = gc_UserDataBuf[tw_FdbOffset+0x15];
+ 695  10                                                                                      ((UBYTE *)(&tdw_StartCluster))[1] = gc_UserDataBuf[tw_FdbOffset+0x14];
+ 696  10                                                                                      ((UBYTE *)(&tdw_StartCluster))[2] = gc_UserDataBuf[tw_FdbOffset+0x1b];
+ 697  10                                                                                      ((UBYTE *)(&tdw_StartCluster))[3] = gc_UserDataBuf[tw_FdbOffset+0x1a];
+ 698  10                      
+ 699  10                                                                                      gs_DIR_FCB[0].dw_FDB_Cluster = tdw_CurrentCluster;//gs_DIR_FCB[0].dw_FDB_Cluster;
+ 700  10                                                                                      gs_DIR_FCB[0].dw_FDB_LogAdd = tdw_LogAddr;//gs_DIR_FCB[0].dw_FDB_LogAdd;
+ 701  10                                                                                      gs_DIR_FCB[0].w_FDB_Offset = tw_FdbOffset;
+ 702  10                                                                                      gs_DIR_FCB[0].dw_FDB_StartCluster = tdw_StartCluster;
+ 703  10                                                                                      gs_DIR_FCB[0].dw_File_StartCluster = tdw_StartCluster;
+ 704  10      
+ 705  10                                                                                      //check if it has dir
+ 706  10                                                                                      ptr.c_Search_Mode = K_COUNTER_DIRNUM;
+ 707  10                                                                                      ptr.dw_FDB_StartCluster = gs_DIR_FCB[0].dw_File_StartCluster;
+ 708  10                                                                                      ptr.c_Search_Attribute = 1; //find dir
+ 709  10                                                                                      ptr.c_Search_Direction = 0; //search next
+ 710  10                                                                                      Count_Dir_Fdb(&ptr);
+ 711  10                                                                                      
+ 712  10                                                                                      gw_FileSkipNumber = ptr.w_DirTotalNum;
+ 713  10      
+ 714  10                                                                                      if(!gw_FileSkipNumber) //Ching 090212
+ 715  10                                                                                      {
+ 716  11                                                                                              if(tdw_LogAddr > tdw_1stSectorOfCluster) 
+ 717  11                                                                                                      gs_DIR_FCB[0].dw_LongFDB_LogAdd0 = tdw_LogAddr - 1;
+ 718  11                                                                                              else //Prev Cluster's last sector
+ 719  11                                                                                              {
+ 720  12                                                                                                      if(tdw_CurrentCluster == tdw_MomFDB_StartClus) //no prev cluster
+ 721  12                                                                                                              gs_DIR_FCB[0].dw_LongFDB_LogAdd0 = 0;
+ 722  12                                                                                                      else
+ 723  12                                                                                                      {//search prev cluster
+ 724  13                                                                                                              tdw_TempCluster1 = tdw_MomFDB_StartClus;
+ 725  13                                                                                                              tdw_TempCluster = tdw_TempCluster1;
+ 726  13                      
+ 727  13                                                                                                              while(tdw_TempCluster1!=tdw_CurrentCluster)
+ 728  13                                                                                                              {
+ 729  14                                                                                                                      tdw_TempCluster1 = DOS_GetNextCluster(tdw_TempCluster1,1);
+C51 COMPILER V7.10   DIR_PROCESS1                                                          02/28/2011 10:30:48 PAGE 13  
+
+ 730  14                                                                                                                      if(tdw_TempCluster1!=tdw_CurrentCluster)
+ 731  14                                                                                                                              tdw_TempCluster = tdw_TempCluster1;
+ 732  14                                                                                                              }
+ 733  13                                                                                                              tdw_1stSectorOfCluster = DOS_ClusterLogicAddr(tdw_TempCluster);
+ 734  13                                                                                                              gs_DIR_FCB[0].dw_LongFDB_LogAdd0 = tdw_1stSectorOfCluster + gc_DOS_SectorPerCluster - 1;
+ 735  13                                                                                                      }
+ 736  12                                                                                              }
+ 737  11                                                                                              return 0;
+ 738  11                                                                                      }
+ 739  10      
+ 740  10                                                                                      while(gw_FileSkipNumber)//if(gw_FileSkipNumber)
+ 741  10                                                                                      {
+ 742  11                                                                                              ptr.c_Search_Mode = K_ORDER_FINDFDB;
+ 743  11                                                                                              ptr.dw_FDB_StartCluster = gs_DIR_FCB[0].dw_File_StartCluster;
+ 744  11                                                                                              ptr.c_Search_Attribute=1; //find dir
+ 745  11                                                                                              ptr.c_Search_Direction = 0; //search next
+ 746  11                                                                                              gw_DirIndex[1] = 0;
+ 747  11                      
+ 748  11                                                                                              gb_TriggerFileSkip = 1;
+ 749  11                                                                                              tc_sts = Find_Fdb(&ptr);
+ 750  11                                                                                              gb_TriggerFileSkip = 0;
+ 751  11                                                                                              if(!tc_sts)
+ 752  11                                                                                              {
+ 753  12                                                                                                  gs_DIR_FCB[0].dw_FDB_StartCluster = ptr.dw_FDB_StartCluster;
+ 754  12                                                                                                      gs_DIR_FCB[0].dw_LongFDB_LogAdd1 = ptr.dw_LongFDB_LogAdd1;
+ 755  12                                                                                                      gs_DIR_FCB[0].dw_LongFDB_LogAdd0 = ptr.dw_LongFDB_LogAdd0;
+ 756  12                                                                                                      gs_DIR_FCB[0].dw_FDB_Cluster = ptr.dw_FDB_Cluster;
+ 757  12                                                                                                      gs_DIR_FCB[0].dw_FDB_LogAdd = ptr.dw_FDB_LogAdd;
+ 758  12                                                                                                      gs_DIR_FCB[0].w_FDB_Offset = ptr.w_FDB_Offset;
+ 759  12                      
+ 760  12                                                                                                      if(DOS_Read_LogicSector(gs_DIR_FCB[0].dw_FDB_LogAdd,1)) return 0xff;
+ 761  12                                                                                                      ((UBYTE *)(&tdw_StartCluster))[0] = gc_UserDataBuf[gs_DIR_FCB[0].w_FDB_Offset+0x15];
+ 762  12                                                                                                      ((UBYTE *)(&tdw_StartCluster))[1] = gc_UserDataBuf[gs_DIR_FCB[0].w_FDB_Offset+0x14];
+ 763  12                                                                                                      ((UBYTE *)(&tdw_StartCluster))[2] = gc_UserDataBuf[gs_DIR_FCB[0].w_FDB_Offset+0x1b];
+ 764  12                                                                                                      ((UBYTE *)(&tdw_StartCluster))[3] = gc_UserDataBuf[gs_DIR_FCB[0].w_FDB_Offset+0x1a];
+ 765  12                      
+ 766  12                                                                                                      gs_DIR_FCB[0].dw_File_StartCluster = tdw_StartCluster; 
+ 767  12                                                                                                      ptr.c_Search_Mode = K_COUNTER_DIRNUM;
+ 768  12                                                                                                      ptr.dw_FDB_StartCluster = gs_DIR_FCB[0].dw_File_StartCluster;
+ 769  12                                                                                                      ptr.c_Search_Attribute = 1; //find dir
+ 770  12                                                                                                      ptr.c_Search_Direction = 0; //search next
+ 771  12                                                                                                      Count_Dir_Fdb(&ptr);
+ 772  12                                                                                                      gw_FileSkipNumber = ptr.w_DirTotalNum;
+ 773  12                                                                                              }
+ 774  11                                                                                              else    return 1;
+ 775  11                                                                                      }               
+ 776  10                                                                                      return 0;
+ 777  10                                                                              }
+ 778   9                                                                      }
+ 779   8                                                              }               
+ 780   7                                                              if(tw_FdbOffset==0) break; //break while(1);
+ 781   7                                                              tw_FdbOffset -= 32;
+ 782   7                                                      }//while(1) //search in one sector
+ 783   6                                                      tw_FdbOffset = 0x1E0;
+ 784   6                                              }//for(tdw_LogAddr) //search in one cluster
+ 785   5      
+ 786   5                                              tdw_TempCluster1 = tdw_MomFDB_StartClus;
+ 787   5                                              tdw_TempCluster = tdw_TempCluster1;
+ 788   5                                              while(tdw_TempCluster1 != tdw_CurrentCluster)
+ 789   5                                              {
+ 790   6                                                      tdw_TempCluster1 = DOS_GetNextCluster(tdw_TempCluster1,1);
+ 791   6                                                      if(tdw_TempCluster1 != tdw_CurrentCluster)
+C51 COMPILER V7.10   DIR_PROCESS1                                                          02/28/2011 10:30:48 PAGE 14  
+
+ 792   6                                                              tdw_TempCluster = tdw_TempCluster1;
+ 793   6                                              }
+ 794   5                                              tdw_1stSectorOfCluster = DOS_ClusterLogicAddr(tdw_TempCluster);
+ 795   5                                              tdw_LogAddr = tdw_1stSectorOfCluster + gc_DOS_SectorPerCluster - 1;
+ 796   5                                      }while(tdw_CurrentCluster != tdw_MomFDB_StartClus); //search in one directory
+ 797   4      
+ 798   4                                      if(gs_DIR_FCB[0].dw_FDB_Cluster == gdw_DOS_RootDirClus) //no prev dir in root dir, then root dir is wh
+             -at we want to get
+ 799   4                                      {
+ 800   5                                              gs_DIR_FCB[0].dw_FDB_Cluster = gdw_DOS_RootDirClus;
+ 801   5                                              gs_DIR_FCB[0].dw_FDB_LogAdd = gdw_DOS_RootDirAddr;
+ 802   5                                              gs_DIR_FCB[0].w_FDB_Offset = 0;
+ 803   5                                              gs_DIR_FCB[0].dw_FDB_StartCluster = gdw_DOS_RootDirClus;
+ 804   5                                              gs_DIR_FCB[0].dw_File_StartCluster = gdw_DOS_RootDirClus;
+ 805   5                                              gs_DIR_FCB[0].dw_LongFDB_LogAdd0 = 0;
+ 806   5                                              return 0;
+ 807   5                                      }
+ 808   4                              }
+ 809   3                      }
+ 810   2              }//while
+ 811   1              return(1); 
+ 812   1      }
+ 813          
+ 814          
+ 815          void DOS_Count_All_Dir(void)
+ 816          {
+ 817   1              gs_DIR_FCB[C_OtherFileType].dw_FDB_StartCluster = gdw_DOS_RootDirClus;
+ 818   1              gs_File_FCB[C_OtherFileType].dw_FDB_StartCluster= gdw_DOS_RootDirClus;
+ 819   1              gb_FindFlag = 0;
+ 820   1              EXT_NameC[0]=1;
+ 821   1              EXT_NameC[1]=0xFE;
+ 822   1              EXT_NameC[2]=0x5A;
+ 823   1              EXT_NameC[3]=0xA5;
+ 824   1              gb_CountDirFlag=1;
+ 825   1              gw_DirTotalNumber=0;
+ 826   1              DOS_Search_File(C_File_All|C_By_FDB, C_OtherFileType, C_CmpExtName|C_Next);
+ 827   1              gb_CountDirFlag=0;
+ 828   1      //      dbprintf("======= DIR num:%x\n\n\n\n",gw_DirTotalNumber);//gw_DirTotalNumber
+ 829   1      }
+ 830          
+ 831           extern xdata   System_Struct gs_System_State;
+ 832          UBYTE DOS_GetDIRName(UBYTE tc_FileHandle, UBYTE tb_UicodeToISN, UBYTE * tpc_LongName);
+ 833          
+ 834          extern  U8      fdb_check_sum(U8 xdata * p);
+ 835          extern xdata    U8      gc_UIblock0_index;
+ 836          extern U8  code Unicode_Offset2[26];
+ 837          extern U16      FDB_OFFSET;
+ 838          UBYTE DOS_GetDIRName(UBYTE tc_FileHandle, UBYTE tb_UicodeToISN, UBYTE * tpc_LongName)
+ 839          {
+ 840   1      
+ 841   1              WORD    i;
+ 842   1              UBYTE   j;
+ 843   1              UBYTE   tc_Chksum=0;
+ 844   1              UBYTE   tc_EndSign=0;
+ 845   1              UBYTE   tc_LogAddrNum=1;
+ 846   1              UBYTE  tc_Array[26];
+ 847   1              WORD    tw_FDB_Offset,tw_LFN_Offset,tw_FileNameLen;
+ 848   1              LWORD   tdw_Addr;
+ 849   1              tb_UicodeToISN = tb_UicodeToISN;
+ 850   1      
+ 851   1              #if 1
+ 852   1              if(gs_File_FCB[0].dw_FDB_StartCluster==gdw_DOS_RootDirClus)
+C51 COMPILER V7.10   DIR_PROCESS1                                                          02/28/2011 10:30:48 PAGE 15  
+
+ 853   1              {
+ 854   2                      j=0;
+ 855   2                      tpc_LongName[0]=0;
+ 856   2                      tpc_LongName[1]=0;
+ 857   2                      tpc_LongName[3]=0;
+ 858   2                      tpc_LongName[4]=3;
+ 859   2                      //tpc_LongName[4]=0;
+ 860   2                      tpc_LongName[2]=K_ShortFileName;
+ 861   2                      tpc_LongName[5]=0x46;
+ 862   2                      tpc_LongName[6]=0x3A;
+ 863   2                      tpc_LongName[7]=0x5C;
+ 864   2      
+ 865   2                      return 0;
+ 866   2              }
+ 867   1              #endif
+ 868   1              tdw_Addr=gs_DIR_FCB[tc_FileHandle].dw_FDB_LogAdd;
+ 869   1              tw_FDB_Offset=gs_DIR_FCB[tc_FileHandle].w_FDB_Offset;
+ 870   1      
+ 871   1      
+ 872   1      //t     gc_ReadWriteDataArea=1;//use buf gc_UserDataBuf[512]
+ 873   1      
+ 874   1              DOS_Read_LogicSector(tdw_Addr, 1);
+ 875   1      
+ 876   1              memcpy(tc_Array,&gc_UserDataBuf[tw_FDB_Offset],11);
+ 877   1              tc_Chksum = fdb_check_sum(tc_Array);
+ 878   1              tw_LFN_Offset=tw_FDB_Offset;
+ 879   1              i=5;//fill the UNICODE from the offset 3! 
+ 880   1              while(i<512)
+ 881   1              {        
+ 882   2                      U8 xdata * p;
+ 883   2                      if(tw_LFN_Offset>=32)
+ 884   2                      {       
+ 885   3                              tw_LFN_Offset-=32;
+ 886   3                      }
+ 887   2                      else
+ 888   2                      {
+ 889   3                              if(tc_LogAddrNum==1)
+ 890   3                              {
+ 891   4                                      //tdw_Addr=gs_File_FCB[tc_FileHandle].dw_LongFDB_LogAdd0;
+ 892   4                                      tdw_Addr=gs_DIR_FCB[tc_FileHandle].dw_LongFDB_LogAdd0;
+ 893   4                                      tc_LogAddrNum=2;
+ 894   4                              } else if(tc_LogAddrNum==2) {
+ 895   4                                      //tdw_Addr=gs_File_FCB[tc_FileHandle].dw_LongFDB_LogAdd1;
+ 896   4                                      tdw_Addr=gs_DIR_FCB[tc_FileHandle].dw_LongFDB_LogAdd1;
+ 897   4      
+ 898   4                              }
+ 899   3      //t                     gc_ReadWriteDataArea=1;//use buf gc_UserDataBuf[512]
+ 900   3                              DOS_Read_LogicSector(tdw_Addr, 1);
+ 901   3                              tw_LFN_Offset=512-32;
+ 902   3                      }
+ 903   2                      p = &(gc_UserDataBuf[tw_LFN_Offset]);
+ 904   2                      //if((gc_UserDataBuf[tw_LFN_Offset]&0x40)==0x40)
+ 905   2                      if((*p&0x40)==0x40)
+ 906   2                      {
+ 907   3                              tc_EndSign=1;
+ 908   3                      }       
+ 909   2      
+ 910   2                      //if(((gc_UserDataBuf[tw_LFN_Offset+11]==0x0f)||(gc_UserDataBuf[tw_LFN_Offset+11]==0x3f))&&(gc_UserDataB
+             -uf[tw_LFN_Offset+12]==0x00)&&(gc_UserDataBuf[tw_LFN_Offset+13]==tc_Chksum))
+ 911   2                      if(((p[11]==0x0f)||(p[11]==0x3f))&&(p[12]==0x00)&&(p[13]==tc_Chksum))
+ 912   2                      {        
+ 913   3                              for (j=0; j<26; j++)
+C51 COMPILER V7.10   DIR_PROCESS1                                                          02/28/2011 10:30:48 PAGE 16  
+
+ 914   3                                      tpc_LongName[i++]=p[Unicode_Offset2[j]];//fill  the long file name into the array
+ 915   3      //--------------------------------------------------------------------------------------------------
+ 916   3      //if  tc_Chksum is not right,or if sign number is not right,fill the short file name into the array
+ 917   3      //----------------------------------------------------------------------------------------------------          
+ 918   3                      } 
+ 919   2                      else 
+ 920   2                      { 
+ 921   3                              j=0;
+ 922   3      //t                     gc_ReadWriteDataArea=1;//use buf gc_UserDataBuf[512]
+ 923   3                              //DOS_Read_LogicSector(gs_File_FCB[tc_FileHandle].dw_FDB_LogAdd, 1);
+ 924   3                              DOS_Read_LogicSector(gs_DIR_FCB[tc_FileHandle].dw_FDB_LogAdd, 1);
+ 925   3      
+ 926   3                              tpc_LongName[0]=0;
+ 927   3                              tpc_LongName[1]=0;
+ 928   3                              tpc_LongName[3]=0;
+ 929   3                              tpc_LongName[2]=K_ShortFileName;
+ 930   3                              while(j<8)
+ 931   3                              {
+ 932   4                                      tpc_LongName[5+j]=tc_Array[j];
+ 933   4                                      if(tc_Array[j]==0x20)
+ 934   4                                      {
+ 935   5                                              break;
+ 936   5                                      }       
+ 937   4                                      j++;
+ 938   4                              }
+ 939   3                              if (tc_Array[8] != 0x20)
+ 940   3                              {
+ 941   4                                      tpc_LongName[5+j]=0x2e;
+ 942   4                                      j+=1;
+ 943   4                              }
+ 944   3                              if (tc_Array[8] != 0x20)
+ 945   3                              {
+ 946   4                                      tpc_LongName[5+j]=tc_Array[8];
+ 947   4                                      j++;
+ 948   4                                      if (tc_Array[9] != 0x20)
+ 949   4                                      {
+ 950   5                                              tpc_LongName[5+j]=tc_Array[9];
+ 951   5                                              j++;
+ 952   5                                              if (tc_Array[10] != 0x20)
+ 953   5                                              {
+ 954   6                                                      tpc_LongName[5+j]=tc_Array[10];
+ 955   6                                                      j++;
+ 956   6                                              }
+ 957   5                                      }
+ 958   4                              }
+ 959   3                              tpc_LongName[4]=j;
+ 960   3                              return 0;               
+ 961   3                      }
+ 962   2      //--------------------------------------------------------------------------------------------------------
+             ----
+ 963   2                      
+ 964   2                      if(tc_EndSign) //when end,fill the first 3 bytes indicate the information of long file name!
+ 965   2                      {
+ 966   3                              //tpc_LongName[0]=gc_UserDataBuf[tw_LFN_Offset];
+ 967   3                              tpc_LongName[0]=*p;
+ 968   3                              tpc_LongName[2]=K_LongFileName;
+ 969   3      
+ 970   3      #if 0
+                                      for (j = 26; j > 0; j=j-2)
+                                      {
+                                              //if((gc_UserDataBuf[tw_LFN_Offset+Unicode_Offset[j-1]]==0)&&(gc_UserDataBuf[tw_LFN_Offset+Unicode_Off
+             -set[j-2]]==0))
+C51 COMPILER V7.10   DIR_PROCESS1                                                          02/28/2011 10:30:48 PAGE 17  
+
+                                              if((p[Unicode_Offset[j-1]]==0)&&(p[Unicode_Offset[j-2]]==0))
+                                              {
+                                                      break; 
+                                              }
+                                      }
+              #else
+ 980   3                              for (j = 0; j < 26; j+=2)
+ 981   3                              {
+ 982   4                                      if((p[Unicode_Offset2[j]]==0)&&(p[Unicode_Offset2[j+1]]==0))
+ 983   4      //                              if (*((U16 xdata *)&(p[Unicode_Offset2[j]])) == 0)
+ 984   4                                      {
+ 985   5                                              break; 
+ 986   5                                      }
+ 987   4                              }
+ 988   3                              j = 26-j;
+ 989   3      #endif
+ 990   3                              tpc_LongName[1] = j;
+ 991   3                              //tw_FileNameLen=(((tpc_LongName[0]&0x3f)-1)*26)+(26-tpc_LongName[1]-1);
+ 992   3                              tw_FileNameLen=(((tpc_LongName[0]&0x3f)-1)*26)+(26-tpc_LongName[1]);//(JC)H0305
+ 993   3                              tpc_LongName[3] = ((UBYTE *)(&tw_FileNameLen))[0];            //save the high 4bit 
+ 994   3                              tpc_LongName[4] = ((UBYTE *)(&tw_FileNameLen))[1];          //save the low 4bit
+ 995   3      //                      dbprintf("tw_FileNameLen=%x\n",tw_FileNameLen);
+ 996   3                              return 0;       
+ 997   3                              
+ 998   3                      }
+ 999   2              }
+1000   1      
+1001   1              return 0;
+1002   1      
+1003   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   4660    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----     243
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

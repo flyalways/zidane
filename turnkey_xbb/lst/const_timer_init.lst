@@ -1,0 +1,42 @@
+C51 COMPILER V7.10   CONST_TIMER_INIT                                                      02/28/2011 10:30:19 PAGE 1   
+
+
+C51 COMPILER V7.10, COMPILATION OF MODULE CONST_TIMER_INIT
+OBJECT MODULE PLACED IN .\obj\const_timer_init.obj
+COMPILER INVOKED BY: F:\Keil C 7.10\chengxu\C51\BIN\C51.EXE MAIN\const_timer_init.c LARGE OPTIMIZE(9,SIZE) BROWSE NOAREG
+                    -S INCDIR(..\libsource\header) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\const_timer_init.lst) OBJECT(.\obj\co
+                    -nst_timer_init.obj)
+
+line level    source
+
+   1          #include "SPDA2K.h"
+   2          
+   3          //! To initialize the constant timer.
+   4          /*!     After initialization, the constant timer is activated with interrupt disabled.
+   5           *      The counter value is reset to 0.
+   6           *      Do this only at boot-up to avoid timing incorrectness.
+   7           */
+   8          void init_const_timer(void)
+   9          {
+  10   1              GLOBAL_REG[0x80] = 0; // disable constant timer, interrupt also disabled.
+  11   1      
+  12   1              GLOBAL_REG[0x81] = 1; // clear const timer counter
+  13   1              while ((GLOBAL_REG[0x81] & 0x10) == 0);
+  14   1      
+  15   1              GLOBAL_REG[0x80] |= 1; // enable constant timer
+  16   1              while ((GLOBAL_REG[0x80] & 0x10) == 0); // wait enable ready.
+  17   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     30    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

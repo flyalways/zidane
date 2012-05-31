@@ -1,0 +1,423 @@
+C51 COMPILER V7.10   MCU_DSPINIT                                                           02/28/2011 10:30:31 PAGE 1   
+
+
+C51 COMPILER V7.10, COMPILATION OF MODULE MCU_DSPINIT
+OBJECT MODULE PLACED IN .\obj\mcu_dspinit.obj
+COMPILER INVOKED BY: F:\Keil C 7.10\chengxu\C51\BIN\C51.EXE Play\mcu_dspinit.c LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INC
+                    -DIR(..\libsource\header) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\mcu_dspinit.lst) OBJECT(.\obj\mcu_dspinit.
+                    -obj)
+
+line level    source
+
+   1          #include "SPDA2K.h"
+   2          #include "dos\fs_struct.h"
+   3          #include "Memalloc.h"
+   4          #include "..\DSP\DSPPHYSIC.H"
+   5          #include "..\DSP\dspuser.h"
+   6          #include "..\header\variables.h"
+   7          
+   8          #include "..\UI_Display\common_UI_disp_func.c"
+   9          
+  10          extern  U8      Get_LogData_PageIndex(void);
+  11          extern  U8      WMA_ASF_Parser();
+  12          extern  U8      USER_LogFile_ReadWrite(U8 tbt_ReadOrWrite);//use reserveblock for log
+  13          extern  U16     MP3_Total_Time_Parser();
+  14          extern  U16     MP3_Bitrate_Parser();
+  15          
+  16          extern  xdata   System_Struct gs_System_State;
+  17          
+  18          U8 MP3_Download(void)
+  19          {
+  20   1              U8 tc_Cnt = 0;
+  21   1      
+  22   1              if ( DSP_Download(0x00, 0x10)!=DSP_SUCCESS )
+  23   1              {
+  24   2                      return DSP_PLAY_COMMAND_ERROR;
+  25   2              }
+  26   1      
+  27   1              for (tc_Cnt=0;tc_Cnt<10;++tc_Cnt) 
+  28   1              {
+  29   2                      if (DSP_PlayInit()==DSP_SUCCESS)
+  30   2                      {
+  31   3                              return 0;
+  32   3                      }
+  33   2      
+  34   2                      if (tc_Cnt < 5) 
+  35   2                      {
+  36   3                              GLOBAL_REG[0x02] &= 0xFE;               // Enable DSP Run Normal Mode
+  37   3                      }
+  38   2                      else
+  39   2                      {
+  40   3                              GLOBAL_REG[0x02] |= 0x01;               // DSP reset
+  41   3                              GLOBAL_REG[0x02] &= 0xFE;               // Enable DSP Run Normal Mode
+  42   3                      }
+  43   2              }
+  44   1      
+  45   1              return DSP_PLAY_COMMAND_ERROR;
+  46   1      }
+  47          
+  48          
+  49          U8 WMA_Download(void)
+  50          {
+  51   1              U8 tc_Cnt = 0;
+  52   1              U8 tc_result = 0;
+  53   1      
+C51 COMPILER V7.10   MCU_DSPINIT                                                           02/28/2011 10:30:31 PAGE 2   
+
+  54   1      
+  55   1      
+  56   1              if ( DSP_Download(0x12, 0x25)!=DSP_SUCCESS )
+  57   1                      return DSP_PLAY_COMMAND_ERROR;
+  58   1      
+  59   1              L2_DSP_Write_DMem16(DSP_W_asf_parse_ok, 0x0);
+  60   1              L2_DSP_Write_DMem16(DSP_W_asf_parse_mode, 0x01);                //Set ASF Parser Mode
+  61   1      
+  62   1              for (tc_Cnt=0;tc_Cnt<10;++tc_Cnt) 
+  63   1              {
+  64   2                      if (DSP_PlayInit()==DSP_SUCCESS)
+  65   2                      {
+  66   3                              break;
+  67   3                      }
+  68   2      
+  69   2                      if (tc_Cnt < 5) 
+  70   2                      {
+  71   3                              GLOBAL_REG[0x02] &= 0xFE;               // Enable DSP Run Normal Mode
+  72   3                      }
+  73   2                      else
+  74   2                      {
+  75   3                              GLOBAL_REG[0x02] |= 0x01;               // DSP reset
+  76   3                              GLOBAL_REG[0x02] &= 0xFE;               // Enable DSP Run Normal Mode
+  77   3                      }
+  78   2              }
+  79   1              if (tc_Cnt == 10)
+  80   1                      return DSP_PLAY_COMMAND_ERROR;
+  81   1      
+  82   1      /*------------------------------------------------------------------*/
+  83   1      /* WMA download IMPM step:                                          */
+  84   1      /* 1. ASF parser mode: to check what entropy mode this bitstream is */
+  85   1      /* 2. check DRM: option                                             */
+  86   1      /* 3. normal wma download: to download the correct IMPM             */
+  87   1      /*------------------------------------------------------------------*/
+  88   1      
+  89   1      //-------------------
+  90   1      //1. ASF parser mode
+  91   1      //-------------------
+  92   1      
+  93   1              if(L2_DSP_SendCommandSet(DCMD_Play) != DCMD_Play)
+  94   1              {
+  95   2                      return DSP_PLAY_COMMAND_ERROR;
+  96   2              }
+  97   1      
+  98   1              gs_DSP_GLOBAL_RAM.sc_DM_Index = 0;      // reset bitstream address of DM
+  99   1      
+ 100   1              if (DOS_Open_File_r(0x00,0x02,0x00))
+ 101   1                      return DSP_PLAY_COMMAND_ERROR;
+ 102   1      
+ 103   1              while(tc_result == 0)
+ 104   1              {
+ 105   2                      if(WMA_DataIn() == DSP_DATAIN_COMMAND_ERROR)    
+ 106   2                              return DSP_DATAIN_COMMAND_ERROR;
+ 107   2      
+ 108   2                      tc_result = L2_DSP_Read_DMem16(DSP_W_asf_parse_ok);
+ 109   2              }
+ 110   1      
+ 111   1              if(tc_result != 1)
+ 112   1              {
+ 113   2                      return DSP_PLAY_COMMAND_ERROR;
+ 114   2              }
+ 115   1      
+C51 COMPILER V7.10   MCU_DSPINIT                                                           02/28/2011 10:30:31 PAGE 3   
+
+ 116   1              L2_DSP_Write_DMem16(L2_DSP_Write_DMem16,0);
+ 117   1      /*-- DSP will jump to pc=0 automatically after asf parse has been done--*/
+ 118   1      
+ 119   1      //----------------------
+ 120   1      //2. Normal wma download
+ 121   1      //----------------------
+ 122   1      
+ 123   1              switch(L2_DSP_Read_DMem16(DSP_w_EntropyMode))
+ 124   1              {
+ 125   2                      case 1:
+ 126   2                                      tc_result = DSP_Download(0x01, 0x23);
+ 127   2                                      break;
+ 128   2      
+ 129   2                      case 2:
+ 130   2                                      tc_result = DSP_Download(0x01, 0x24);
+ 131   2                                      break;
+ 132   2      
+ 133   2                      case 3:
+ 134   2                                      tc_result = DSP_Download(0x01, 0x25);
+ 135   2                                      break;
+ 136   2                      default:
+ 137   2                                      break;
+ 138   2              }
+ 139   1                      
+ 140   1              if(tc_result != DSP_SUCCESS )   
+ 141   1                      return DSP_PLAY_COMMAND_ERROR;
+ 142   1      
+ 143   1              for (tc_Cnt=0;tc_Cnt<10;++tc_Cnt) {
+ 144   2                      if (DSP_PlayInit()==DSP_SUCCESS)
+ 145   2                              break;
+ 146   2      
+ 147   2                      if (tc_Cnt < 5) 
+ 148   2                      {
+ 149   3                              //GLOBAL_REG[0x02] |= 0x01;             // DSP reset, ycc mark
+ 150   3                              GLOBAL_REG[0x02] &= 0xFE;               // Enable DSP Run Normal Mode
+ 151   3                      }
+ 152   2                      else
+ 153   2                      {
+ 154   3                              GLOBAL_REG[0x02] |= 0x01;               // DSP reset
+ 155   3                              GLOBAL_REG[0x02] &= 0xFE;               // Enable DSP Run Normal Mode
+ 156   3                      }
+ 157   2              }
+ 158   1      
+ 159   1              if (tc_Cnt == 10)
+ 160   1                      return DSP_PLAY_COMMAND_ERROR;  
+ 161   1      
+ 162   1              L2_DSP_Write_DMem16(DSP_W_asf_parse_mode, 0x0);         //Clear ASF Parser Mode
+ 163   1      
+ 164   1              return DSP_SUCCESS;
+ 165   1      }
+ 166          
+ 167          
+ 168          void play_init()
+ 169          { 
+ 170   1              gs_str_scroll_state.c_str_1st_char = 0;
+ 171   1              gs_str_scroll_state.c_shift_in_1st_char = 0;
+ 172   1      
+ 173   1              if(gw_init_needed & SET_BIT0)
+ 174   1          {
+ 175   2              gw_init_needed&=CLR_BIT0;      
+ 176   2              gs_System_State.c_FileHandle=0;
+ 177   2              gs_System_State.c_Phase = TASK_PHASE_STOP;
+C51 COMPILER V7.10   MCU_DSPINIT                                                           02/28/2011 10:30:31 PAGE 4   
+
+ 178   2              gs_DSP_GLOBAL_RAM.sw_Volume = 42;//(JC)init value
+ 179   2              gs_DSP_GLOBAL_RAM.sc_EQ_Type=0;//(JC)init value
+ 180   2              gb_LrcFileName_Exist=0;
+ 181   2              gs_DSP_GLOBAL_RAM.sc_DM_Index = 0;  // reset bitstream address of DM
+ 182   2              gs_DSP_GLOBAL_RAM.s_DSP_RAM.sc_RepeatMode = REPEAT_AB_NULL;
+ 183   2              //(JC)search music file overall by FDB, findout 1st one in ROOT
+ 184   2      
+ 185   2                      if(gb_DirPlay_Flag==1)
+ 186   2                      {
+ 187   3                              U16 tw_FileIndex=0;
+ 188   3                      Get_LogData_PageIndex();  //chiayen0808
+ 189   3                      USER_LogFile_ReadWrite(0);//use reserveblock for log
+ 190   3      
+ 191   3                              gb_DirPlay_Flag=0;
+ 192   3                  gc_RepPlayMode_Pre=gc_RepPlayMode;
+ 193   3                  gc_RepPlayMode=2;
+ 194   3                  gb_InitLogFileIndex=1;
+ 195   3                              tw_FileIndex=gw_FileIndex[0];
+ 196   3                  gw_FileSkipNumber=gw_FileIndex[0];
+ 197   3                              gb_TriggerFileSkip=1;
+ 198   3                              DOS_Search_File(C_File_OneDir|C_Cnt_FileNo, C_MusicFileType, C_CmpExtName|C_Next);
+ 199   3                              if(DOS_Search_File(C_File_OneDir|C_By_FDB, C_MusicFileType, C_CmpExtName|C_Next))
+ 200   3                              {
+ 201   4                                      gs_File_FCB[gs_System_State.c_FileHandle].dw_FDB_StartCluster = gdw_DOS_RootDirClus;
+ 202   4                                      DOS_Search_File(C_File_OneDir|C_Cnt_FileNo, C_MusicFileType, C_CmpExtName|C_Next);
+ 203   4                                      gw_FileSkipNumber=0;
+ 204   4                                      gw_FileIndex[0]=0;              
+ 205   4                              if(DOS_Search_File(C_File_All|C_By_Time, C_MusicFileType, C_CmpExtName|C_Next))
+ 206   4                              {
+ 207   5                                  if(gc_CurrentCard==2) //if SD no file change to Host or flash
+ 208   5                                  {
+ 209   6                                      gb_SDNoFileflag=1;  
+ 210   6                                  }
+ 211   5                                              if(gc_CurrentCard==5) //if Host no file change to SD or flash
+ 212   5                                  {
+ 213   6                                      gc_HostNoFileflag=1;  
+ 214   6                                  }
+ 215   5                                              gb_FlashNoFileflag=0;
+ 216   5                                  gw_init_needed |= SET_BIT8;
+ 217   5                                  gc_PhaseInx = 9;
+ 218   5                      
+ 219   5                                  return;
+ 220   5                              }                               
+ 221   4                              }
+ 222   3                              else
+ 223   3                              {
+ 224   4                                      gw_FileIndex[0]=tw_FileIndex;
+ 225   4                              }
+ 226   3                              gb_TriggerFileSkip=0;
+ 227   3                  gc_RepPlayMode=gc_RepPlayMode_Pre;
+ 228   3                  gb_InitLogFileIndex=0;                      
+ 229   3                              gb_DirPlay_Flag=1;
+ 230   3                      }
+ 231   2                      else
+ 232   2                      {
+ 233   3                              gs_File_FCB[gs_System_State.c_FileHandle].dw_FDB_StartCluster = gdw_DOS_RootDirClus;
+ 234   3              
+ 235   3                      if(DOS_Search_File(C_File_All|C_By_Time, C_MusicFileType, C_CmpExtName|C_Next))
+ 236   3                      {
+ 237   4                          if(gc_CurrentCard==2) //if SD no file change to Host or flash
+ 238   4                          {
+ 239   5                              gb_SDNoFileflag=1;  
+C51 COMPILER V7.10   MCU_DSPINIT                                                           02/28/2011 10:30:31 PAGE 5   
+
+ 240   5                          }
+ 241   4                                      if(gc_CurrentCard==5) //if Host no file change to SD or flash
+ 242   4                          {
+ 243   5                              gc_HostNoFileflag=1;  
+ 244   5                          }
+ 245   4                                      gb_FlashNoFileflag=0;
+ 246   4                          gw_init_needed |= SET_BIT8;
+ 247   4                          gc_PhaseInx = 9;
+ 248   4              
+ 249   4                          return;
+ 250   4                      }
+ 251   3                      }
+ 252   2      
+ 253   2                      gc_Play_FileType=gs_File_FCB[gs_System_State.c_FileHandle].c_FileType;
+ 254   2                      if(gc_Play_FileType==0)//(JC)MP3
+ 255   2                      {
+ 256   3                              set_clock_mode(CLOCK_MODE_MP3);
+ 257   3                      }
+ 258   2                      else if(gc_Play_FileType==1)//(JC)WMA //Jimi: gc_Play_FileType==2 ==>WMV
+ 259   2                      {
+ 260   3                              set_clock_mode(CLOCK_MODE_WMA);
+ 261   3              }
+ 262   2      
+ 263   2                      if(gc_Play_FileType==0)
+ 264   2                      {
+ 265   3                              gs_System_State.w_BitRate=MP3_Bitrate_Parser();
+ 266   3                              gw_TotalSec = MP3_Total_Time_Parser();//(JC)H0630 LCM test
+ 267   3                      }
+ 268   2                      else if(gc_Play_FileType==1)
+ 269   2                      {
+ 270   3                              WMA_ASF_Parser();
+ 271   3                      }
+ 272   2                      
+ 273   2                      if(gb_DirPlay_Flag==0)
+ 274   2                      {
+ 275   3                              Get_LogData_PageIndex();  //chiayen0808
+ 276   3                              USER_LogFile_ReadWrite(0);//use reserveblock for log
+ 277   3                      }
+ 278   2      
+ 279   2                      if((gw_FM_frequency<875) || (gw_FM_frequency>1080))
+ 280   2              {
+ 281   3                  gw_FM_frequency=875;
+ 282   3              }
+ 283   2      
+ 284   2              if((gs_DSP_GLOBAL_RAM.sw_Volume<0) || (gs_DSP_GLOBAL_RAM.sw_Volume>50))
+ 285   2              {
+ 286   3                  gs_DSP_GLOBAL_RAM.sw_Volume=42; 
+ 287   3              }
+ 288   2      
+ 289   2              if((gs_DSP_GLOBAL_RAM.sc_EQ_Type<0) || (gs_DSP_GLOBAL_RAM.sc_EQ_Type>5))
+ 290   2              {
+ 291   3                  gs_DSP_GLOBAL_RAM.sc_EQ_Type=0; 
+ 292   3              }
+ 293   2      
+ 294   2                      if(gc_MenuHZK > 17)
+ 295   2                      {
+ 296   3                              gc_MenuHZK=HZK_LANGUAGE;        
+ 297   3                      }
+ 298   2      
+ 299   2              if((gc_RepPlayMode>2))
+ 300   2              {
+ 301   3                  gc_RepPlayMode=2;
+C51 COMPILER V7.10   MCU_DSPINIT                                                           02/28/2011 10:30:31 PAGE 6   
+
+ 302   3              }
+ 303   2      
+ 304   2                      if(gb_DirPlay_Flag==0)
+ 305   2                      {
+ 306   3                              gw_FileIndex[0]=1;
+ 307   3                      if(gc_CurrentCard==0)
+ 308   3                      { 
+ 309   4                          if(gw_LogFileIndex<=gw_FileTotalNumber[0])
+ 310   4                          {
+ 311   5                              if(gw_LogFileIndex==0)
+ 312   5                              {
+ 313   6                                  gw_LogFileIndex=1;  
+ 314   6                              }
+ 315   5                              if(gw_LogFileIndex!=gw_FileIndex[0])
+ 316   5                              {
+ 317   6                                  gc_RepPlayMode_Pre=gc_RepPlayMode;
+ 318   6                                  gc_RepPlayMode=2;
+ 319   6                                  gb_InitLogFileIndex=1;
+ 320   6                                  gw_FileSkipNumber=gw_LogFileIndex-1;
+ 321   6                                  play_next();
+ 322   6                                  gc_RepPlayMode=gc_RepPlayMode_Pre;
+ 323   6                                  gb_InitLogFileIndex=0;
+ 324   6                              }
+ 325   5                          }
+ 326   4                      }
+ 327   3                      else if(gc_CurrentCard==2)
+ 328   3                      {
+ 329   4                          if(gw_SDLogFileIndex==0)
+ 330   4                          {
+ 331   5                              gw_SDLogFileIndex=1;    
+ 332   5                          }
+ 333   4                          if((gw_SDLogFileIndex<=gw_FileTotalNumber[0]))
+ 334   4                          {
+ 335   5                              if(gw_SDLogFileIndex!=gw_FileIndex[0])
+ 336   5                              {
+ 337   6                                  gc_RepPlayMode_Pre=gc_RepPlayMode;
+ 338   6                                  gc_RepPlayMode=2;
+ 339   6                                  gb_InitLogFileIndex=1;
+ 340   6                                  gw_FileSkipNumber=gw_SDLogFileIndex-1;
+ 341   6                                  play_next();
+ 342   6                                  gc_RepPlayMode=gc_RepPlayMode_Pre;
+ 343   6                                  gb_InitLogFileIndex=0;
+ 344   6                              }
+ 345   5                          }
+ 346   4                      }
+ 347   3                      else if(gc_CurrentCard==5)
+ 348   3                      {
+ 349   4                          if(gw_USBLogFileIndex==0)
+ 350   4                          {
+ 351   5                              gw_USBLogFileIndex=1;    
+ 352   5                          }
+ 353   4                          if((gw_USBLogFileIndex<=gw_FileTotalNumber[0]))
+ 354   4                          {
+ 355   5                              if(gw_USBLogFileIndex!=gw_FileIndex[0])
+ 356   5                              {
+ 357   6                                  gc_RepPlayMode_Pre=gc_RepPlayMode;
+ 358   6                                  gc_RepPlayMode=2;
+ 359   6                                  gb_InitLogFileIndex=1;
+ 360   6                                  gw_FileSkipNumber=gw_USBLogFileIndex-1;
+ 361   6                                  play_next();
+ 362   6                                  gc_RepPlayMode=gc_RepPlayMode_Pre;
+ 363   6                                  gb_InitLogFileIndex=0;
+C51 COMPILER V7.10   MCU_DSPINIT                                                           02/28/2011 10:30:31 PAGE 7   
+
+ 364   6                              }
+ 365   5                          }
+ 366   4                      }
+ 367   3                      }
+ 368   2                      else
+ 369   2                      {
+ 370   3                      }
+ 371   2      
+ 372   2                      if(gc_MenuHZK > 17)
+ 373   2                      {
+ 374   3                              gc_MenuHZK=HZK_LANGUAGE;//0; --sunzhk modify    
+ 375   3                      }
+ 376   2      
+ 377   2              if((gc_RepPlayMode>2))
+ 378   2              {
+ 379   3                  gc_RepPlayMode=2;
+ 380   3              }
+ 381   2              }
+ 382   1      
+ 383   1      //      DOS_GetLongFileName(0,gc_FileLongName); 
+ 384   1              gw_DispSongNum1=0xFFFF;
+ 385   1              gc_PhaseInx=3;
+ 386   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1082    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       5
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

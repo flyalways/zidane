@@ -1,0 +1,369 @@
+C51 COMPILER V7.10   MENU_HZK2                                                             02/28/2011 10:31:10 PAGE 1   
+
+
+C51 COMPILER V7.10, COMPILATION OF MODULE MENU_HZK2
+OBJECT MODULE PLACED IN .\obj\Menu_hzk2.obj
+COMPILER INVOKED BY: F:\Keil C 7.10\chengxu\C51\BIN\C51.EXE Menu_hzk\Menu_hzk2.c LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS I
+                    -NCDIR(..\libsource\header) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\Menu_hzk2.lst) OBJECT(.\obj\Menu_hzk2.ob
+                    -j)
+
+line level    source
+
+   1          #include "..\Header\SPDA2K.h"
+   2          #include "..\LCM\model_define.h"//(JC)H1124
+   3          #include "..\header\variables.h"
+   4          
+   5          #include "..\LCM\TFT_config.h"          // TFT
+   6          #include "..\Menu_hzk\MenuDisp_string.c"
+   7          #include  "..\Menu_hzk\String_HZK2.c"
+   8          
+   9          //------------------¸ÃbankÖÐ·ÅÁËÒôÀÖ²Ëµ¥¼°ÒôÁ¿¡£FMÑ¡Ôñ¡¢Ñ¡È¡½çÃæµÄ×Ö·û´®----
+  10          //-----------------ÏÔÊ¾×Ö·û´®µÄº¯ÊýÇë·ÅÔÚ¸ÃÎÄ¼þÖÐ£¬¹©ÆäËû²¿·Öµ÷ÓÃ
+  11          
+  12          #define MjpegMenuItemNums 3
+  13          #define Mjpeg_RepMenuItemNums 3
+  14          #define JpegMenuItemNums 3
+  15          #define Jpeg_PlayModeNums 2
+  16          #define Language_MenuNums 17
+  17          
+  18          #ifdef Contrast_Set
+  19          #define SettingMenuNums 5
+  20          #else
+              #define SettingMenuNums 4
+              #endif
+  23          //
+  24          #define SetupMenuTpye 41
+  25          #define LanguageMenuTpye 42
+  26          #define MemeryTitleType 43
+  27          #define FWVerTitleType 44
+  28          
+  29          #ifdef Contrast_Set
+  30          #define ContrastTitleType 45
+  31          #endif
+  32          
+  33          code U8 FW_Data[21]={20,0,'2',0,'0',0,'1',0,'0',0,'/',0,'0',0,'8',0,'/',0,'1',0,'6'};
+  34          code U8 FW_Ver[17]={16,0,'V',0,'1',0,'.',0,'0',0,'0',0,'.',0,'0',0,'3'};
+  35          //-----------------------------------------------------------------------------
+  36          //
+  37          //tc_MenuType:gc_TuneVolFreqStatus=1:vol adj 2:FM adj 3:play menu 4:eq 5:rep
+  38          //Jpeg:31 file select   32 auto or ,manual      33 play set
+  39          //Mjpeg:21 file select  22 rep mode
+  40          //----------------------------------------------------------------------------
+  41          void Menu_Disp_Item_Other(U8 tc_MenuType,U8 tc_Select,U8 tc_RefreshType)
+  42          {
+  43   1              U8 tc_i;
+  44   1              U8 tc_ItemNums;
+  45   1              U8 tc_language=2;
+  46   1              U16 tw_icon_ID,tw_icon_x,tw_icon_y,tw_icon_Hsize,tw_icon_Vsize;  //Ñ¡ÖÐÏîÇ°µÄÐ¡Í¼±êµÄÏÔÊ¾Éè¶¨
+  47   1              U16 tw_color_select,tw_color_BG_select,tw_color_Noselect,tw_color_BG_Noselect;//Ñ¡ÖÐ×ÖÌåµÄÑÕÉ«ºÍÎ´Ñ¡ÖÐµÄÑ
+             -ÕÉ«
+  48   1              U8 tc_High;//Á½¸öÏîÄ¿µÄ¼ä¸ô
+  49   1              U16 tw_word_x;//²Ëµ¥×ÖÆðÊ¼µÄx
+  50   1          U8 *(*p);     //Ö¸ÕëÊý×é
+  51   1              U8 tc_flag_dispItem=0;
+  52   1              
+C51 COMPILER V7.10   MENU_HZK2                                                             02/28/2011 10:31:10 PAGE 2   
+
+  53   1              tc_language = gc_MenuHZK;
+  54   1      
+  55   1              if(tc_RefreshType==0xff)
+  56   1              {
+  57   2                      return;
+  58   2              }
+  59   1      //    dbprintf("\n@1=%bx @2=%bx @3=%bx\n",tc_MenuType,tc_Select,tc_RefreshType);
+  60   1              switch(tc_MenuType)
+  61   1              {
+  62   2              /*      case 1: //Ë¢ÐÂÒôÁ¿ÉèÖÃ±³¾°¼°ÎÄ×Ö
+  63   2                              LCM_set_view(TFT_IconDispDir,0,0,TFT_H_Size,TFT_V_Size);
+  64   2                              LCD_DisplayIcon(ID_PUBLIC_FULL,OFFSET_VOLSET_BG);        
+  65   2      
+  66   2                              Menu_Disp_String(Voice_Item_X,Voice_Item_Y,VolORFMTitleTable[0+tc_language*VolORFMTitleNums],Voice_Item
+             -_WordColor,Voice_Item_WordColor_BG);
+  67   2                              tc_flag_dispItem=1;
+  68   2                              break;
+  69   2                      case 2://Ë¢ÐÂFMÉèÖÃ±³¾°¼°ÎÄ×Ö
+  70   2                              LCM_set_view(TFT_IconDispDir,0,0,TFT_H_Size,TFT_V_Size);
+  71   2                              LCD_DisplayIcon(ID_PUBLIC_FULL,OFFSET_FMSET_BG);         
+  72   2                              
+  73   2                              Menu_Disp_String(FM_ModeItem_X,FM_ModeItem_Y,VolORFMTitleTable[1+tc_language*VolORFMTitleNums],FM_ModeI
+             -tem_WordColor,FM_ModeItem_WordColor_BG);
+  74   2                              tc_flag_dispItem=1;
+  75   2                              break;           */
+  76   2                      case 21://mjpeg menu
+  77   2                      case 31://jpeg
+  78   2                      case 41://setting menu
+  79   2      
+  80   2                              if(tc_MenuType==21)
+  81   2                              {
+  82   3                                      tc_ItemNums = MjpegMenuItemNums;
+  83   3                                      p=MjpegMenuTable;       
+  84   3                              }else if(tc_MenuType==31)
+  85   2                              {
+  86   3                                      tc_ItemNums = JpegMenuItemNums;
+  87   3                                      p=JPEGMenuTable;                                        
+  88   3                                      
+  89   3                              }else if(tc_MenuType==41)
+  90   2                              {
+  91   3                                      tc_ItemNums = SettingMenuNums;
+  92   3                                      p=SettingMenuTable; 
+  93   3                              }
+  94   2                              if(tc_RefreshType == REFRESH_ALL)
+  95   2                              {
+  96   3                                      LCM_set_view(TFT_IconDispDir,0,0,TFT_H_Size,TFT_V_Size);
+  97   3                                      LCD_DisplayIcon(ID_PUBLIC_FULL,OFFSET_MENU_1_BG);        //Ë¢ÐÂ±³¾°
+  98   3                              }       
+  99   2                              tw_icon_x = 0;
+ 100   2                              tw_icon_y = ID_SelectOrNot_1_Y_Pos;
+ 101   2                              tw_icon_Hsize = SelectOrNot1_H_Size;
+ 102   2                              tw_icon_Vsize = SelectOrNot1_V_Size;
+ 103   2                              tw_icon_ID = ID_SelectOrNot_1;
+ 104   2                              tc_High = 24;
+ 105   2                              tw_word_x = 20;
+ 106   2                              tw_color_select = WordColor_MenuItem1_Select;
+ 107   2                              tw_color_BG_select = WordColor_MenuItem1_BG;
+ 108   2                              tw_color_Noselect =     WordColor_MenuItem1_NOSelect;
+ 109   2                              tw_color_BG_Noselect = WordColor_MenuItem1_BG;          
+ 110   2                              break;
+ 111   2                      case 22://Mjpeg rep menu
+ 112   2                      case 32://jpeg playmode menu 
+C51 COMPILER V7.10   MENU_HZK2                                                             02/28/2011 10:31:10 PAGE 3   
+
+ 113   2                              if(tc_MenuType == 22)
+ 114   2                              {       
+ 115   3                                      tc_ItemNums = Mjpeg_RepMenuItemNums;
+ 116   3                                      p=MJPEG_REPTable;    
+ 117   3                                      if(tc_RefreshType == REFRESH_ALL)
+ 118   3                                      {
+ 119   4                                              LCM_set_view(TFT_IconDispDir,0,0,TFT_H_Size,TFT_V_Size);
+ 120   4                                              LCD_DisplayIcon(ID_PUBLIC_FULL,OFFSET_MENU_2_BG);        //Ë¢ÐÂ±³¾°      
+ 121   4              
+ 122   4                                              Menu_Disp_String(2,4,MjpegMenuTable[1+tc_language*MjpegMenuItemNums],WordColor_MenuItem2_Title,WordCo
+             -lor_MenuItem2_Title_BG);
+ 123   4                                      }
+ 124   3                              }else
+ 125   2                              {
+ 126   3                                      tc_ItemNums = Jpeg_PlayModeNums;
+ 127   3                                      p=JPEG_PlayModeTable;    
+ 128   3                                      if(tc_RefreshType == REFRESH_ALL)
+ 129   3                                      {
+ 130   4                                              LCM_set_view(TFT_IconDispDir,0,0,TFT_H_Size,TFT_V_Size);
+ 131   4                                              LCD_DisplayIcon(ID_PUBLIC_FULL,OFFSET_MENU_2_BG);        //Ë¢ÐÂ±³¾°      
+ 132   4              
+ 133   4                                              Menu_Disp_String(2,4,JPEGMenuTable[1+tc_language*JpegMenuItemNums],WordColor_MenuItem2_Title,WordColo
+             -r_MenuItem2_Title_BG);
+ 134   4                                      } 
+ 135   3                              }
+ 136   2                              
+ 137   2                              tw_icon_x = 0;
+ 138   2                              tw_icon_y = ID_SelectOrNot_2_Y_Pos;
+ 139   2                              tw_icon_Hsize = SelectOrNot2_H_Size;
+ 140   2                              tw_icon_Vsize = SelectOrNot2_V_Size;
+ 141   2                              tw_icon_ID = ID_SelectOrNot_2;
+ 142   2                              tc_High = ID_SelectOrNot_BaseOffset;//20;
+ 143   2                              tw_word_x = 20;
+ 144   2                              tw_color_select = WordColor_MenuItem2_Select;
+ 145   2                              tw_color_BG_select = WordColor_MenuItem2_BG;
+ 146   2                              tw_color_Noselect =     WordColor_MenuItem2_NOSelect;
+ 147   2                              tw_color_BG_Noselect = WordColor_MenuItem2_BG;          
+ 148   2                              
+ 149   2                              break;
+ 150   2                      case 33: //jpeg Play set
+ 151   2                               tc_flag_dispItem=1;
+ 152   2                              break;
+ 153   2      /////////////////////////setting menu//////////////
+ 154   2                      case 42://language menu
+ 155   2                              
+ 156   2                              if(tc_RefreshType == REFRESH_ALL)
+ 157   2                              {
+ 158   3                                      LCM_set_view(TFT_IconDispDir,0,0,TFT_H_Size,TFT_V_Size);
+ 159   3                                      LCD_DisplayIcon(ID_PUBLIC_FULL,OFFSET_MENU_2_BG);        //Ë¢ÐÂ±³¾°      
+ 160   3      
+ 161   3                                      Menu_Disp_String(2,4,SettingMenuTable[0+tc_language*SettingMenuNums],WordColor_MenuItem2_Title,WordCol
+             -or_MenuItem2_Title_BG);
+ 162   3                              } 
+ 163   2                              #if ((defined TFT_18H) || (defined TFT_15H))
+ 164   2                              if(((tc_RefreshType == REFRESH_PREV)&&(tc_Select==5 || tc_Select==11 || tc_Select==16))||\
+ 165   2                                 ((tc_RefreshType == REFRESH_NEXT)&&(tc_Select==0 || tc_Select==6  || tc_Select==12)) )
+ 166   2                              {       
+ 167   3                                      LCM_set_view(TFT_IconDispDir,0,0,TFT_H_Size,TFT_V_Size);
+ 168   3                                      LCD_DisplayIcon(ID_PUBLIC_FULL,OFFSET_MENU_2_BG);        //Ë¢ÐÂ±³¾°      
+ 169   3      
+ 170   3                                      Menu_Disp_String(2,4,SettingMenuTable[0+tc_language*SettingMenuNums],WordColor_MenuItem2_Title,WordCol
+             -or_MenuItem2_Title_BG);
+C51 COMPILER V7.10   MENU_HZK2                                                             02/28/2011 10:31:10 PAGE 4   
+
+ 171   3                                      tc_RefreshType=REFRESH_ALL;     
+ 172   3                              } 
+ 173   2                              if((tc_Select >= 0)&&(tc_Select <= 5))// ¶à¹úÓïÑÔµÚÒ»¸ö½çÃæ
+ 174   2                              {
+ 175   3                                      tc_ItemNums=6;
+ 176   3                                      p=&Language_table[0];                           
+ 177   3                              }else if((tc_Select >= 6)&&(tc_Select <= 11))// ¶à¹úÓïÑÔµÚ¶þ¸ö½çÃæ
+ 178   2                              {
+ 179   3                                      tc_ItemNums=6;
+ 180   3                                      p=&Language_table[6];
+ 181   3                                      tc_Select-=6;
+ 182   3                              }else if((tc_Select >= 12)&&(tc_Select <= 16)) // ¶à¹úÓïÑÔµÚÈý¸ö½çÃæ
+ 183   2                              {
+ 184   3                                      tc_ItemNums=5;
+ 185   3                                      p=&Language_table[12];
+ 186   3                                      tc_Select-=12;
+ 187   3                              }    
+ 188   2                              #elif defined TFT_18V   
+                                              if (((tc_RefreshType == REFRESH_PREV)&&(tc_Select==6 || tc_Select==13 || tc_Select==16))||\
+                                                      ((tc_RefreshType == REFRESH_NEXT)&&(tc_Select==0 || tc_Select==7  || tc_Select==14)) )
+                                      {       
+                                              LCM_set_view(TFT_IconDispDir,0,0,TFT_H_Size,TFT_V_Size);
+                                              LCD_DisplayIcon(ID_PUBLIC_FULL,OFFSET_MENU_2_BG);        //Ë¢ÐÂ±³¾°      
+              
+                                              Menu_Disp_String(2,4,SettingMenuTable[0+tc_language*SettingMenuNums],WordColor_MenuItem2_Title,WordCol
+             -or_MenuItem2_Title_BG);
+                                              tc_RefreshType=REFRESH_ALL;     
+                                      }
+                                      if((tc_Select >= 0)&&(tc_Select <= 6))// ¶à¹úÓïÑÔµÚÒ»¸ö½çÃæ
+                                      {
+                                              tc_ItemNums=7;
+                                              p=&Language_table[0];                           
+                                      }else if((tc_Select >= 7)&&(tc_Select <= 13))// ¶à¹úÓïÑÔµÚ¶þ¸ö½çÃæ
+                                      {
+                                              tc_ItemNums=7;
+                                              p=&Language_table[7];
+                                              tc_Select-=7;
+                                      }else if((tc_Select >= 14)&&(tc_Select <= 16)) // ¶à¹úÓïÑÔµÚÈý¸ö½çÃæ
+                                      {
+                                              tc_ItemNums=3;
+                                              p=&Language_table[14];
+                                              tc_Select-=14;
+                                      }                       
+                                      #endif
+ 214   2                              tc_language=0;//¶à¹úÓïÑÔ²Ëµ¥ÎÞ¶à¹úÓïÏÔÊ¾
+ 215   2      //-
+ 216   2      
+ 217   2                              tw_icon_x = 0;
+ 218   2                              tw_icon_y = ID_SelectOrNot_2_Y_Pos;
+ 219   2                              tw_icon_Hsize = SelectOrNot2_H_Size;
+ 220   2                              tw_icon_Vsize = SelectOrNot2_V_Size;
+ 221   2                              tw_icon_ID = ID_SelectOrNot_2;
+ 222   2                              tc_High = ID_SelectOrNot_BaseOffset;//20;
+ 223   2                              tw_word_x = 20;
+ 224   2                              tw_color_select = WordColor_MenuItem2_Select;
+ 225   2                              tw_color_BG_select = WordColor_MenuItem2_BG;
+ 226   2                              tw_color_Noselect =     WordColor_MenuItem2_NOSelect;
+ 227   2                              tw_color_BG_Noselect = WordColor_MenuItem2_BG;
+ 228   2                              break;
+ 229   2                               
+ 230   2                      case FWVerTitleType://44: // FW ver 
+ 231   2                              if(tc_RefreshType == REFRESH_ALL)
+C51 COMPILER V7.10   MENU_HZK2                                                             02/28/2011 10:31:10 PAGE 5   
+
+ 232   2                              {
+ 233   3                                      LCM_set_view(TFT_IconDispDir,0,0,TFT_H_Size,TFT_V_Size);
+ 234   3                                      LCD_DisplayIcon(ID_PUBLIC_FULL,OFFSET_FWVer_BG);         //Ë¢ÐÂ±³¾°      
+ 235   3      
+ 236   3                                      Menu_Disp_String(FW_Ver_Start_X,FW_Ver_Start_Y,FW_Ver,WordColor_MenuItem2_Title,WordColor_MenuItem2_Ti
+             -tle_BG);
+ 237   3                                      Menu_Disp_String(FW_Data_Start_X,FW_Data_Start_Y,FW_Data,WordColor_MenuItem2_Title,WordColor_MenuItem2
+             -_Title_BG);
+ 238   3                              }
+ 239   2                              tc_flag_dispItem=1;
+ 240   2                              break;
+ 241   2      #ifdef Contrast_Set
+ 242   2                      case ContrastTitleType://45 // ¶Ô±È¶È
+ 243   2                              if(tc_RefreshType == REFRESH_ALL)
+ 244   2                              {
+ 245   3                                      LCM_set_view(TFT_IconDispDir,0,0,TFT_H_Size,TFT_V_Size);
+ 246   3                                      LCD_DisplayIcon(ID_PUBLIC_FULL,OFFSET_MENU_1_BG);        //Ë¢ÐÂ±³¾°      
+ 247   3      
+ 248   3                                      Menu_Disp_String(FM_ModeItem_X,FM_ModeItem_Y,SettingMenuTable[1+tc_language*SettingMenuNums],FM_ModeIt
+             -em_WordColor,FM_ModeItem_WordColor_BG);
+ 249   3                              }
+ 250   2                              tc_flag_dispItem=1;
+ 251   2                              break;
+ 252   2      #endif
+ 253   2                      case 60://ÎÄ¼þÑ¡Ôñ
+ 254   2                              if(tc_RefreshType == REFRESH_ALL)
+ 255   2                              {
+ 256   3                                      LCM_set_view(TFT_IconDispDir,0,0,TFT_H_Size,TFT_V_Size);
+ 257   3                                      LCD_DisplayIcon(ID_PUBLIC_FULL,OFFSET_MENU_2_BG);        //Ë¢ÐÂ±³¾°      
+ 258   3              
+ 259   3                                      Menu_Disp_String(2,4,JPEGMenuTable[0+tc_language*JpegMenuItemNums],WordColor_MenuItem2_Title,WordColor
+             -_MenuItem2_Title_BG);
+ 260   3                              }
+ 261   2                              tc_flag_dispItem=1;
+ 262   2                              break;  
+ 263   2                      default: 
+ 264   2                              break;
+ 265   2              }
+ 266   1              if(tc_flag_dispItem)
+ 267   1              {  // not disp item 
+ 268   2                      tc_flag_dispItem=0;
+ 269   2                      return;
+ 270   2              }
+ 271   1              for(tc_i=0;tc_i<tc_ItemNums;tc_i++)
+ 272   1              {
+ 273   2                      if(tc_i == tc_Select)
+ 274   2                      {
+ 275   3                              LCM_set_view(TFT_IconDispDir,tw_icon_x,tw_icon_y+tc_High*tc_i,tw_icon_Hsize,tw_icon_Vsize);//ÏÔÊ¾Ñ¡ÖÐµÄ
+             -Ð¡Í¼±ê
+ 276   3                  LCD_DisplayIcon(tw_icon_ID,Select_Offset);
+ 277   3              
+ 278   3                  Menu_Disp_String(tw_word_x,tw_icon_y+tc_High*tc_i,p[tc_i+tc_language*tc_ItemNums],tw_color_sel
+             -ect,tw_color_BG_select);              
+ 279   3                      }else
+ 280   2                      {
+ 281   3                              if(tc_RefreshType == REFRESH_ALL)
+ 282   3                  {  //È«²¿ÏîÄ¿¶¼Ë¢ÐÂ
+ 283   4                      LCM_set_view(TFT_IconDispDir,tw_icon_x,tw_icon_y+tc_High*tc_i,tw_icon_Hsize,tw_icon_Vsize)
+             -; //ÏÔÊ¾Î´Ñ¡ÖÐµÄÐ¡Í¼±ê
+ 284   4                      LCD_DisplayIcon(tw_icon_ID,SelectNot_Offset);   
+ 285   4               
+ 286   4                      Menu_Disp_String(tw_word_x,tw_icon_y+tc_High*tc_i,p[tc_i+tc_language*tc_ItemNums],tw_color
+C51 COMPILER V7.10   MENU_HZK2                                                             02/28/2011 10:31:10 PAGE 6   
+
+             -_Noselect,tw_color_BG_Noselect);  
+ 287   4                  }else if(tc_RefreshType == REFRESH_NEXT)
+ 288   3                  {  //Ö»Ë¢ÐÂµ±Ç°Ñ¡ÖÐÏîÄ¿¼°µ±Ç°ÏîÄ¿µÄÏÂÒ»Ïî  
+ 289   4                      if((tc_i+1 == tc_Select) || (tc_Select == 0))
+ 290   4                      {
+ 291   5                          LCM_set_view(TFT_IconDispDir,tw_icon_x,tw_icon_y+tc_High*tc_i,tw_icon_Hsize,tw_icon_Vs
+             -ize);   //ÏÔÊ¾Î´Ñ¡ÖÐµÄÐ¡Í¼±ê
+ 292   5                          LCD_DisplayIcon(tw_icon_ID,SelectNot_Offset);   
+ 293   5               
+ 294   5                          Menu_Disp_String(tw_word_x,tw_icon_y+tc_High*tc_i,p[tc_i+tc_language*tc_ItemNums],tw_c
+             -olor_Noselect,tw_color_BG_Noselect);   
+ 295   5                       }
+ 296   4                  }else if(tc_RefreshType == REFRESH_PREV)
+ 297   3                  {  //Ö»Ë¢ÐÂµ±Ç°Ñ¡ÖÐÏîÄ¿¼°µ±Ç°ÏîÄ¿µÄÉÏÒ»Ïî
+ 298   4                      if((tc_i-1 == tc_Select) || (tc_Select == tc_ItemNums-1))
+ 299   4                      {
+ 300   5                          LCM_set_view(TFT_IconDispDir,tw_icon_x,tw_icon_y+tc_High*tc_i,tw_icon_Hsize,tw_icon_Vs
+             -ize);   //ÏÔÊ¾Î´Ñ¡ÖÐµÄÐ¡Í¼±ê
+ 301   5                          LCD_DisplayIcon(tw_icon_ID,SelectNot_Offset);   
+ 302   5                          
+ 303   5                          Menu_Disp_String(tw_word_x,tw_icon_y+tc_High*tc_i,p[tc_i+tc_language*tc_ItemNums],tw_c
+             -olor_Noselect,tw_color_BG_Noselect);  
+ 304   5                      }
+ 305   4                      
+ 306   4                  } 
+ 307   3                      }
+ 308   2              }
+ 309   1              gc_refresh_type=0xff;   
+ 310   1                      
+ 311   1      }
+ 312          
+ 313          
+ 314          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   2250    ----
+   CONSTANT SIZE    =   7794    ----
+   XDATA SIZE       =   ----     108
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
