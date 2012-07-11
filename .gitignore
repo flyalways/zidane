@@ -1,6 +1,6 @@
 #EXE/
 mp_slickedit/*
-turnkey_xbb/obj/*
-turnkey_xbb/lst/*
-turnkey_xbb/*.Uv2.bak
-turnkey_xbb/*.opt.bak
+*/turnkey_xbb/obj/*
+*/turnkey_xbb/lst/*
+*/turnkey_xbb/*.Uv2.bak
+*/turnkey_xbb/*.opt.bak
