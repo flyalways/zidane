@@ -1,0 +1,1168 @@
+C51 COMPILER V9.00   FLASH_COMM                                                            07/10/2012 15:51:46 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE FLASH_COMM
+OBJECT MODULE PLACED IN .\obj\Flash_COMM.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE ..\libsource\FLASH\Flash_COMM.C LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDI
+                    -R(..\libsource\header) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\Flash_COMM.lst) OBJECT(.\obj\Flash_COMM.obj)
+
+line level    source
+
+   1          /*
+   2           *                          Sunplus mMedia Inc.
+   3           *
+   4           *   (c) Copyright 2008~, Sunplus mMedia Inc., Hsinchu, Taiwan R.O.C.
+   5           *                          All Right Reserved
+   6           */
+   7          /*! \file       Flash_COMM.c
+   8           *      \brief  
+   9           *
+  10           *      \author jay
+  11           */
+  12          
+  13          #include "SPDA2K.h"
+  14          
+  15          
+  16          extern U8       gc_clock_mode;  //20090526 chiayen add
+  17          
+  18          /***************************************************************************
+  19          * NAME:         void Check_LoadMap(void)
+  20          * DESCRIPTION:
+  21          *     This subroutine is to do the Host Read Sector.
+  22          *     Input  Vars: // SPDA26xx flash  plan
+  23          ***************************************************************************/
+  24          void Check_LoadMap(void){
+  25   1              bit tbt_NeedChangeMap=1;
+  26   1              bit tbt_Disable_Update_Table=0;
+  27   1              data    U8      tc_Old_CLK_Mode;          
+  28   1              xdata   U8      tc_i;
+  29   1              data    U8      gc_PreWhichGroup;
+  30   1              data    U16     tw_FastPage;
+  31   1              for(tc_i=0;tc_i<MAPRAM_NUM;tc_i++){
+  32   2                      if(MAP_Table[tc_i] ==gw_WhichGroup){
+  33   3                              tbt_NeedChangeMap=0;
+  34   3                              gw_NowBMTPoint=tc_i;
+  35   3                              break;
+  36   3                      }
+  37   2              }       
+  38   1              if(tbt_NeedChangeMap){
+  39   2                      gw_NowBMTPoint=(gw_NowBMTPoint+1)&(MAPRAM_NUM-1);
+  40   2                      gc_PreWhichGroup = MAP_Table[gw_NowBMTPoint]; 
+  41   2                      if(gc_PreWhichGroup==0xFF){//沒有使用過的的mapping ram 
+  42   3                              tbt_Disable_Update_Table=1;
+  43   3                      }               
+  44   2              }
+  45   1              if(gw_NowBMTPoint==1){
+  46   2                      Mapping_Table = MAP_1;          // switch table pointer
+  47   2                      Wear_Table    = WEARTAB_1;      // switch table pointer
+  48   2              }
+  49   1              else{
+  50   2                      Mapping_Table = MAP_0;          // switch table pointer
+  51   2                      Wear_Table    = WEARTAB_0;      // switch table pointer
+  52   2              }       
+  53   1              
+  54   1              if(tbt_NeedChangeMap){ //要換表了
+C51 COMPILER V9.00   FLASH_COMM                                                            07/10/2012 15:51:46 PAGE 2   
+
+  55   2                      
+  56   2                      if((FAST_BMTPage_Table[gc_PreWhichGroup]==0)||BMT_KEY[gw_NowBMTPoint]){ //把表寫回Flash
+  57   3                              if(!tbt_Disable_Update_Table){//預防第一次使用時誤認為之前有建過表
+  58   4                                      NAND_ZONE_To_BMT_DBP(gc_PreWhichGroup);                 
+  59   4                                      FDBP.cFDev = BMT.cFDev;                 
+  60   4                                      FDBP.wFBlock= FAST_BMTTable[gc_PreWhichGroup];  
+  61   4                                      tw_FastPage = FAST_BMTPage_Table[gc_PreWhichGroup];                             
+  62   4                                      if(tw_FastPage==H_INFO.wHBLOCKPAGE){
+  63   5                                              Flash_EraseOneBlock_NO_ChkRdy();
+  64   5      //                                      dbprintf("\n Erase FAST_Blcok:%x ,Zone:%bx",FDBP.wFBlock,gc_PreWhichGroup);
+  65   5                                              FAST_BMTPage_Table[gc_PreWhichGroup]=0x00;
+  66   5                                              Wear_Table[FCNT]=Wear_Table[FCNT]+1;
+  67   5                                              FDBP.wFBlock =Mapping_Table[SBK];// 將fast maping block 與 Swap 交換
+  68   5                                              Mapping_Table[SBK] = FAST_BMTTable[gc_PreWhichGroup];
+  69   5                                              FAST_BMTTable[gc_PreWhichGroup]=FDBP.wFBlock;
+  70   5                                              tc_i=Wear_Table[FCNT];    // 將 erase cnt 交換
+  71   5                                              Wear_Table[FCNT] =Wear_Table[SCNT];
+  72   5                                              Wear_Table[SCNT] =tc_i;                         
+  73   5                                              APort_SBlock[0] = Mapping_Table[SBK];
+  74   5                                              APort_SCNT[0] = Wear_Table[SCNT];                       
+  75   5                                      } 
+  76   4                                      tw_FastPage=FAST_BMTPage_Table[gc_PreWhichGroup];
+  77   4                                      FDBP.cFPlane= tw_FastPage&(NAND_INFO.cPLANE_NUM-1);
+  78   4                                      FDBP.wFBlock= FAST_BMTTable[gc_PreWhichGroup];
+  79   4                                      FDBP.wFPage = tw_FastPage/NAND_INFO.cPLANE_NUM;
+  80   4                                      FDBP.cFInAddr = 0;
+  81   4                                      Device_Write_SRAM_Index.WD = MAPRAM_PTR[gw_NowBMTPoint];
+  82   4                                      ZSpare[0]=0xAA; ZSpare[1] = gc_PreWhichGroup;
+  83   4                                      ZSpare[2]=0xFF; ZSpare[3] = Wear_Table[FCNT];                   
+  84   4                                      ZSpare[4]=0xFF; ZSpare[5] = 0xFF;
+  85   4                                      ZSpare[6]=0xFF; ZSpare[7] = 0xFF;                       
+  86   4                                      CHK_Flash_Ready();
+  87   4                                      Flash_Sequent_Write(2,1);//1k with tage
+  88   4                                      FAST_BMTPage_Table[gc_PreWhichGroup]=tw_FastPage+1;
+  89   4                              }
+  90   3                      }   
+  91   2                      BMT_KEY[gw_NowBMTPoint] = 0; // disable BMT updatw Key
+  92   2                      if(FAST_BMTPage_Table[gw_WhichGroup]!=0x00){ //有把mapping寫在flash過
+  93   3                              NAND_ZONE_To_BMT_DBP(gw_WhichGroup);
+  94   3                              FDBP.cFDev = BMT.cFDev;                 
+  95   3                              Device_Read_SRAM_Index.WD = MAPRAM_PTR[gw_NowBMTPoint];
+  96   3                              tw_FastPage=FAST_BMTPage_Table[gw_WhichGroup]-1;
+  97   3                              FDBP.cFPlane= tw_FastPage&(NAND_INFO.cPLANE_NUM-1);
+  98   3                              FDBP.wFBlock= FAST_BMTTable[gw_WhichGroup];     
+  99   3                              FDBP.wFPage = tw_FastPage/NAND_INFO.cPLANE_NUM;
+ 100   3                              FDBP.cFInAddr = 0;                      
+ 101   3                              if(Flash_Sequent_Read(2)){//081024 Jay 萬一ECC Fail 的情況-->再次重建表
+ 102   4      //                              dbprintf("\n Read Fast BMT Fail Zone:%x ,BLK%x", gw_WhichGroup,FDBP.wFBlock);
+ 103   4                                      Flash_EraseOneBlock_NO_ChkRdy();
+ 104   4                                      FAST_BMTPage_Table[gw_WhichGroup]=0x00;
+ 105   4                                      Wear_Table[FCNT]=Wear_Table[FCNT]+1;
+ 106   4                                      FDBP.wFBlock =Mapping_Table[SBK];// 將fast maping block 與 Swap 交換
+ 107   4                                      Mapping_Table[SBK] = FAST_BMTTable[gw_WhichGroup];
+ 108   4                                      FAST_BMTTable[gw_WhichGroup]=FDBP.wFBlock;
+ 109   4                                      tc_i=Wear_Table[FCNT];    // 將 erase cnt 交換
+ 110   4                                      Wear_Table[FCNT] =Wear_Table[SCNT];
+ 111   4                                      Wear_Table[SCNT] =tc_i; 
+ 112   4                                      APort_SBlock[0] = Mapping_Table[SBK];
+ 113   4                                      APort_SCNT[0] = Wear_Table[SCNT]; 
+ 114   4                                      BMT_KEY[gw_NowBMTPoint]= 0x01; //下次需重新更新mapping table
+ 115   4                                      goto Re_Build_Mapping_Table;
+ 116   4                              }
+C51 COMPILER V9.00   FLASH_COMM                                                            07/10/2012 15:51:46 PAGE 3   
+
+ 117   3                      
+ 118   3                      }
+ 119   2                      else{
+ 120   3      Re_Build_Mapping_Table:       //081024 Jay  for mapping table fail
+ 121   3                              tc_Old_CLK_Mode=gc_clock_mode;
+ 122   3                              set_clock_mode(CLOCK_MODE_USB);                                         
+ 123   3                              NAND_ZONE_To_BMT_DBP(gw_WhichGroup);            
+ 124   3                              BMT_KEY[gw_NowBMTPoint]=1;
+ 125   3                              Create_Zone_Lookup_Table();                     
+ 126   3                              set_clock_mode(tc_Old_CLK_Mode);                
+ 127   3                      }
+ 128   2              }
+ 129   1              MAP_Table[gw_NowBMTPoint] = gw_WhichGroup;//同步Ram中的紀錄
+ 130   1              
+ 131   1      }           
+ 132          /***************************************************************************
+ 133          * NAME:         void NAND_ZONE_To_BMT_DBP(U16 tw_ZoneNum)
+ 134          * DESCRIPTION:
+ 135          *          // SPDA26xx flash  plan
+ 136          ***************************************************************************/
+ 137          void NAND_ZONE_To_BMT_DBP(U16 tw_ZoneNum){
+ 138   1              #ifdef HBLOCK_LINEAR_MODE
+ 139   1                      BMT.cFDev = tw_ZoneNum/SYS_ZONE.cDEV_ZONE_NUM;
+ 140   1                      BMT.cFPlane =0; 
+ 141   1                      BMT.wFBlock = BMTTable[BMT.cFDev];
+ 142   1                      BMT.wFPage = tw_ZoneNum%SYS_ZONE.cDEV_ZONE_NUM;
+ 143   1                      BMT.cFInAddr =0;
+ 144   1      
+ 145   1              #else 
+                              BMT.cFDev = tw_ZoneNum%NAND_INFO.cDEVICE_NUM;
+                              BMT.cFPlane =0; 
+                              BMT.wFBlock = BMTTable[BMT.cFDev];
+                              BMT.wFPage = tw_ZoneNum/NAND_INFO.cDEVICE_NUM;
+                              BMT.cFInAddr =0;
+                      #endif  
+ 152   1      }
+ 153          
+ 154          /*********************************************************************************
+ 155          * NAME:              void CHK_Data_Transfer_Done(void)
+ 156          * DESCRIPTION:
+ 157          *********************************************************************************/
+ 158          void CHK_Data_Transfer_Done(void) {
+ 159   1              while (!(DMA_REG[0xC0] & 0x01));                                                        //Wait Data xfer done
+ 160   1              DMA_REG[0xC0] = 0x00;                                                                           //Clear DMA Xfer done interrupt
+ 161   1      }
+ 162          
+ 163          
+ 164          
+ 165          /*********************************************************************************
+ 166          * NAME:                      void CHK_Flash_Ready(void)
+ 167          * DESCRIPTION:
+ 168          *********************************************************************************/
+ 169          void CHK_Flash_Ready(void) {
+ 170   1      
+ 171   1              while (!(DEVICE_REG[0x24] & 0x01));
+ 172   1      }
+ 173          
+ 174          
+ 175          
+ 176          /*********************************************************************************
+ 177          * NAME:              void CHK_NandAutocmp_Done(void)
+ 178          * DESCRIPTION:
+C51 COMPILER V9.00   FLASH_COMM                                                            07/10/2012 15:51:46 PAGE 4   
+
+ 179          *********************************************************************************/
+ 180          void CHK_NandAutocmp_Done(void) {
+ 181   1              while(!(FLASH_REG[0x0F]&0x01));                                                         // Wait Nand Automode Done
+ 182   1              FLASH_REG[0x0F]=0x00;                                                                           // Clear Nand Atyomode done interrupt
+ 183   1      }
+ 184          
+ 185          
+ 186          //! Read a reserve data(DSP or HZK) from flash
+ 187          /*!
+ 188           *      \param  Area            0:DSP   1: HZK
+ 189           *      \param  Offset_Addr     Read sector offset address
+ 190           *      \param  SectorCnt       Read sector number
+ 191           *      \param  Buf_Index       Target Data Buf Address
+ 192           */
+ 193          void DSPHZK_Block_Read(U8 Area,U16 Offset_Addr,U8 SectorCnt,U8 Buf_Index)
+ 194          {
+ 195   1              data    U8  tc_InAddr;
+ 196   1              data    U16     tw_HPage_WD;
+ 197   1              xdata   U16 tw_TargetInx;
+ 198   1              xdata   U16     tw_SourceInx;
+ 199   1              xdata   U16 tw_BlockSize;
+ 200   1              xdata   U8      tc_sts=0;
+ 201   1              
+ 202   1          tw_BlockSize = (gw_PagesPerBlock*gc_InAddrMax);
+ 203   1              gc_LCD_Gobal_J=FDBP.cFDev;
+ 204   1              FDBP.cFDev=0x00;     // CE0
+ 205   1              FDBP.cFPlane = 0;       
+ 206   1          tw_TargetInx = (U16)Buf_Index<<8;
+ 207   1          while(SectorCnt){
+ 208   2                      Device_Read_SRAM_Index.BY[0] = gc_TempFlashBufHB;//0x90
+ 209   2                      Device_Read_SRAM_Index.BY[1] = 0x00;
+ 210   2                      FDBP.cFDev=0x00;
+ 211   2                      tw_HPage_WD = Offset_Addr%tw_BlockSize ;//090820  Jay add
+ 212   2              gc_Flash_Data = Offset_Addr/tw_BlockSize; 
+ 213   2              FDBP.cFPlane = 0;
+ 214   2              if(Area==1){
+ 215   3                      FDBP.wFBlock = HZK_Block_A[gc_Flash_Data]; 
+ 216   3                      }
+ 217   2                      else{
+ 218   3                      FDBP.wFBlock = DSP_Block_B[gc_Flash_Data];              
+ 219   3                      }
+ 220   2                      FDBP.wFPage = (tw_HPage_WD/gc_InAddrMax);  
+ 221   2                      FDBP.wFPage = (FDBP.wFPage%gw_PagesPerBlock);
+ 222   2              tc_InAddr =   (tw_HPage_WD%gc_InAddrMax);    
+ 223   2              FDBP.cFInAddr = (tc_InAddr&0xFE);
+ 224   2                      tc_sts=Flash_ReadPage();        
+ 225   2                      if(tc_InAddr&0x01){
+ 226   3                              tw_SourceInx=(Device_Read_SRAM_Index.WD+0x200);
+ 227   3                              Move_RAM(tw_SourceInx,tw_TargetInx,511);
+ 228   3                      }
+ 229   2                      else{
+ 230   3                              tw_SourceInx=(Device_Read_SRAM_Index.WD+0);
+ 231   3                              Move_RAM(tw_SourceInx,tw_TargetInx,511);
+ 232   3                      }
+ 233   2                      Offset_Addr++;
+ 234   2                      tw_TargetInx+=0x200;
+ 235   2                      SectorCnt--;
+ 236   2              }
+ 237   1      
+ 238   1              if(tc_sts && (!Area))//read data from backup block(only DSP)
+ 239   1              {
+ 240   2                      FDBP.cFDev=0x00;     // CE0
+C51 COMPILER V9.00   FLASH_COMM                                                            07/10/2012 15:51:46 PAGE 5   
+
+ 241   2                      FDBP.cFPlane = 0;       
+ 242   2              tw_TargetInx = (U16)Buf_Index<<8;
+ 243   2              while(SectorCnt){
+ 244   3                              Device_Read_SRAM_Index.BY[0] = gc_TempFlashBufHB;//0x90
+ 245   3                              Device_Read_SRAM_Index.BY[1] = 0x00;
+ 246   3                              FDBP.cFDev=0x00;
+ 247   3                              tw_HPage_WD = Offset_Addr%tw_BlockSize ;//090820  Jay add
+ 248   3                      gc_Flash_Data = Offset_Addr/tw_BlockSize; 
+ 249   3                      FDBP.cFPlane = 0;
+ 250   3                      FDBP.wFBlock = DSP_Block_A[gc_Flash_Data];              
+ 251   3                              FDBP.wFPage = (tw_HPage_WD/gc_InAddrMax);  
+ 252   3                              FDBP.wFPage = (FDBP.wFPage%gw_PagesPerBlock);
+ 253   3                      tc_InAddr =   (tw_HPage_WD%gc_InAddrMax);    
+ 254   3                      FDBP.cFInAddr = (tc_InAddr&0xFE);
+ 255   3                              tc_sts=Flash_ReadPage();        
+ 256   3                              if(tc_InAddr&0x01){
+ 257   4                                      tw_SourceInx=(Device_Read_SRAM_Index.WD+0x200);
+ 258   4                                      Move_RAM(tw_SourceInx,tw_TargetInx,511);
+ 259   4                              }
+ 260   3                              else{
+ 261   4                                      tw_SourceInx=(Device_Read_SRAM_Index.WD+0);
+ 262   4                                      Move_RAM(tw_SourceInx,tw_TargetInx,511);
+ 263   4                              }
+ 264   3                              Offset_Addr++;
+ 265   3                              tw_TargetInx+=0x200;
+ 266   3                              SectorCnt--;
+ 267   3                      }
+ 268   2              }
+ 269   1              FDBP.cFDev=gc_LCD_Gobal_J;
+ 270   1      }
+ 271          
+ 272          /*********************************************************************************
+ 273          * NAME:                      bit Flash_ChkStatus(void)
+ 274          * DESCRIPTION:
+ 275          *********************************************************************************/
+ 276          bit Flash_ChkStatus(void) {
+ 277   1              gc_FlashStatus     = 0x00;
+ 278   1              CHK_Flash_Ready();
+ 279   1              FLASH_REG [0x00] = 0x00;                //強迫進IO Mode     
+ 280   1              DEVICE_REG[0x23] = 0x0A;                //CLE = '1', ALE = '0', nWP = '1', nCE = '0'
+ 281   1              DEVICE_REG[0x20] = 0x70;
+ 282   1              DEVICE_REG[0x23] = 0x02;                //CLE = '0', ALE = '0', nWP = '1', nCE = '0'
+ 283   1              gc_FlashStatus = DEVICE_REG[0x20];
+ 284   1              DEVICE_REG[0x23] = 0x03;                //CLE = '0', ALE = '0', nWP = '1', nCE = '1'
+ 285   1              FLASH_REG [0x00] = 0x01;                //進auto Mode     
+ 286   1              if (gc_FlashStatus & 0x01) {
+ 287   2                      return 1;
+ 288   2              }
+ 289   1              else {
+ 290   2                      return 0;
+ 291   2              }
+ 292   1      }
+ 293          
+ 294          /*********************************************************************************
+ 295          * NAME:                   bit Flash_EraseOneBlock(void)
+ 296          * DESCRIPTION:
+ 297          *********************************************************************************/
+ 298          U8 Flash_EraseOneBlock(void) {  
+ 299   1              CHK_Flash_Ready();
+ 300   1              FLASH_REG[0x06]  = FERASE_CMD1;                                                                 // cmd1
+ 301   1              FLASH_REG[0x07]  = FERASE_CMD2;                                                                 // cmd2 
+ 302   1              FLASH_REG[0x04]  = 0x05;
+C51 COMPILER V9.00   FLASH_COMM                                                            07/10/2012 15:51:46 PAGE 6   
+
+ 303   1              NAND_FBlock_FPage_FBank_To_PhyAddr_NAND();
+ 304   1              FLASH_REG[0x1D] = 0x02;                                                                 // skip FA0 FA1
+ 305   1              CHK_Flash_Ready();
+ 306   1              TRIGGER_FLASH_CMD();
+ 307   1              CHK_NandAutocmp_Done();
+ 308   1              CHK_Flash_Ready();  
+ 309   1              FLASH_REG[0x1D] = 0x00; 
+ 310   1              if (Flash_ChkStatus()& 0x01) {
+ 311   2                      return 1;
+ 312   2              }
+ 313   1              else {
+ 314   2                      return 0;
+ 315   2              }
+ 316   1      }
+ 317          
+ 318          /*********************************************************************************
+ 319          * NAME:                   bit Flash_EraseOneBlock(void)
+ 320          * DESCRIPTION:// SPDA26xx flash  plan
+ 321          *********************************************************************************/
+ 322          void Flash_EraseOneBlock_NO_ChkRdy(void) {      
+ 323   1              
+ 324   1              FLASH_REG[0x06]  = FERASE_CMD1;                                                                 // cmd1
+ 325   1              FLASH_REG[0x07]  = FERASE_CMD2;                                                                 // cmd2 
+ 326   1              FLASH_REG[0x04]  = 0x05;
+ 327   1              NAND_FBlock_FPage_FBank_To_PhyAddr_NAND();
+ 328   1              FLASH_REG[0x1D] = 0x02;                                                                 // skip FA0 FA1
+ 329   1              CHK_Flash_Ready();
+ 330   1              TRIGGER_FLASH_CMD();
+ 331   1              CHK_NandAutocmp_Done();
+ 332   1              FLASH_REG[0x1D] = 0x00; 
+ 333   1              
+ 334   1      }
+ 335          /*********************************************************************************
+ 336          * NAME:          void Flash_MultiBank_Erase(void)
+ 337          * DESCRIPTION:
+ 338          *********************************************************************************/
+ 339          U8 Flash_MultiBank_Erase(U8 tbt_CHK_Rdy)
+ 340          {
+ 341   1              FDBP.wFPage =0;                 
+ 342   1              FDBP.cFPlane =0;                
+ 343   1              Flash_EraseOneBlock_NO_ChkRdy();
+ 344   1              if(tbt_CHK_Rdy)
+ 345   1              {
+ 346   2                      CHK_Flash_Ready();  
+ 347   2                      CHK_NandAutocmp_Done();
+ 348   2                      FLASH_REG[0x1D] = 0x00; 
+ 349   2                      if (Flash_ChkStatus()& 0x01) 
+ 350   2                      {
+ 351   3                              return 1;
+ 352   3                      }
+ 353   2                      else 
+ 354   2                      {
+ 355   3                              return 0;
+ 356   3                      }
+ 357   2              }       
+ 358   1              else
+ 359   1              {
+ 360   2                      return 0;
+ 361   2              }
+ 362   1      }
+ 363          
+ 364          
+C51 COMPILER V9.00   FLASH_COMM                                                            07/10/2012 15:51:46 PAGE 7   
+
+ 365          /*********************************************************************************
+ 366          * NAME:                   void Flash_ReadSpare(U8 cSbyte)  
+ 367          * DESCRIPTION:// SPDA26xx flash  plan  4byte or 8 byte
+ 368          *********************************************************************************/
+ 369          void Flash_ReadSpare(U8 cSbyte) {
+ 370   1          xdata       U8      i;
+ 371   1          data        U8      j;
+ 372   1          data        U8      tc_EndInAddr; 
+ 373   1          Device_Xfer_DataLength.WD = 0x03FF;
+ 374   1              SET_DEVICE_READ();
+ 375   1              ENA_ECC_Decode();
+ 376   1              FLASH_REG[0x06]  = 0x00;                                   // cmd1
+ 377   1              FLASH_REG[0x07]  = 0x30;                                   // cmd2      
+ 378   1              NAND_InAddr_To_Column_NAND();                              // set Column
+ 379   1              NAND_FBlock_FPage_FBank_To_PhyAddr_NAND();                 // set FBank Fblock Fpage
+ 380   1              FLASH_REG[0x1A] = 0x10;                                    // last frag = 1
+ 381   1              FLASH_REG[0x04] = 0x01;                                    // CMD0+ADDR+CMD1
+ 382   1              CHK_Flash_Ready();
+ 383   1              TRIGGER_FLASH_CMD();                                       //               
+ 384   1              CHK_Flash_Ready();
+ 385   1              tc_EndInAddr=cSbyte>>2;
+ 386   1              for(j=0;j<tc_EndInAddr;j++){
+ 387   2                      if(j==(tc_EndInAddr-1)){
+ 388   3                              FLASH_REG[0x1A] = 0x11; 
+ 389   3                      }               
+ 390   2                      else{
+ 391   3                              FLASH_REG[0x1A] = 0x10;
+ 392   3                      } 
+ 393   2                      FLASH_REG[0xA1] = 0x01;
+ 394   2                      Trigger_Data_Transfer_Done();
+ 395   2                      CHK_NandAutocmp_Done();
+ 396   2                      CHK_ECC_Done(); 
+ 397   2                      for(i=0;i<4;i++){
+ 398   3                      ZSpare[(j*4)+i] = FLASH_REG[0x60+i];  //每1k有4 byte 的spare byte
+ 399   3              }
+ 400   2                      
+ 401   2              }       
+ 402   1      }
+ 403          
+ 404          /*********************************************************************************
+ 405          * NAME:                    bit Flash_Sequent_Read(UBYTE Secount)
+ 406          * DESCRIPTION:
+ 407          *   If ECC is Uncorrectable, return TRUE; else return FALSE. 
+ 408          *********************************************************************************/      
+ 409          bit Flash_Sequent_Read(UBYTE Secount){
+ 410   1              bit tbt_ECC_Fail=0;
+ 411   1              Device_Xfer_DataLength.WD = 0x03FF;   
+ 412   1              SET_DEVICE_READ();
+ 413   1              ENA_ECC_Decode();
+ 414   1              FLASH_REG[0x06]  = 0x00;                                                                        // cmd1
+ 415   1              FLASH_REG[0x07]  = 0x30;                                                                        // cmd2 
+ 416   1              NAND_InAddr_To_Column_NAND();                                                           // set Column
+ 417   1              NAND_FBlock_FPage_FBank_To_PhyAddr_NAND();                                      // set FBank Fblock FPage       
+ 418   1              FLASH_REG[0x04] = 0x01;                                                                         // CMD0+ADDR+CMD1
+ 419   1              CHK_Flash_Ready();
+ 420   1              TRIGGER_FLASH_CMD();               
+ 421   1              CHK_Flash_Ready();
+ 422   1              Secount-=2;
+ 423   1              while(Secount){
+ 424   2                      FLASH_REG[0xA1] = 0x01;                                                                 // last flag = 0
+ 425   2                      FLASH_REG[0xA2] &= 0xF3;
+ 426   2                      FLASH_REG[0x1A] = 0x10;
+C51 COMPILER V9.00   FLASH_COMM                                                            07/10/2012 15:51:46 PAGE 8   
+
+ 427   2                      Trigger_Data_Transfer_Done();    
+ 428   2                      if(CHK_ECC_Done()){
+ 429   3                              tbt_ECC_Fail=1;
+ 430   3                      }
+ 431   2                      CHK_NandAutocmp_Done();
+ 432   2                      Device_Read_SRAM_Index.BY[0] += 0x04;  
+ 433   2                      Device_Read_SRAM_Index.BY[1] =  0x00;
+ 434   2                      SET_DEVICE_READ();              
+ 435   2                      Secount-=2;
+ 436   2              }
+ 437   1              FLASH_REG[0xA1] = 0x01;
+ 438   1              FLASH_REG[0xA2] &= 0xF3;
+ 439   1              FLASH_REG[0x1A] = 0x11;                                                                         // last flag = 1
+ 440   1              Trigger_Data_Transfer_Done();    
+ 441   1              if(CHK_ECC_Done()){
+ 442   2                      tbt_ECC_Fail=1;
+ 443   2              }
+ 444   1              CHK_NandAutocmp_Done();
+ 445   1              FLASH_REG[0xA1] = 0x00; 
+ 446   1              return tbt_ECC_Fail;
+ 447   1              
+ 448   1              
+ 449   1              
+ 450   1      }
+ 451          /*********************************************************************************
+ 452          * NAME:               void Flash_Sequent_Write(UBYTE Secount,bit spare )
+ 453          * DESCRIPTION://以page為單位
+ 454          *********************************************************************************/
+ 455          void Flash_Sequent_Write(UBYTE Secount,bit spare ) {    
+ 456   1              data    U8 i;   
+ 457   1              Device_Xfer_DataLength.WD = 0x03FF;     
+ 458   1              DMA_REG[0xB1] = 0x01 ;                                                                          // Enable DMA Auto address account
+ 459   1              SET_DEVICE_WRITE();
+ 460   1              ENA_ECC_Encode();
+ 461   1              FLASH_REG[0x06]  = 0x80;                                                                        // cmd1
+ 462   1              NAND_InAddr_To_Column_NAND();                                                           // set Column
+ 463   1              NAND_FBlock_FPage_FBank_To_PhyAddr_NAND();                                      // set FBank Fblock FPage
+ 464   1              CHK_Flash_Ready();
+ 465   1              FLASH_REG[0x04] = 0x0F;                                                                         // Radom write phase
+ 466   1              TRIGGER_FLASH_CMD();
+ 467   1              Secount-=2 ;
+ 468   1              if(spare){
+ 469   2                      FLASH_REG[0x60]=ZSpare[0];
+ 470   2                      FLASH_REG[0x61]=ZSpare[1];
+ 471   2                      FLASH_REG[0x62]=ZSpare[2];
+ 472   2                      FLASH_REG[0x63]=ZSpare[3];              
+ 473   2              }
+ 474   1              while(Secount){             
+ 475   2                      if(spare){
+ 476   3                              for(i=0;i<4; i++){
+ 477   4                              FLASH_REG[0x60+i]=ZSpare[(FDBP.cFInAddr&0x03)*2+i];
+ 478   4                      } 
+ 479   3                    
+ 480   3                      }                               
+ 481   2                      FLASH_REG[0x1A] = 0x10;                                                                         // last flag = 1
+ 482   2                      FLASH_REG[0xA0] = 0x01;                                                                 //Start Encode RS-Code                
+ 483   2                      Trigger_Data_Transfer_Done();
+ 484   2                      while (FLASH_REG[0xA2] & 0x40);                                                 // check Ecc done
+ 485   2                  CHK_NandAutocmp_Done();
+ 486   2                      Secount-=2;
+ 487   2                      FDBP.cFInAddr+=2;
+ 488   2              }
+C51 COMPILER V9.00   FLASH_COMM                                                            07/10/2012 15:51:46 PAGE 9   
+
+ 489   1              if(spare){
+ 490   2                      for(i=0;i<4; i++){
+ 491   3                      FLASH_REG[0x60+i]=ZSpare[(FDBP.cFInAddr&0x03)*2+i];
+ 492   3                      } 
+ 493   2                    
+ 494   2              }
+ 495   1              FLASH_REG[0x1A] = 0x11;                                                                         // last flag = 1
+ 496   1              FLASH_REG[0xA0] = 0x01;                                                                         //Start Encode RS-Code
+ 497   1              Trigger_Data_Transfer_Done();
+ 498   1              while (FLASH_REG[0xA2] & 0x40);
+ 499   1              CHK_NandAutocmp_Done();
+ 500   1              FLASH_REG[0x06]  = 0x10;                                                                        // CMD1
+ 501   1              FLASH_REG[0x04] = 0x08;                                                                         // CMD phase
+ 502   1              TRIGGER_FLASH_CMD();    
+ 503   1              FLASH_REG[0xA0]  = 0x00; 
+ 504   1              DMA_REG[0xB1] = 0x00 ;                                                                          // Disable DMA Auto address account
+ 505   1      }
+ 506          
+ 507          
+ 508          /******************************************************* 
+ 509          * NAME:            void Flash_State_Initial(void)
+ 510          * DESCRIPTION:// SPDA26xx flash  plan
+ 511          ********************************************************/
+ 512          void Flash_State_Initial(void){
+ 513   1              xdata   U8 tc_FMAP;
+ 514   1              DEVICE_REG[0x00] = 0x01;                                // 0x00=none ; 0x01= Flash ; 0x03 = CF; 0x04 =SPI ; 0x06 = SD ; 0x07 = MS
+ 515   1          //DEVICE_REG[0x21]    = 0x12;                               // [3..0]Low flash strobe; [7..4] High flash strobe     
+ 516   1              FLASH_REG[0x00]  = 0x01;                                // Enable Flash auto mode
+ 517   1              FLASH_REG[0x02]  = 0x52;                                // Flash signal strobe counter[3..0]; Check flash ready delay[7..4] 
+ 518   1              FLASH_REG[0xA3]  = 0x01;                                // Enable ECC
+ 519   1              
+ 520   1              if(!NAND_INFO.cECC_MODE){       //0-->24 bit 1-->16bit
+ 521   2                  FLASH_REG[0xA5] = 0x0A;     //24 bit ECC    
+ 522   2              }
+ 523   1              else{
+ 524   2                  FLASH_REG[0xA5] = 0x08;     // 16 bit ECC       
+ 525   2              }       
+ 526   1          if(NAND_INFO.cFMAP&0xF0){// 
+ 527   2              FLASH_REG[0x0D] =0xF0;  // disable auot Fmap
+ 528   2          }
+ 529   1          else{      
+ 530   2              tc_FMAP = NAND_INFO.cFMAP&0x0F;
+ 531   2              FLASH_REG[0x0D]  = (tc_FMAP<<4)|0x03;              // Enable Fmap
+ 532   2          }
+ 533   1          DEVICE_REG[0x21]    = gc_RW_Strobe;
+ 534   1          FLASH_REG[0x00] =0x01;
+ 535   1      
+ 536   1      }
+ 537          
+ 538          /*********************************************************************************
+ 539          * NAME:                      void FlashReset(void)
+ 540          * DESCRIPTION:
+ 541          *********************************************************************************/
+ 542          void FlashReset(void) {
+ 543   1          CHK_Flash_Ready();
+ 544   1              FLASH_REG[0x06] = 0xFF;
+ 545   1              FLASH_REG[0x04] = 0x08;
+ 546   1              FLASH_REG[0x03] = 0x01;
+ 547   1              CHK_NandAutocmp_Done(); 
+ 548   1              CHK_Flash_Ready();
+ 549   1              DEVICE_REG[0x23] = 0x03;        //CLE = '0', ALE = '0', nWP = '1', nCE = '1'
+ 550   1      }
+C51 COMPILER V9.00   FLASH_COMM                                                            07/10/2012 15:51:46 PAGE 10  
+
+ 551          
+ 552          /*********************************************************************************
+ 553          * NAME: void LBA2DBP (void)
+ 554          * DESCRIPTION:
+ 555          *       LBA -> gw_CylTemp, HPage(轉換的過程與Flash本身的gc_BanksPerDevice, gc_PagesPerBlock有關)
+ 556          *    
+ 557          *     
+ 558          *********************************************************************************/
+ 559          void LBA2DBP(void) {
+ 560   1      
+ 561   1              if(gbt_enableCDROM && (gc_bCBWLUN==2)){//09/04/24,joyce for CD-ROM
+ 562   2                      LBA.LW=LBA.LW+Capacity_Remove.LW; 
+ 563   2              }
+ 564   1      
+ 565   1              HBlock.WD  = LBA.LW/H_INFO.wHBLOCKSECTOR;
+ 566   1              HPage.WD   = LBA.LW%H_INFO.wHBLOCKSECTOR;
+ 567   1              gc_HInAddr = HPage.WD&(NAND_INFO.cINADDRMAX-1); 
+ 568   1              HPage.WD   = HPage.WD/NAND_INFO.cINADDRMAX;                     
+ 569   1              LBlock.WD  = HBlock.WD;// for swap mode 
+ 570   1      }
+ 571          
+ 572          /*********************************************************************************
+ 573          * NAME:           void NAND_FBlock_FPage_FBank_To_PhyAddr_NAND(void)
+ 574          * DESCRIPTION:
+ 575          *********************************************************************************/
+ 576          void NAND_FBlock_FPage_FBank_To_PhyAddr_NAND(void) {
+ 577   1              unionWORD tw_FBlock;
+ 578   1          xdata       U8 tc_FMAP;
+ 579   1              DEVICE_REG[0x0F] =FDBP.cFDev;   
+ 580   1              if(NAND_INFO.cFMAP&0xF0){
+ 581   2              tc_FMAP = (NAND_INFO.cFMAP&0xF0)>>4;
+ 582   2              switch(tc_FMAP){
+ 583   3                      case 1:         // 256 page  block 
+ 584   3                              //tw_FBlock.WD = FDBP.wFBlock+FDBP.cFPlane;// support 2 plane mode                      
+ 585   3                              tw_FBlock.WD = FDBP.wFBlock;//only 1 plane 
+ 586   3                              FLASH_REG[0x0A]= FDBP.wFPage;  
+ 587   3                              FLASH_REG[0x09]= tw_FBlock.BY[1];
+ 588   3                              FLASH_REG[0x08]= tw_FBlock.BY[0];                       
+ 589   3                                      break;
+ 590   3                              default: 
+ 591   3                                      break;
+ 592   3                      }                     
+ 593   2          }
+ 594   1          else{
+ 595   2              //tw_FBlock.WD = FDBP.wFBlock+FDBP.cFPlane;
+ 596   2              tw_FBlock.WD = FDBP.wFBlock;//only 1 plane
+ 597   2              FLASH_REG[0x0A] = FDBP.wFPage;                                             // FPage
+ 598   2                  FLASH_REG[0x09] = tw_FBlock.BY[1];                                      // FBlock_L 
+ 599   2                  FLASH_REG[0x08] = tw_FBlock.BY[0];                                      // FBlock_H
+ 600   2                      FLASH_REG[0x1C] = 0;                                             // FBank  
+ 601   2              }
+ 602   1              if(NAND_INFO.cADDR_CYCLE==0x04){        // 4 cycle addr
+ 603   2                      FLASH_REG[0x01] = 0x30|0x01;
+ 604   2              }
+ 605   1              else{
+ 606   2                      FLASH_REG[0x01] = (0x40|0x01);  // 5 cycle addr
+ 607   2              }         
+ 608   1      }
+ 609          
+ 610          /*********************************************************************************
+ 611          * NAME:           void NAND_InAddr_To_Column_NAND(void)
+ 612          * DESCRIPTION:
+C51 COMPILER V9.00   FLASH_COMM                                                            07/10/2012 15:51:46 PAGE 11  
+
+ 613          *********************************************************************************/
+ 614          void NAND_InAddr_To_Column_NAND(void) {
+ 615   1               unionWORD tw_FColAddr;
+ 616   1          if((FLASH_REG[0xA5]&0x03)==0x02){ //24bit
+ 617   2              tw_FColAddr.WD =  (U16)(FDBP.cFInAddr>>1)*1070;//(1024+46)        
+ 618   2          }
+ 619   1          else{                             //16bit
+ 620   2             tw_FColAddr.WD =  (U16)(FDBP.cFInAddr>>1)*1056;//(1024+32)
+ 621   2          }   
+ 622   1              FLASH_REG[0x0C] = tw_FColAddr.BY[1];
+ 623   1              FLASH_REG[0x0B] = tw_FColAddr.BY[0]; 
+ 624   1      }
+ 625          
+ 626          
+ 627          /*********************************************************************************
+ 628          * NAME:                     void SET_DEVICE_READ(void)
+ 629          * DESCRIPTION:
+ 630          * Global Variable: Device_Xfer_DataLength.WD, Device_Read_SRAM_Index.WD
+ 631          *********************************************************************************/
+ 632          void SET_DEVICE_READ(void) {
+ 633   1              DMA_REG[0x01] = DEVICE2SRAM;                                                            //FLASH to SRAM
+ 634   1              DMA_REG[0x03] = Device_Xfer_DataLength.BY[0];                           //傳送長度.
+ 635   1              DMA_REG[0x02] = Device_Xfer_DataLength.BY[1];
+ 636   1              CPU_REG[0x15] = Device_Read_SRAM_Index.BY[0];                           //SRAM Index
+ 637   1              CPU_REG[0x14] = Device_Read_SRAM_Index.BY[1];
+ 638   1      }
+ 639          
+ 640          /*********************************************************************************
+ 641          * NAME:                     void SET_DEVICE_READ_TO_DRAM(void)
+ 642          * DESCRIPTION:
+ 643          * Global Variable: Device_Xfer_DataLength.WD, Device_Read_SRAM_Index.WD
+ 644          *********************************************************************************/
+ 645          void SET_DEVICE_READ_TO_DRAM(void){
+ 646   1              DMA_REG[0x01] = DEVICE2DRAM;                                                    //FLASH to DERAM
+ 647   1              DMA_REG[0x03] = Device_Xfer_DataLength.BY[0];                           //傳送長度.
+ 648   1              DMA_REG[0x02] = Device_Xfer_DataLength.BY[1];               //
+ 649   1              CPU_REG[0x19] = Device_Read_SRAM_Index.BY[0];               //DRAM Index
+ 650   1              CPU_REG[0x18] = Device_Read_SRAM_Index.BY[1];               //  
+ 651   1                      
+ 652   1      }
+ 653          
+ 654          /*********************************************************************************
+ 655          * NAME:                     void SET_DEVICE_WRITE(void)
+ 656          * DESCRIPTION:
+ 657          * Global Variable: Device_Xfer_DataLength.WD, Device_Write_SRAM_Index.WD
+ 658          *********************************************************************************/
+ 659          void SET_DEVICE_WRITE(void) {
+ 660   1              DMA_REG[0x01] = SRAM2DEVICE;                                                            //SRAM to FLASH
+ 661   1              DMA_REG[0x03] = Device_Xfer_DataLength.BY[0];                           //傳送長度.
+ 662   1              DMA_REG[0x02] = Device_Xfer_DataLength.BY[1];
+ 663   1              CPU_REG[0x13] = Device_Write_SRAM_Index.BY[0];                          //SRAM Index
+ 664   1              CPU_REG[0x12] = Device_Write_SRAM_Index.BY[1];
+ 665   1      }  
+ 666          
+ 667          /*********************************************************************************
+ 668          * NAME:                   void SetHBlockToHDev(void)
+ 669          * DESCRIPTION:
+ 670          
+ 671          *********************************************************************************/
+ 672          void SetHBlockToHDev(void) {
+ 673   1              #ifdef HBLOCK_LINEAR_MODE //HBlock  linear mode
+ 674   1              gw_WhichGroup=HBlock.WD/SYS_ZONE.wZONE_SIZE;
+C51 COMPILER V9.00   FLASH_COMM                                                            07/10/2012 15:51:46 PAGE 12  
+
+ 675   1              HBlock.WD = HBlock.WD%SYS_ZONE.wZONE_SIZE;
+ 676   1              gc_HDev=gw_WhichGroup/SYS_ZONE.cDEV_ZONE_NUM;
+ 677   1              if( gc_HDev >= NAND_INFO.cDEVICE_NUM) {
+ 678   2                  gc_ErrorCode = ID_NOT_FND;
+ 679   2              }
+ 680   1              #else  // HBlock swap mode
+                      U16 tw_Big_HBlock =0;
+                      U8  tc_Small_HBlock;
+                      U8  tc_Big_HPage;
+                      
+                      tw_Big_HBlock = LBlock.WD/SWAP_HBLOCK_SIZE;//   先轉換成基本swap mode 單位
+                      tc_Small_HBlock = LBlock.WD%SWAP_HBLOCK_SIZE;
+                      tc_Big_HPage = tw_Big_HBlock/SYS_ZONE.cTOTALZONE_NUM;
+                      
+                      gw_WhichGroup=tw_Big_HBlock%SYS_ZONE.cTOTALZONE_NUM;
+                      HBlock.WD= (tc_Big_HPage*SWAP_HBLOCK_SIZE)+tc_Small_HBlock;
+                      gc_HDev=gw_WhichGroup%NAND_INFO.cDEVICE_NUM;
+                      if( HBlock.WD >= SYS_ZONE.wZONE_SIZE) {
+                          gc_ErrorCode = ID_NOT_FND;
+                      }
+                      #endif 
+ 696   1              
+ 697   1              
+ 698   1              
+ 699   1      }
+ 700          
+ 701          /*********************************************************************************
+ 702          * NAME:                void SetHBlock_To_WhichGroup(void)
+ 703          * DESCRIPTION:
+ 704          *********************************************************************************/
+ 705          void SetHBlock_To_WhichGroup(void) {
+ 706   1              #ifdef HBLOCK_LINEAR_MODE //Hblock Linear mode 
+ 707   1              
+ 708   1              if(HBlock.WD == SYS_ZONE.wZONE_SIZE) {  //必須更換Zone
+ 709   2                      HBlock.WD = 0;                  //重新歸零
+ 710   2                  gw_WhichGroup++;                    //下一個Zone
+ 711   2                  gc_HDev=gw_WhichGroup/SYS_ZONE.cDEV_ZONE_NUM;
+ 712   2                      if( gc_HDev >= NAND_INFO.cDEVICE_NUM) {
+ 713   3                      gc_ErrorCode = ID_NOT_FND;
+ 714   3                      }
+ 715   2              }
+ 716   1              #else
+                       //HBlock Swap mode
+                      U16 tw_Big_HBlock =0;
+                      U8  tc_Small_HBlock;
+                      U8  tc_Big_HPage;
+                      
+                      tw_Big_HBlock = LBlock.WD/SWAP_HBLOCK_SIZE;//   先轉換成基本swap mode 單位
+                      tc_Small_HBlock = LBlock.WD%SWAP_HBLOCK_SIZE;
+                      tc_Big_HPage = tw_Big_HBlock/SYS_ZONE.cTOTALZONE_NUM;
+                      
+                      gw_WhichGroup=tw_Big_HBlock%SYS_ZONE.cTOTALZONE_NUM;
+                      HBlock.WD= (tc_Big_HPage*SWAP_HBLOCK_SIZE)+tc_Small_HBlock;
+                      gc_HDev=gw_WhichGroup%NAND_INFO.cDEVICE_NUM;
+                      if( HBlock.WD >= SYS_ZONE.wZONE_SIZE) {
+                          gc_ErrorCode = ID_NOT_FND;
+                      }
+                      #endif
+ 733   1      
+ 734   1      }
+ 735          
+ 736          
+C51 COMPILER V9.00   FLASH_COMM                                                            07/10/2012 15:51:46 PAGE 13  
+
+ 737          /*********************************************************************************
+ 738          * NAME:                 void Trigger_Data_Transfer(void)
+ 739          * DESCRIPTION:
+ 740          *********************************************************************************/
+ 741          void Trigger_Data_Transfer(void) {
+ 742   1              DMA_REG[0xC0] = 0x00;                                                                           //Clear DMA Xfer done interrupt
+ 743   1              DMA_REG[0xB0] = 0x01;                                                                           //Trigger Data Xfer
+ 744   1      }
+ 745          
+ 746          
+ 747          /*********************************************************************************
+ 748          * NAME:                  void TRIGGER_FLASH_CMD(void)
+ 749          * DESCRIPTION:
+ 750          * Global Variable: gc_Flash_CMD2
+ 751          *********************************************************************************/
+ 752          void TRIGGER_FLASH_CMD(void) {
+ 753   1              FLASH_REG[0x03] = 0x01; 
+ 754   1              while(FLASH_REG[0x03]);
+ 755   1      }
+ 756          
+ 757          
+ 758          /*********************************************************************************
+ 759          * NAME:            void TRIGGER_FLASH_CMD_COL_ADDR_CMD(void)
+ 760          * DESCRIPTION:
+ 761          * Global Variable: gc_Flash_CMD1, FCOL_ADDR.WD, gc_Flash_CMD2
+ 762          *********************************************************************************/
+ 763          void TRIGGER_FLASH_CMD_COL_ADDR_CMD(void) {
+ 764   1              FLASH_REG[0x06]  = gc_Flash_CMD1;                                                       // cmd1
+ 765   1              FLASH_REG[0x07]  = gc_Flash_CMD2;                                                       // cmd2 
+ 766   1              NAND_InAddr_To_Column_NAND();                                                           // set Column
+ 767   1              NAND_FBlock_FPage_FBank_To_PhyAddr_NAND();                                      // set FBank Fblock FPage       
+ 768   1              FLASH_REG[0x04] = gc_Flash_CMD_Type;                                            // CMD0+ADDR+CMD1       
+ 769   1              CHK_Flash_Ready();
+ 770   1              FLASH_REG[0x03] = 0x01;                                         
+ 771   1      }
+ 772          
+ 773          //! erase UserData block
+ 774          /*!
+ 775           *      \param  Block_index     index of userdata block
+ 776           */
+ 777          U8 UserData_Block_Erase(U8 Block_index)
+ 778          {
+ 779   1              if(Block_index >= User_Block_Num)
+ 780   1              {
+ 781   2                      //dbprintf("over \n");
+ 782   2                      return 1;
+ 783   2              }
+ 784   1              gc_LCD_Gobal_J=FDBP.cFDev;
+ 785   1              FDBP.cFDev=0x00;
+ 786   1              FDBP.cFPlane =0;
+ 787   1              FDBP.wFBlock = UserData_Block[Block_index];
+ 788   1              FDBP.wFPage =0;
+ 789   1              if(FDBP.wFBlock==0x00 || FDBP.wFBlock==0xffff)
+ 790   1              {
+ 791   2      //              dbprintf("error user block \n");
+ 792   2                      FDBP.cFDev=gc_LCD_Gobal_J;
+ 793   2                      return 1;
+ 794   2              } 
+ 795   1              Flash_EraseOneBlock();
+ 796   1      
+ 797   1              FDBP.cFDev=gc_LCD_Gobal_J;
+ 798   1              return 0;
+C51 COMPILER V9.00   FLASH_COMM                                                            07/10/2012 15:51:46 PAGE 14  
+
+ 799   1      }
+ 800          
+ 801          //! Read UserData data from flash
+ 802          /*!
+ 803           *      \param  Block_index     index of userdata block
+ 804           *      \param  Sector_Addr     Read sector address
+ 805           *      \param  SectorCnt       Read sector number
+ 806           *      \param  Buf_Index       Target Data Buf Address
+ 807           */
+ 808          U8 UserData_Block_Read(U8 Block_index,U16 Sector_Addr,U8 SectorCnt,U8 Buf_Index)
+ 809          {
+ 810   1              data    U8      tc_sts=0;
+ 811   1              data    U8  tc_InAddr;
+ 812   1              xdata   U16 tw_TargetInx;
+ 813   1              data    U16     tw_SourceInx;
+ 814   1              data    U16     tw_HPage_WD;
+ 815   1              data    U16     tw_SectCnt = 0;
+ 816   1              if( Block_index >= User_Block_Num)
+ 817   1              {
+ 818   2                      //dbprintf("over \n");
+ 819   2                      return 1;
+ 820   2              }
+ 821   1              gc_LCD_Gobal_J=FDBP.cFDev;
+ 822   1              tw_TargetInx = (U16)Buf_Index<<8;
+ 823   1              while(SectorCnt)
+ 824   1              {
+ 825   2                      if(Buf_Index>=0xAC)
+ 826   2                      {
+ 827   3                              Device_Read_SRAM_Index.BY[0] = gc_TempFlashBufHB;       // 0x90
+ 828   3                      }
+ 829   2                      else
+ 830   2                      {
+ 831   3                              Device_Read_SRAM_Index.BY[0] = 0xAC;
+ 832   3                      }
+ 833   2                      Device_Read_SRAM_Index.BY[1] = 0x00;
+ 834   2                      FDBP.cFDev=0x00;
+ 835   2                      tw_HPage_WD = Sector_Addr;
+ 836   2              gc_Flash_Data = Sector_Addr/gw_DataBlockSize; 
+ 837   2              FDBP.cFPlane = 0;
+ 838   2                      FDBP.wFBlock = UserData_Block[Block_index]; 
+ 839   2              FDBP.wFPage = (tw_HPage_WD/gc_InAddrMax);  
+ 840   2                      FDBP.wFPage = (FDBP.wFPage%gw_PagesPerBlock);
+ 841   2              tc_InAddr =   (tw_HPage_WD%gc_InAddrMax);    
+ 842   2              FDBP.cFInAddr = (tc_InAddr&0xFE);
+ 843   2                      tc_sts=Flash_ReadPage();        
+ 844   2                      if(tc_InAddr&0x01){
+ 845   3                              tw_SourceInx=(Device_Read_SRAM_Index.WD+0x200);
+ 846   3                              Move_RAM(tw_SourceInx,tw_TargetInx,511);
+ 847   3                      }
+ 848   2                      else
+ 849   2                      {
+ 850   3                              tw_SourceInx=(Device_Read_SRAM_Index.WD+0);
+ 851   3                              Move_RAM(tw_SourceInx,tw_TargetInx,511);
+ 852   3                      }
+ 853   2      
+ 854   2                      Sector_Addr++;
+ 855   2                      tw_TargetInx+=0x200;
+ 856   2                      SectorCnt--;
+ 857   2              }
+ 858   1              
+ 859   1              FDBP.cFDev=gc_LCD_Gobal_J;
+ 860   1              if(tc_sts)
+C51 COMPILER V9.00   FLASH_COMM                                                            07/10/2012 15:51:46 PAGE 15  
+
+ 861   1              {
+ 862   2                      //dbprintf("ECC \n");
+ 863   2                      return 1;
+ 864   2              }
+ 865   1              else
+ 866   1              {
+ 867   2                      return 0;
+ 868   2              }
+ 869   1      }
+ 870          
+ 871          //! Write UserData data from flash
+ 872          /*!
+ 873           *      \param  Block_index     index of userdata block
+ 874           *      \param  Sector_Addr     write sector address
+ 875           *      \param  SectorCnt       write sector number
+ 876           *      \param  Buf_Index       Target Data Buf Address
+ 877           */
+ 878          U8 UserData_Block_Write(U8 Block_index,U16 Sector_Addr,U8 SectorCnt,U8 Buf_Index)
+ 879          {
+ 880   1              xdata   U8  tc_InAddr;
+ 881   1              data    U8 tc_XferCnt;
+ 882   1              data    U16 tw_HPage_WD;
+ 883   1              gc_LCD_Gobal_J=FDBP.cFDev;
+ 884   1              if(Block_index >= User_Block_Num)
+ 885   1              {
+ 886   2                      //dbprintf("over \n");
+ 887   2                      return 1;
+ 888   2              }
+ 889   1              if(SectorCnt&0x01){
+ 890   2                      tc_XferCnt = SectorCnt+1;
+ 891   2              }
+ 892   1                      
+ 893   1              else{
+ 894   2                      tc_XferCnt =SectorCnt;
+ 895   2              }
+ 896   1              Device_Write_SRAM_Index.BY[0] = Buf_Index;
+ 897   1              Device_Write_SRAM_Index.BY[1] = 0x00;
+ 898   1              FDBP.cFDev=0x00;
+ 899   1              tw_HPage_WD = Sector_Addr;
+ 900   1          gc_Flash_Data = Sector_Addr/gw_DataBlockSize; 
+ 901   1          FDBP.cFPlane = 0;
+ 902   1              FDBP.wFBlock = UserData_Block[Block_index]; 
+ 903   1          FDBP.wFPage = (tw_HPage_WD/gc_InAddrMax);  
+ 904   1              FDBP.wFPage = (FDBP.wFPage%gw_PagesPerBlock);
+ 905   1          tc_InAddr = (tw_HPage_WD%gc_InAddrMax);
+ 906   1          FDBP.cFInAddr =(tc_InAddr&0xFE);
+ 907   1          Flash_Sequent_Write(tc_XferCnt,0);
+ 908   1              
+ 909   1              FDBP.cFDev=gc_LCD_Gobal_J;
+ 910   1              return 0;
+ 911   1      }
+ 912          
+ 913          /*********************************************************************************
+ 914          * NAME:                      bit CHK_ECC_Done(void)
+ 915          * DESCRIPTION:
+ 916          *********************************************************************************/
+ 917          bit CHK_ECC_Done(void) {
+ 918   1               gc_ECC_Error_Bit =0;
+ 919   1          while (FLASH_REG[0xA2] & 0x01);                            // check Ecc done
+ 920   1              if (FLASH_REG[0xA2] & 0x04) {                              // Error Bit Occur, correct it
+ 921   2                      if (FLASH_REG[0xA2] & 0x08) {                          // Un-Correctable Error
+ 922   3                              gbt_ECC_Fail = 1;
+C51 COMPILER V9.00   FLASH_COMM                                                            07/10/2012 15:51:46 PAGE 16  
+
+ 923   3                              gc_ECC_Error_Bit = 25;               
+ 924   3                      }
+ 925   2                      else{
+ 926   3                              gbt_ECC_Fail = 0;
+ 927   3                              gc_ECC_Error_Bit = FLASH_REG[0xA7];
+ 928   3                      }
+ 929   2                                      
+ 930   2                      FLASH_REG[0xA2] &= 0xF3;  
+ 931   2              }
+ 932   1              else {
+ 933   2                      gbt_ECC_Fail = 0;
+ 934   2                      gc_ECC_Error_Bit =0;
+ 935   2              }
+ 936   1              return gbt_ECC_Fail;    
+ 937   1      }    
+ 938              
+ 939          
+ 940              
+ 941          /*********************************************************************************
+ 942          * NAME:                    void  ENA_ECC_Decode(void)
+ 943          * DESCRIPTION:*    // SPDA26xx flash  plan
+ 944          *********************************************************************************/
+ 945          void  ENA_ECC_Decode(void){
+ 946   1              DEVICE_REG[0xA0] = 0x01;                                   // Reset ECC  
+ 947   1              FLASH_REG[0xA3]  = 0x01;                                   // Enable ECC 
+ 948   1              FLASH_REG[0xA0]  = 0x00;                                       // Disable Encode RS-Code
+ 949   1              FLASH_REG[0xA1]  = 0x01;                                   // Start Decode RS-Code
+ 950   1              FLASH_REG[0xA2] &= 0xF3;                                   // Clear ECC fail register
+ 951   1      }
+ 952          /*********************************************************************************
+ 953          * NAME:                    void  ENA_ECC_Encode(void)
+ 954          * DESCRIPTION:* // SPDA26xx flash  plan    
+ 955          /*********************************************************************************/
+ 956          void  ENA_ECC_Encode(void){
+ 957   1              DEVICE_REG[0xA0] = 0x01;                                   // Reset ECC  
+ 958   1              FLASH_REG[0xA3]  = 0x01;                                   // Enable ECC 
+ 959   1              FLASH_REG[0xA0]  = 0x01;                                       // Disable Encode RS-Code
+ 960   1              FLASH_REG[0xA1]  = 0x00;                                   // Start Decode RS-Code
+ 961   1              FLASH_REG[0xA2] &= 0xF3;                                   // Clear ECC fail register
+ 962   1      }
+ 963              
+ 964          /*********************************************************************************
+ 965          * NAME:                   void LoadBlock_From_MAP(U8 tc_ptr)
+ 966          * DESCRIPTION:
+ 967          *********************************************************************************/
+ 968          void LoadBlock_From_MAP(U8 tc_ptr){
+ 969   1              APort_LBlock[tc_ptr] = Mapping_Table[HBlock.WD];
+ 970   1              APort_SBlock[tc_ptr] = Mapping_Table[SBK];      
+ 971   1              APort_RBlock[tc_ptr] = Mapping_Table[RBK];
+ 972   1          APort_LCNT[tc_ptr]=Wear_Table[HBlock.WD];
+ 973   1          APort_RCNT[tc_ptr]=Wear_Table[RCNT];         
+ 974   1          APort_SCNT[tc_ptr]=Wear_Table[SCNT];
+ 975   1      }
+ 976              
+ 977          /*********************************************************************************
+ 978          * NAME:        void Load_E_D_Block_From_MAP(U8 tc_ptr,U8 tc_Inx);
+ 979          * DESCRIPTION:
+ 980          *********************************************************************************/
+ 981          void Load_E_D_Block_From_MAP(U8 tc_ptr,U8 tc_Inx){
+ 982   1          
+ 983   1              APort_EBlock[tc_ptr] = Mapping_Table[EBK+tc_Inx];
+ 984   1              APort_DBlock[tc_ptr] = Mapping_Table[DBK+tc_Inx];
+C51 COMPILER V9.00   FLASH_COMM                                                            07/10/2012 15:51:46 PAGE 17  
+
+ 985   1      
+ 986   1              APort_ECNT[tc_ptr]=Wear_Table[ECNT+tc_Inx];
+ 987   1          APort_DCNT[tc_ptr]=Wear_Table[DCNT+tc_Inx];
+ 988   1      
+ 989   1      }
+ 990          /*********************************************************************************
+ 991          * NAME:    bit CHK_DSBlock_Exist_Or_New(U8 tc_Which_D,U8 tc_ExtLBLK, bit tbt_Need_New)
+ 992          * DESCRIPTION:
+ 993          *********************************************************************************/
+ 994          U8 CHK_DSBlock_Exist_Or_New(U8 tc_Which_D,U8 tc_ExtLBLK, bit tbt_Need_New){
+ 995   1              data    bit     tbt_FindPage=0;
+ 996   1              xdata   U8      tc_i;
+ 997   1              xdata   U8      tc_Offset;
+ 998   1              tc_Offset= (tc_Which_D* MAX_DUMMY_PAGE); 
+ 999   1              for(tc_i=0; tc_i<MAX_DUMMY_PAGE;tc_i++){
+1000   2                      QTable.WD=Mapping_Table[D_HPAGE+tc_Offset+tc_i];
+1001   2                      if(tc_ExtLBLK==QTable.BY[0]){
+1002   3                              SQTable.WD = Mapping_Table[D_PAGE+tc_Offset+tc_i];                      
+1003   3                              gc_D_SBlock = QTable.BY[1];
+1004   3                              gc_NowIndex =tc_i;
+1005   3                              tbt_FindPage=1;
+1006   3                              break;
+1007   3                      }
+1008   2              }
+1009   1              if(tbt_FindPage){
+1010   2                      return 0;
+1011   2              }
+1012   1              else if(tbt_Need_New){          
+1013   2                      tbt_FindPage=0;
+1014   2                      for(tc_i=0; tc_i<MAX_DUMMY_PAGE;tc_i++){
+1015   3                              if(Mapping_Table[D_HPAGE+tc_Offset+tc_i]==0xFFFF){
+1016   4                                      Mapping_Table[D_PAGE+tc_Offset+tc_i]=0x0000;
+1017   4                                      gc_NowIndex =tc_i;
+1018   4                                      tbt_FindPage=1;
+1019   4                                      SQTable.WD= 0x0000;
+1020   4                                      break;
+1021   4                              }
+1022   3                      }
+1023   2                      if(tbt_FindPage){
+1024   3                              return 0;
+1025   3                      }
+1026   2                      else{
+1027   3                              return 1;
+1028   3                      }
+1029   2                      
+1030   2              }
+1031   1              else{
+1032   2                      return 1;
+1033   2              }
+1034   1              
+1035   1      }
+1036          /*********************************************************************************
+1037          * NAME:               void NAND_HPage_To_SBlock_SPage(void)
+1038          * DESCRIPTION:
+1039          *********************************************************************************/
+1040          void NAND_HPage_To_SBlock_SPage(void){
+1041   1              gc_SBlock= HPage.WD/H_INFO.cSMALLPAGE_NUM;
+1042   1              gc_SPage = HPage.WD%H_INFO.cSMALLPAGE_NUM;
+1043   1      }    
+1044          /*********************************************************************************
+1045          * NAME:               bit CHK_RandomPage_Exist(U8 tc_Inx);
+1046          * DESCRIPTION:
+C51 COMPILER V9.00   FLASH_COMM                                                            07/10/2012 15:51:46 PAGE 18  
+
+1047          *********************************************************************************/
+1048          U8 CHK_RandomPage_Exist(U8 tc_Inx,U16 tw_HPage){
+1049   1              xdata   U8 tc_Offset ;
+1050   1              data    U8      tc_i;
+1051   1              data    bit tbt_FindPage=0;
+1052   1      
+1053   1              tc_Offset = tc_Inx*MAX_RANDOM_HPAGE;
+1054   1              for(tc_i=0; tc_i<MAX_RANDOM_HPAGE;tc_i++){
+1055   2                      if(Mapping_Table[R_HPAGE+tc_Offset+tc_i] ==tw_HPage){
+1056   3                              gc_NowIndex =tc_i;
+1057   3                              tbt_FindPage=1;
+1058   3                              break;
+1059   3                      }       
+1060   2              }       
+1061   1              return tbt_FindPage;
+1062   1      }    
+1063              
+1064          /*********************************************************************************
+1065          * NAME:               void NAND_SBlock_SPage_To_FDBP(void)
+1066          * DESCRIPTION:
+1067          *********************************************************************************/
+1068          void NAND_SBlock_SPage_To_FDBP(void){
+1069   1              
+1070   1              FDBP.cFDev =gc_HDev;
+1071   1              FDBP.cFPlane = gw_TargetPage&(NAND_INFO.cPLANE_NUM-1);
+1072   1              FDBP.wFBlock = APort_FBlock[0];
+1073   1              FDBP.wFPage = gw_TargetPage/NAND_INFO.cPLANE_NUM;
+1074   1              FDBP.cFInAddr =0;
+1075   1      }    
+1076              
+1077          /*********************************************************************************
+1078          * NAME:                    bit Flash_ReadPage(void)
+1079          * DESCRIPTION:// SPDA26xx flash  plan
+1080          *   If ECC is Uncorrectable, return TRUE; else return FALSE. 
+1081          *********************************************************************************/
+1082          U8 Flash_ReadPage(void) {
+1083   1              XBYTE[0xB400]=1;
+1084   1              Device_Xfer_DataLength.WD = 0x03FF;
+1085   1              SET_DEVICE_READ();
+1086   1              ENA_ECC_Decode();
+1087   1              FLASH_REG[0x06]  = 0x00;                                   // cmd1
+1088   1              FLASH_REG[0x07]  = 0x30;                                   // cmd2
+1089   1              NAND_InAddr_To_Column_NAND();                              // set Column
+1090   1              NAND_FBlock_FPage_FBank_To_PhyAddr_NAND();                 // set FBank Fblock Fpage
+1091   1              FLASH_REG[0x1A] = 0x11;                                    // last frag = 1
+1092   1              FLASH_REG[0x04] = 0x01;                                    // CMD0+ADDR+CMD1
+1093   1              CHK_Flash_Ready();
+1094   1              TRIGGER_FLASH_CMD();                                       //               
+1095   1              CHK_Flash_Ready();
+1096   1              Trigger_Data_Transfer_Done();
+1097   1              CHK_NandAutocmp_Done();
+1098   1              CHK_ECC_Done(); 
+1099   1              return gbt_ECC_Fail;
+1100   1      }    
+1101              
+1102              
+1103              
+1104              
+1105              
+1106              
+1107              
+1108                              
+C51 COMPILER V9.00   FLASH_COMM                                                            07/10/2012 15:51:46 PAGE 19  
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   4086    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----      33
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      22
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       7
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

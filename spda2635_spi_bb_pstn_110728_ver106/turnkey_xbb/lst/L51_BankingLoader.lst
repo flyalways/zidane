@@ -1,0 +1,192 @@
+C51 COMPILER V9.00   L51_BANKINGLOADER                                                     07/09/2012 21:16:43 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE L51_BANKINGLOADER
+NO OBJECT MODULE REQUESTED
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE ASM\L51_BankingLoader.c LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDIR(..\lib
+                    -source\header) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\L51_BankingLoader.lst) SRC(.\obj\L51_BankingLoader.S
+                    -RC)
+
+line level    source
+
+   1          #include <stdio.h>
+   2          #include "..\header\SPDA2K.h"
+   3          #include "..\header\variables.h"
+   4          
+   5          
+   6          //! Entry of the banking loader.
+   7          void perform_nand_bank_call(void)
+   8          {
+   9   1      #pragma asm
+  10   1              cjne A, gc_bank_number, ?_need_to_load_nand_bank
+  11   1              push DPL
+  12   1              push DPH
+  13   1              ret
+  14   1      
+  15   1      ?_need_to_load_nand_bank:
+  16   1              //Target Bank Number is in register A
+  17   1              push gc_bank_number
+  18   1              mov  gc_bank_number, A
+  19   1      
+  20   1              //push the bank recover function for returning use
+  21   1              mov  A, #LOW return_from_nand_bank
+  22   1              push ACC
+  23   1              mov  A, #HIGH return_from_nand_bank
+  24   1              push ACC
+  25   1              //push target address
+  26   1              push DPL
+  27   1              push DPH
+  28   1              //push PSW and IE
+  29   1              push PSW
+  30   1              mov  PSW, #18   //use register bank3
+  31   1              push IE
+  32   1              clr  EA                 //disable IRQ
+  33   1      
+  34   1              call load_nand_bank
+  35   1      
+  36   1              //recover IE and PSW
+  37   1              pop  IE
+  38   1              pop  PSW
+  39   1              ret
+  40   1      #pragma endasm
+  41   1      }
+  42          
+  43          //! Exit of the banking loader.
+  44          void return_from_nand_bank(void)
+  45          {
+  46   1      #pragma asm
+  47   1              mov  A, gc_bank_number  //A is current bank
+  48   1              pop  gc_bank_number             //gc_bank_number is return bank
+  49   1              push PSW
+  50   1              cjne A, gc_bank_number, ?_recover_need_load_nand
+  51   1              pop PSW
+  52   1              ret
+  53   1      ?_recover_need_load_nand:
+C51 COMPILER V9.00   L51_BANKINGLOADER                                                     07/09/2012 21:16:43 PAGE 2   
+
+  54   1              mov  PSW, #18                   //use register bank3
+  55   1              push IE
+  56   1              clr  EA                                 //disable IRQ
+  57   1      
+  58   1              call load_nand_bank
+  59   1      
+  60   1              //pop PSW and IE
+  61   1              pop  IE
+  62   1              pop  PSW
+  63   1              ret
+  64   1      #pragma endasm
+  65   1      }
+  66          
+  67          //! NAND banking loader.
+  68          #define SECTORS_PER_BANK        24              // 12K
+  69          #define BANK0_START_ADDR        0x60    // 24K
+  70          #define BANK1_START_ADDR        0xC0    // 48K
+  71          #define BANK_SIZE                       0x30    // 12K
+  72          
+  73          
+  74          void load_nand_bank(void) using 3
+  75          {
+  76   1              xdata   U8      tc_clock;
+  77   1              xdata   U8      tc_B400;
+  78   1              xdata   U16     tw_addr;
+  79   1       
+  80   1              tc_clock=gc_clock_mode;
+  81   1              set_clock_mode(CLOCK_MODE_SPI);
+  82   1              tc_B400=XBYTE[0xB400]; 
+  83   1               
+  84   1              if (gc_bank_number == 0)
+  85   1              {
+  86   2                      tw_addr=BANK0_START_ADDR;
+  87   2              }
+  88   1              else
+  89   1              {
+  90   2                      tw_addr=BANK1_START_ADDR+(gc_bank_number-1)*BANK_SIZE;
+  91   2              }
+  92   1      
+  93   1              //dbprintf("%bx ",gc_bank_number); 
+  94   1      
+  95   1              //reset spi interface 
+  96   1              XBYTE[0xB400]|=0x20;
+  97   1              XBYTE[0xB400]=0x04; 
+  98   1              while(1)
+  99   1              {
+ 100   2                      gc_SPI_Addr1=(U8)(tw_addr);
+ 101   2                      gc_SPI_Addr2=(U8)(tw_addr>>8);
+ 102   2                      SPI_Load_Code_To_DRAM(SECTORS_PER_BANK);
+ 103   2      
+ 104   2                      if(gb_ReloadProgram==0)
+ 105   2                      {
+ 106   3                              break;
+ 107   3                      }
+ 108   2                      else
+ 109   2                      {
+ 110   3                              //reset spi interface 
+ 111   3                              XBYTE[0xB400]|=0x20;
+ 112   3                              XBYTE[0xB400]=0x04; 
+ 113   3                              gb_ReloadProgram=0;
+ 114   3                      }
+ 115   2              }
+C51 COMPILER V9.00   L51_BANKINGLOADER                                                     07/09/2012 21:16:43 PAGE 3   
+
+ 116   1              set_clock_mode(tc_clock); 
+ 117   1              XBYTE[0xB400]=tc_B400;
+ 118   1      }
+ 119          
+ 120          
+ 121          void SPI_Load_Code_To_DRAM(U8 u_Seccnt)
+ 122          {
+ 123   1              data    U8      i;
+ 124   1              data    bit     tc_Retry=0;
+ 125   1        
+ 126   1              gc_ProgRAM_Index=BANK0_START_ADDR;
+ 127   1      
+ 128   1          while(u_Seccnt)
+ 129   1              {
+ 130   2              SPI_ENABLE(); 
+ 131   2              SPI_Send_Byte(0x03);  //CMD
+ 132   2              SPI_Send_Byte(gc_SPI_Addr2);  
+ 133   2              SPI_Send_Byte(gc_SPI_Addr1);  
+ 134   2              SPI_Send_Byte(0x00);  
+ 135   2      
+ 136   2                      XBYTE[0xB304]=0x09;             //Reset DMA
+ 137   2                      XBYTE[0xB304]=0x08;             //Normal DMA
+ 138   2                  SET_DEVICE_READ_TO_DRAM();
+ 139   2      
+ 140   2                  SPI_REG[0x10] = 0x0F;                                               // after DMA, SPI FIFO has to be cleared
+ 141   2                      Trigger_Data_Transfer_Done();
+ 142   2      
+ 143   2                      if(tc_Retry==0)
+ 144   2                      {
+ 145   3                              tc_Retry=1;
+ 146   3                      }
+ 147   2                      else
+ 148   2                      {
+ 149   3                          gc_SPI_Addr1+=0x02;
+ 150   3                              if(gc_SPI_Addr1==0x00)
+ 151   3                              {
+ 152   4                                      gc_SPI_Addr2++;
+ 153   4                              }
+ 154   3                          gc_ProgRAM_Index+=0x02;     // ProgRAM Index
+ 155   3                              u_Seccnt--;  
+ 156   3                      }
+ 157   2                  SPI_DISABLE();
+ 158   2                      for(i=0;i<20;i++);
+ 159   2          }
+ 160   1      } 
+ 161          
+ 162          
+ 163          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    399    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       5
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       1
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

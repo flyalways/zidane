@@ -1,0 +1,10 @@
+#include    <stdio.h>
+#include    <stdlib.h>
+#include    <string.h> 
+#include	"..\header\define.h"
+#include	"..\header\UI_CONFIG.h"
+#include	"..\header\system.h"
+#include	"..\header\PROTOTYP.h"
+#include	"..\header\Rambase.h"
+#include	"..\header\DSP.h"
+#include	"..\header\EX_USB_Data.h"

@@ -1,0 +1,292 @@
+C51 COMPILER V9.00   TFT_DISPLAYB7                                                         07/10/2012 15:51:58 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE TFT_DISPLAYB7
+OBJECT MODULE PLACED IN .\obj\TFT_displayB7.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE LCM\TFT_displayB7.c LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDIR(..\libsour
+                    -ce\header) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\TFT_displayB7.lst) OBJECT(.\obj\TFT_displayB7.obj)
+
+line level    source
+
+   1          #include "SPDA2K.h"
+   2          #include "..\LCM\LCM_func.h"
+   3          #include "..\LCM\TFT_config.h"
+   4          #include "..\LCM\TFT_display.h"
+   5          #include "..\header\variables.h"
+   6          
+   7          extern  data    U8      gc_CurrentCard;
+   8          extern  xdata   U8      gc_LanguageSel;
+   9          extern  xdata   U8      gc_IconY;
+  10          extern  xdata   U8      gc_IconType;
+  11          extern  xdata   U16     gw_FileIndex[]; 
+  12          extern  xdata   U16     gw_FileTotalNumber[];
+  13          
+  14          extern void LCD_DisplayIcon(U8 tw_IconIDNumber,U8 tc_CurrentOffset);
+  15          
+  16          extern  xdata   U8      gc_JPGSetting;
+  17          extern  xdata   U8      gc_FuncPicCount;
+  18          extern  xdata   U8      gc_MenuItem;
+  19          
+  20          #if 1
+  21          // USB
+  22          void TFT_ShowUSBIcon(void)
+  23          {
+  24   1              LCM_set_view(TFT_IconDispDir,0,0,TFT_H_Size,TFT_V_Size);
+  25   1              LCD_DisplayIcon(ID_PUBLIC_FULL,OFFSET_USB);
+  26   1      }
+  27          #endif
+  28          
+  29          // 開機動畫
+  30          void TFT_PowerOnlogo(void)
+  31          {
+  32   1              data    U16 i;
+  33   1      
+  34   1              LCM_set_view(TFT_IconDispDir,PowerONLogo_X_Pos,PowerONLogo_Y_Pos,PowerONLogo_H_Size,PowerONLogo_V_Size);
+  35   1              for(i=0;i<PowerONLogoPicNum;i++)
+  36   1              {
+  37   2                      
+  38   2                      LCD_DisplayIcon(PowerONLogoID,i);
+  39   2                      if(i==1)
+  40   2                      LCD_BACKLIGHT_ON;
+  41   2                      USER_DelayDTms(PowerONLogoTimer);
+  42   2              }
+  43   1      }
+  44          
+  45          // 關機動畫
+  46          void TFT_PowerOfflogo(void)
+  47          {
+  48   1              data    U8 i;
+  49   1      
+  50   1              LCM_set_view(TFT_IconDispDir,0,0,TFT_H_Size,TFT_V_Size);
+  51   1      
+  52   1              for(i=0;i<PowerOFFLogoPicNum;i++)
+  53   1              {
+  54   2                      LCD_DisplayIcon(PowerOFFLogoID,i);
+C51 COMPILER V9.00   TFT_DISPLAYB7                                                         07/10/2012 15:51:58 PAGE 2   
+
+  55   2                      USER_DelayDTms(80);
+  56   2              }
+  57   1              USER_DelayDTms(500);
+  58   1      }
+  59          
+  60          // 功能選項-Music/Movie/Photo/Setup
+  61          void TFT_ShowMenu(void)
+  62          {
+  63   1          U8 x_menu;
+  64   1      
+  65   1              LCM_set_view(TFT_IconDispDir,MainMenu_Title_X_Pos,MainMenu_Title_Y_Pos,MainMenu_Title_H_Size,MainMenu_Tit
+             -le_V_Size);
+  66   1              x_menu = gc_MenuItem+gc_LanguageSel*4;
+  67   1              LCD_DisplayIcon(ID_MainMenu_Title,x_menu);
+  68   1      
+  69   1              LCM_set_view(TFT_IconDispDir,MainMenu_X_Pos,MainMenu_Y_Pos,MainMenu_H_Size,MainMenu_V_Size);
+  70   1              x_menu = (gc_MenuItem*NumOfGroup+gc_FuncPicCount);//+gc_LanguageSel*16;
+  71   1              LCD_DisplayIcon(ID_MainMenu,x_menu);
+  72   1      
+  73   1              gc_FuncPicCount++;
+  74   1              if(gc_FuncPicCount==NumOfGroup)
+  75   1              {
+  76   2                      gc_FuncPicCount=0;
+  77   2              }
+  78   1      }
+  79                  
+  80          // JPG播放延遲時間
+  81          void TFT_Velocity(void)
+  82          {
+  83   1              data    U8      i;
+  84   1              data    U8      BCD[2];
+  85   1      
+  86   1              if(gc_JpegVelocity==10)
+  87   1              {
+  88   2                      BCD[0]=1;
+  89   2                      BCD[1]=0;
+  90   2              }
+  91   1              else
+  92   1              {
+  93   2                      BCD[0]=0;
+  94   2                      BCD[1]=gc_JpegVelocity;
+  95   2              }
+  96   1      
+  97   1              for(i=0;i<2;i++)
+  98   1              {
+  99   2                      LCM_set_view(TFT_IconDispDir,Velocity_X_Pos+(Velocity_H_Size+2)*i,Velocity_Y_Pos,Velocity_H_Size,Velocit
+             -y_V_Size);
+ 100   2                      LCD_DisplayIcon(VelocityID,BCD[i]);
+ 101   2              }
+ 102   1      }
+ 103          
+ 104          
+ 105          U8 CheckNum(U16 num)
+ 106          {
+ 107   1              if(num>9999)    
+ 108   1              {
+ 109   2                      return 0;
+ 110   2              }
+ 111   1              if(num>999)             
+ 112   1              {
+ 113   2                      return 1;
+ 114   2              }
+C51 COMPILER V9.00   TFT_DISPLAYB7                                                         07/10/2012 15:51:58 PAGE 3   
+
+ 115   1              if(num>99)      
+ 116   1              {
+ 117   2                      return 2;
+ 118   2              }
+ 119   1              if(num>9)
+ 120   1              {
+ 121   2                      return 3;
+ 122   2              }
+ 123   1              return 4;
+ 124   1      }
+ 125          // 記憶體資料
+ 126          void TFT_MemoryInfo(void)
+ 127          {
+ 128   1              data    U8      i,j;
+ 129   1              xdata   U8      BCD[15];
+ 130   1              data    U16     tc_used=gdw_CARD_TotalSizeMB-gdw_Dos_FreeMemorySizeMB;
+ 131   1      
+ 132   1              LCM_set_view(TFT_IconDispDir,0,0,TFT_H_Size,TFT_V_Size);
+ 133   1              //LCD_DisplayIcon(MemInfoID,0/*gc_LanguageSel*/);
+ 134   1              LCD_DisplayIcon(ID_PUBLIC_FULL,OFFSET_MemoryInfo_BG);
+ 135   1      
+ 136   1      //      if(gc_LanguageSel!=16)
+ 137   1              {
+ 138   2                      for(i=0;i<3;i++)
+ 139   2                      {
+ 140   3                              if(i==0)
+ 141   3                              {
+ 142   4                                      TFT_HEX_BCD_5(gdw_CARD_TotalSizeMB,BCD+0,BCD+1,BCD+2,BCD+3,BCD+4);
+ 143   4                                      j=CheckNum(gdw_CARD_TotalSizeMB);
+ 144   4                              }
+ 145   3                              else if(i==1)
+ 146   3                              {
+ 147   4                                      TFT_HEX_BCD_5(tc_used,BCD+5,BCD+6,BCD+7,BCD+8,BCD+9);
+ 148   4                                      j=CheckNum(tc_used);
+ 149   4                              }
+ 150   3                              else
+ 151   3                              {
+ 152   4                                      TFT_HEX_BCD_5(gdw_Dos_FreeMemorySizeMB,BCD+10,BCD+11,BCD+12,BCD+13,BCD+14);
+ 153   4                                      j=CheckNum(gdw_Dos_FreeMemorySizeMB);
+ 154   4                              }
+ 155   3                              
+ 156   3                              for(;j<5;j++)
+ 157   3                              {
+ 158   4      #ifdef  TFT_18V
+                                              LCM_set_view(TFT_IconDispDir,MemInfoNUM_X_Pos+j*MemInfoNUM_H_Size,MemInfoNUM_Y_Pos+i*22,MemInfoNUM_H_S
+             -ize,MemInfoNUM_V_Size);
+              #else
+ 161   4                                      LCM_set_view(TFT_IconDispDir,MemInfoNUM_X_Pos+j*MemInfoNUM_H_Size,MemInfoNUM_Y_Pos+i*17,MemInfo
+             -NUM_H_Size,MemInfoNUM_V_Size);
+ 162   4      #endif
+ 163   4                                      LCD_DisplayIcon(MemInfoNumID,BCD[i*5+j]);
+ 164   4                              }
+ 165   3                      }
+ 166   2              }
+ 167   1      }
+ 168          
+ 169          void TFT_HEX_BCD_5(U16 num,U8 *AA,U8 *BB,U8 *CC,U8 *DD,U8 *EE)
+ 170          {
+ 171   1              *AA=num/10000;
+ 172   1              *BB=(num%10000)/1000;
+ 173   1              *CC=(num%1000)/100;
+ 174   1              *DD=(num%100)/10;
+C51 COMPILER V9.00   TFT_DISPLAYB7                                                         07/10/2012 15:51:58 PAGE 4   
+
+ 175   1              *EE=num%10;
+ 176   1      }
+ 177          
+ 178          // 儲存裝置:NAND(0)/U-Disk(1)/SDC(2)
+ 179          void TFT_ShowMediaIcon_M(void)
+ 180          {
+ 181   1              data    U8      i;
+ 182   1      
+ 183   1              if(gc_CurrentCard==5)
+ 184   1              {
+ 185   2                      i=4;    // Host
+ 186   2              }
+ 187   1              else
+ 188   1              {
+ 189   2                      i=gc_CurrentCard;
+ 190   2              }
+ 191   1      
+ 192   1              LCM_set_view(TFT_IconDispDir,MediaIcon_X_Pos,MediaIcon_Y_Pos,MediaIcon_H_Size,MediaIcon_V_Size);
+ 193   1              LCD_DisplayIcon(MediaIconID,i);
+ 194   1      }
+ 195          
+ 196          // PAUSE 
+ 197          void TFT_PAUSE(void)
+ 198          {
+ 199   1              LCM_set_view(TFT_IconDispDir,Pause_X_Pos,Pause_Y_Pos,Pause_H_Size,Pause_V_Size);
+ 200   1              LCD_DisplayIcon(PauseID,0);
+ 201   1      }
+ 202          
+ 203          
+ 204          // 文件格式Icon
+ 205          void TFT_FileIcon(void)
+ 206          {
+ 207   1              LCM_set_view(TFT_IconDispDir,FileIcon_X_Pos,FileIcon_Y_Pos+20*gc_IconY,FileIcon_H_Size,FileIcon_V_Size);
+ 208   1              LCD_DisplayIcon(FileIconID,gc_IconType);
+ 209   1      }
+ 210          
+ 211          
+ 212          
+ 213           void Folder_Display()
+ 214          {
+ 215   1      //      U8 testbuf[]={16,0,'V',0,'1',0,'.',0,'0',0,'1',0,'.',0,'0',0,'1'};
+ 216   1              U8 i;
+ 217   1              U8      BCD[4];
+ 218   1              //扢离晊奀奀潔
+ 219   1      //      gc_FolderTimer=5;
+ 220   1              //珆尨掖劓
+ 221   1              LCM_set_view(TFT_IconDispDir,0,0,TFT_H_Size,TFT_V_Size);
+ 222   1              LCD_DisplayIcon(ID_PUBLIC_FULL,OFFSET_Floder_BG);   
+ 223   1              //刲坰狟珨跺恅璃標
+ 224   1      
+ 225   1              //珆尨絞ヶ⑻醴
+ 226   1      //      HEX_to_BCD(gw_FileIndex[gs_System_State.c_FileHandle],BCD+0,4);
+ 227   1              TFT_HEX_BCD(gw_FileIndex[0],(BCD+0),(BCD+1),(BCD+2),(BCD+3));
+ 228   1      
+ 229   1              for(i=0;i<4;i++)
+ 230   1              {
+ 231   2                      LCM_set_view(TFT_IconDispDir,30+FMAdj_H_Size*i,50,FMAdj_H_Size,FMAdj_V_Size);
+ 232   2                      LCD_DisplayIcon(FMAdjID,BCD[i]);        
+ 233   2              } 
+ 234   1              //珆尨軞⑻醴
+ 235   1      //      HEX_to_BCD(gw_FileTotalNumber[gs_System_State.c_FileHandle],BCD+0,4);
+ 236   1              TFT_HEX_BCD(gw_FileTotalNumber[0],(BCD+0),(BCD+1),(BCD+2),(BCD+3));
+C51 COMPILER V9.00   TFT_DISPLAYB7                                                         07/10/2012 15:51:58 PAGE 5   
+
+ 237   1      
+ 238   1              for(i=0;i<4;i++)
+ 239   1              {
+ 240   2                      LCM_set_view(TFT_IconDispDir,85+FMAdj_H_Size*i,50,FMAdj_H_Size,FMAdj_V_Size);
+ 241   2                      LCD_DisplayIcon(FMAdjID,BCD[i]);        
+ 242   2              }
+ 243   1              //珆尨恅璃標靡備
+ 244   1       //     Menu_Disp_String(5,5,testbuf,0xffff,0); 
+ 245   1      //      Menu_Disp_String(Voice_Item_X,Voice_Item_Y,testbuf,Voice_Item_WordColor,Voice_Item_WordColor_BG);
+ 246   1      //    gs_str_scroll_state.c_str_1st_char=0;  //20090331
+ 247   1      //    gs_str_scroll_state.c_shift_in_1st_char=0;
+ 248   1              //LCD_Disp_FileName(&gc_FileLongName[5], gc_FileLongName[2], gc_FileLongName[4], 1);
+ 249   1      
+ 250   1      }
+ 251          void TFT_ShowError(void)
+ 252          {
+ 253   1              LCM_set_view(TFT_IconDispDir,Error_X_Pos,Error_Y_Pos,Error_H_Size,Error_V_Size);
+ 254   1              LCD_DisplayIcon(ErrorID,0);
+ 255   1      }
+ 256          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1124    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----      37
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      11
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,310 @@
+C51 COMPILER V9.00   DOS                                                                   07/10/2012 15:51:50 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE DOS
+OBJECT MODULE PLACED IN .\obj\Dos.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE ..\LIBSOURCE\DOS\Dos.C LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDIR(..\libs
+                    -ource\header) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\Dos.lst) OBJECT(.\obj\Dos.obj)
+
+line level    source
+
+   1          /*
+   2           *                          Sunplus mMedia Inc.
+   3           *
+   4           *   (c) Copyright 2008~, Sunplus mMedia Inc., Hsinchu, Taiwan R.O.C.
+   5           *                          All Right Reserved
+   6           */
+   7          /*! \file       dos.c
+   8           *      \brief  
+   9           *
+  10           *  
+  11           *      \author jay
+  12           */
+  13          #include "SPDA2K.h"
+  14          
+  15          
+  16          bit     tgbt_Dos_Start_Stage;   
+  17          bit     tgbt_Dos_Continue_Stage;
+  18          bit tgbt_Dos_End_Stage;
+  19          unionWORD Source_Addr;
+  20          
+  21          //! Read a sector at a given LBA
+  22          /*! \ 1-->ECC fail 0-->ECC_Pass
+  23           *      \param  Read_LBA        Read sector logical block address
+  24           *      \param  Buf_Index       Target Data Buf Address
+  25           */
+  26          bit Dos_Read_LBA(LWORD Read_LBA ,UBYTE Buf_Index) {
+  27   1              gc_ErrorCode=0x00;      
+  28   1              LBA.LW = Read_LBA;      
+  29   1              Source_Addr.BY[0] = Buf_Index;
+  30   1              Source_Addr.BY[1] = 0x00;
+  31   1              if(LBA.LW>= Capacity.LW){
+  32   2      //              dbprintf("\n Read out of range ");
+  33   2                      gc_ErrorCode = ID_NOT_FND;
+  34   2              }       
+  35   1              LBA2DBP();      
+  36   1              SetHBlockToHDev();
+  37   1              if (gc_ErrorCode) {
+  38   2                      return 1 ;
+  39   2              }
+  40   1              
+  41   1              if(NAND_FlashReadSector_DOS()){
+  42   2                      return 1;
+  43   2              }
+  44   1              return 0;       
+  45   1      }
+  46          
+  47          //! Write a sector at a given LBA
+  48          /*!
+  49           *      \param  Write_LBA       Write sector logical block address
+  50           *      \param  Buf_Index       ource Data Buf Address
+  51           *      \param  Write_Stage     
+  52           *                                              - 0     Dos_Start_Stage+ Dos_Continue_Stage 
+  53           *                                              - 1     Only Dos_Continue_Stage 
+  54           *                                              - 2     Dos_Continue_Stage + Dos_End _Stage      
+C51 COMPILER V9.00   DOS                                                                   07/10/2012 15:51:50 PAGE 2   
+
+  55           *                                              - 3     Dos_Start_Stage + Dos_Continue_Stage + Dos_End _Stage
+  56           *                                              - 4     Only Dos_End_Stage 
+  57           */
+  58          void Dos_Write_LBA(LWORD Write_LBA,UBYTE Buf_Index,UBYTE Write_Stage) {
+  59   1              data    U8 tc_Temp ;                                                                            // 081105 Jay add
+  60   1              
+  61   1              gc_ErrorCode=0x00;      
+  62   1              LBA.LW =Write_LBA;
+  63   1              Source_Addr.BY[0] = Buf_Index;
+  64   1              Source_Addr.BY[1] = 0x00;
+  65   1              tc_Temp= DMA_REG[0x90];
+  66   1              DMA_REG[0x90] = 0x00;
+  67   1      
+  68   1              switch(Write_Stage){
+  69   2                      case 0:
+  70   2                              tgbt_Dos_Start_Stage    = 1;
+  71   2                              tgbt_Dos_Continue_Stage = 1;
+  72   2                              tgbt_Dos_End_Stage              = 0;
+  73   2                              break;
+  74   2                      case 1:
+  75   2                              tgbt_Dos_Continue_Stage = 1;
+  76   2                              tgbt_Dos_End_Stage              = 0;
+  77   2                              break;
+  78   2                      case 2:
+  79   2                              tgbt_Dos_Continue_Stage = 1;
+  80   2                              tgbt_Dos_End_Stage      = 1;
+  81   2                              break;
+  82   2                      case 3:
+  83   2                              tgbt_Dos_Start_Stage    = 1;
+  84   2                              tgbt_Dos_Continue_Stage = 1;
+  85   2                              tgbt_Dos_End_Stage              = 1;
+  86   2                              break;
+  87   2                      default:
+  88   2                              if(tgbt_Dos_Start_Stage==1)
+  89   2                              {
+  90   3                                      tgbt_Dos_Start_Stage    = 0;
+  91   3                                      tgbt_Dos_Continue_Stage = 0;
+  92   3                                      tgbt_Dos_End_Stage              = 0;
+  93   3                                      break;
+  94   3                              }
+  95   2                              tgbt_Dos_Continue_Stage = 0;
+  96   2                              if(!tgbt_Dos_End_Stage){                                                // 081117 Jay fix                       
+  97   3                                      tgbt_Dos_End_Stage      = 1;
+  98   3                              }
+  99   2                              else{
+ 100   3                                      tgbt_Dos_End_Stage   = 0;
+ 101   3                              }
+ 102   2                              break;
+ 103   2              }       
+ 104   1              if(LBA.LW>= Capacity.LW){
+ 105   2      //              dbprintf("\n  Write out of range ");
+ 106   2                      gc_ErrorCode=ID_NOT_FND;
+ 107   2              }       
+ 108   1              DMA_REG[0x90] = tc_Temp;
+ 109   1      }
+ 110          
+ 111          
+ 112          /*********************************************************************************
+ 113          * NAME:  bit NAND_FlashReadSector_DOS(void)
+ 114          * DESCRIPTION:  1-->ECC_fail 0-->ECCP ASS , ¥ý¥á¨ì 0X9000
+ 115          *********************************************************************************/
+ 116          bit NAND_FlashReadSector_DOS(void) {
+C51 COMPILER V9.00   DOS                                                                   07/10/2012 15:51:50 PAGE 3   
+
+ 117   1              data    bit     tbt_ECC_Fail=0;
+ 118   1              data    bit     tbt_Extend_Found,tbt_Random_Found,tbt_Find_D_SBlock;
+ 119   1              data    U8      tc_Extend_Count;
+ 120   1              data    U8      tc_Random_Count;
+ 121   1              xdata   U8      tc_Offset;
+ 122   1              xdata   U8      tc_Buf_InAddr;
+ 123   1          xdata       U8      tc_i;
+ 124   1          xdata       U8      tc_RealInAddr;     
+ 125   1          xdata       U16     tw_TotalESPage;
+ 126   1      
+ 127   1          DEVICE_REG[0x00]|=0x10;  //for interface switch                                                                     // ±NFlash module reset
+ 128   1              DEVICE_REG[0x00]&=0xEF;
+ 129   1              DEVICE_REG[0x00]= 0x01;
+ 130   1              Flash_State_Initial();
+ 131   1              Check_LoadMap();        
+ 132   1              NAND_HPage_To_SBlock_SPage();
+ 133   1              APort_FBlock[0] = Mapping_Table[HBlock.WD];
+ 134   1              tbt_Extend_Found = 0;   
+ 135   1              tbt_Random_Found = 0;
+ 136   1              LoadBlock_From_MAP(0);  
+ 137   1              for(tc_Extend_Count=0;tc_Extend_Count<Extend_NUM;tc_Extend_Count++){
+ 138   2                      if(Mapping_Table[EINX+tc_Extend_Count]==HBlock.WD){
+ 139   3                              tbt_Extend_Found = 1;
+ 140   3                              Load_E_D_Block_From_MAP(0,tc_Extend_Count);
+ 141   3                              gc_Q1_SBlock = Mapping_Table[Q1_INX+tc_Extend_Count]>>8;
+ 142   3                              gc_E_SBlock = Mapping_Table[Q2_INX+tc_Extend_Count]>>8;
+ 143   3                              gc_E_SPage  = (U8)Mapping_Table[ Q2_INX+tc_Extend_Count];               
+ 144   3                              tw_TotalESPage = ((U16)gc_E_SBlock*H_INFO.cSMALLPAGE_NUM)+gc_E_SPage;
+ 145   3                              break;
+ 146   3                      }
+ 147   2              }
+ 148   1              if(!tbt_Extend_Found){
+ 149   2                      for(tc_Random_Count=0;tc_Random_Count<MAX_RANDOM_HBLOCK;tc_Random_Count++){
+ 150   3                              if(Wear_Table[RINX+tc_Random_Count]==HBlock.WD){
+ 151   4                                      tbt_Random_Found= 1;                               
+ 152   4                                      break;
+ 153   4                              }
+ 154   3                      }
+ 155   2              }
+ 156   1              if(tbt_Extend_Found){
+ 157   2                      if(HPage.WD>= tw_TotalESPage){
+ 158   3                              APort_FBlock[0] = APort_LBlock[0];
+ 159   3                              gw_TargetPage = HPage.WD;
+ 160   3                      }               
+ 161   2                      else{
+ 162   3                              tc_Offset= (tc_Extend_Count* MAX_DUMMY_PAGE); 
+ 163   3                              tbt_Find_D_SBlock =0;
+ 164   3                              for(tc_i=0; tc_i<MAX_DUMMY_PAGE;tc_i++){
+ 165   4                                      if(Mapping_Table[D_HPAGE+tc_Offset+tc_i]!=0xFFFF){
+ 166   5                                              tbt_Find_D_SBlock=1;
+ 167   5                                              break;
+ 168   5                                      }
+ 169   4                              }
+ 170   3                              if(tbt_Find_D_SBlock){
+ 171   4                                      if(CHK_DSBlock_Exist_Or_New(tc_Extend_Count,gc_SBlock,0)){//no dummy
+ 172   5                                              tbt_Find_D_SBlock=0;
+ 173   5                                              if(gc_SBlock<gc_Q1_SBlock){                     
+ 174   6                                                      APort_FBlock[0] =APort_LBlock[0];
+ 175   6                                              }
+ 176   5                                              else{                   
+ 177   6                                                      APort_FBlock[0] = APort_EBlock[0];
+ 178   6                                              }                               
+C51 COMPILER V9.00   DOS                                                                   07/10/2012 15:51:50 PAGE 4   
+
+ 179   5                                              gw_TargetPage = ((U16)gc_SBlock*H_INFO.cSMALLPAGE_NUM)+gc_SPage;        
+ 180   5                      
+ 181   5                                      }
+ 182   4                                      else{
+ 183   5                                              tbt_Find_D_SBlock=1;
+ 184   5                                              if((gc_SPage>=SQTable.BY[0])&&(gc_SPage<SQTable.BY[1])){
+ 185   6                                                      APort_FBlock[0] =APort_DBlock[0];                               
+ 186   6                                                      gw_TargetPage = ((U16)gc_D_SBlock*H_INFO.cSMALLPAGE_NUM)+(gc_SPage-SQTable.BY[0]);      
+ 187   6                                              }       
+ 188   5                                              else{
+ 189   6                                                      if(gc_SBlock<gc_Q1_SBlock){     //0524 Jay add          
+ 190   7                                                              APort_FBlock[0] =APort_LBlock[0];
+ 191   7                                                      }
+ 192   6                                                      else{                   
+ 193   7                                                              APort_FBlock[0] =APort_EBlock[0];                               
+ 194   7                                                      }                                               
+ 195   6                                                      gw_TargetPage = ((U16)gc_SBlock*H_INFO.cSMALLPAGE_NUM)+gc_SPage;
+ 196   6                                              }
+ 197   5                                      }                               
+ 198   4                              }               
+ 199   3                              else{
+ 200   4                                      if(gc_SBlock<gc_Q1_SBlock){                     
+ 201   5                                              APort_FBlock[0] =APort_LBlock[0];
+ 202   5                                      }
+ 203   4                                      else{                   
+ 204   5                                              APort_FBlock[0] = APort_EBlock[0];
+ 205   5                                      }
+ 206   4                                      gw_TargetPage = HPage.WD;       
+ 207   4                              }                       
+ 208   3                      }               
+ 209   2              }
+ 210   1              else if (tbt_Random_Found){             
+ 211   2                      if(CHK_RandomPage_Exist(tc_Random_Count,HPage.WD)){
+ 212   3                              tc_Offset =tc_Random_Count*MAX_RANDOM_HPAGE;
+ 213   3                              gw_TargetPage =Mapping_Table[R_PAGE+tc_Offset+gc_NowIndex];
+ 214   3                              APort_FBlock[0] = APort_RBlock[0];
+ 215   3                      }
+ 216   2                      else{                                           
+ 217   3                              APort_FBlock[0] = APort_LBlock[0];
+ 218   3                              gw_TargetPage = HPage.WD;
+ 219   3                      }
+ 220   2                      
+ 221   2              }
+ 222   1              else{
+ 223   2                      APort_FBlock[0] =APort_LBlock[0];
+ 224   2                      gw_TargetPage = HPage.WD;
+ 225   2                      
+ 226   2              }
+ 227   1              tc_Buf_InAddr =gc_HInAddr&0x01;
+ 228   1              tc_RealInAddr = gc_HInAddr&0xFE;
+ 229   1              NAND_SBlock_SPage_To_FDBP();    
+ 230   1              FDBP.cFInAddr =tc_RealInAddr;
+ 231   1              Device_Read_SRAM_Index.BY[0] = 0x90;    
+ 232   1              Device_Read_SRAM_Index.BY[1] = 0x00;
+ 233   1              Device_Xfer_DataLength.WD = 0x03FF;   
+ 234   1              SET_DEVICE_READ();
+ 235   1              ENA_ECC_Decode();
+ 236   1              FLASH_REG[0x06]  = 0x00;                                                                        // cmd1
+ 237   1              FLASH_REG[0x07]  = 0x30;                                                                        // cmd2 
+ 238   1              NAND_InAddr_To_Column_NAND();                                                           // set Column
+ 239   1              NAND_FBlock_FPage_FBank_To_PhyAddr_NAND();                                      // set FBank Fblock FPage       
+ 240   1              FLASH_REG[0x04] = 0x01;                                                                         // CMD0+ADDR+CMD1
+C51 COMPILER V9.00   DOS                                                                   07/10/2012 15:51:50 PAGE 5   
+
+ 241   1              CHK_Flash_Ready();
+ 242   1              TRIGGER_FLASH_CMD();               
+ 243   1              CHK_Flash_Ready();
+ 244   1              FLASH_REG[0xA1] = 0x01;
+ 245   1              FLASH_REG[0xA2] &= 0xF3;
+ 246   1              FLASH_REG[0x1A] = 0x11;                                                                         // last flag = 1
+ 247   1              Trigger_Data_Transfer_Done();    
+ 248   1              if(CHK_ECC_Done()){
+ 249   2                      tbt_ECC_Fail=1;
+ 250   2              }
+ 251   1              if(tc_Buf_InAddr){// 
+ 252   2                      Device_Read_SRAM_Index.WD= 0x9200;              
+ 253   2              }
+ 254   1              else{
+ 255   2                      Device_Read_SRAM_Index.WD= 0x9000;
+ 256   2              }               
+ 257   1              Move_RAM(Device_Read_SRAM_Index.WD,Source_Addr.WD,511);
+ 258   1              return tbt_ECC_Fail;
+ 259   1      }
+ 260          
+ 261          /*****************************************************************************
+ 262          * NAME:         void Move_RAM(void)
+ 263          * DESCRIPTION:  using DMA2  module to move ram 
+ 264          *   
+ 265          *****************************************************************************/
+ 266          void Move_RAM(WORD RAM_Source,WORD RAM_Destination,WORD RAM_Size){
+ 267   1              DMA_REG[0xC0]=0x00;                                                                                     // Clean 0xB3C0
+ 268   1              DMA_REG[0x01]=SRAM2SRAM;                                                                        // DMA from SRAM to SRAM
+ 269   1              DMA_REG[0x02]=(RAM_Size&0xFF);                                                          // Define data size in DMA transfer =512 byte (0xB302, 0xB303)
+ 270   1              DMA_REG[0x03]=(RAM_Size>>8);                                                            //
+ 271   1              CPU_REG[0x12]=(RAM_Source&0xFF);                                                        // DMA Source Addr[7:0]
+ 272   1              CPU_REG[0x13]=(RAM_Source>>8);                                                          //                [15:8]
+ 273   1              CPU_REG[0x14]=(RAM_Destination&0xFF);                                           // DMA Destination Addr[7:0]
+ 274   1              CPU_REG[0x15]=(RAM_Destination>>8);                                                     //                     [15:8]
+ 275   1              DMA_REG[0xB0]=0x01;                                                                                     // Tigger DMA transfer
+ 276   1              while(!(DMA_REG[0xC0]&0x01));                                                           // wait until DMA cycle is completed (0xB3C0)
+ 277   1              DMA_REG[0xC0]=0x00;                                                                                     // Clean 0xB3C0
+ 278   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1091    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      2      18
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       3
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      3       4
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

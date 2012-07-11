@@ -1,0 +1,378 @@
+C51 COMPILER V9.00   ISR                                                                   07/09/2012 21:16:51 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE ISR
+OBJECT MODULE PLACED IN .\obj\ISR.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE MAIN\ISR.c LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDIR(..\libsource\header
+                    -) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\ISR.lst) OBJECT(.\obj\ISR.obj)
+
+line level    source
+
+   1          #include "..\header\SPDA2K.h"
+   2          #include "..\header\variables.h"
+   3          #include "..\LCM\LCM_BMP.h"
+   4          
+   5          void Timer0() interrupt 1 using 2
+   6          {
+   7   1              TR0=0;
+   8   1              TH0=gc_T0IntervalMSB;
+   9   1              TL0=gc_T0IntervalLSB;   
+  10   1              TR0=1;  
+  11   1      
+  12   1              gw_Random_Timer++;
+  13   1              if(gc_CL6017Cont)
+  14   1              {
+  15   2                      gc_CL6017Cont--;
+  16   2              }
+  17   1      
+  18   1              if(gc_IR_press_timer!=0)
+  19   1              {
+  20   2                      gc_IR_press_timer--;
+  21   2                      if(gc_IR_press_timer==0)
+  22   2                      {
+  23   3                              gc_IRCmdStatus=1;
+  24   3                      }
+  25   2              }
+  26   1      
+  27   1              gc_XTimeBase=(gc_XTimeBase+1)&0x03;
+  28   1              gb_SD_pin=SD_Detect;
+  29   1      
+  30   1              switch(gc_XTimeBase)
+  31   1              {
+  32   2                      case 0:
+  33   2                              if(gb_SARStable==0)
+  34   2                              {
+  35   3                                      // Wait SARIN stable
+  36   3                                      Get_KeyValue(READ_SARADC(0));
+  37   3                                      if(gc_key_Pressed==C_Key_None)
+  38   3                                      {
+  39   4                                              gb_SARStable=1;
+  40   4                                      }
+  41   3                              }
+  42   2                              else
+  43   2                              {
+  44   3                                      ScanKey();
+  45   3                              }
+  46   2                      break;
+  47   2                      
+  48   2                      case 1:                 
+  49   2                              if(gc_MenuEndTimer)
+  50   2                              {
+  51   3                                      gc_MenuEndTimer--;
+  52   3                              }
+  53   2      
+  54   2                              if(gc_PinPuTimer)
+C51 COMPILER V9.00   ISR                                                                   07/09/2012 21:16:51 PAGE 2   
+
+  55   2                              {
+  56   3                                      gc_PinPuTimer--;
+  57   3                                      if(gc_PinPuTimer==0)
+  58   3                                      {
+  59   4                                              gc_PinPuCount=(gc_PinPuCount+1)%15;
+  60   4                                      }
+  61   3                              }
+  62   2                              
+  63   2                      break;
+  64   2                      
+  65   2                      case 2:
+  66   2                              if(gc_LogData_Timer!=0)
+  67   2                              {
+  68   3                                      gc_LogData_Timer--;
+  69   3                                      if(gc_LogData_Timer==0)
+  70   3                                      {
+  71   4                                              gb_LogDataFlag=1;
+  72   4                                      }
+  73   3                              }
+  74   2      
+  75   2                              if(gc_ShowTimer!=0)
+  76   2                              {
+  77   3                                      gc_ShowTimer--;
+  78   3                              }
+  79   2              
+  80   2                              if(gc_LCMScrollTimer!=0)
+  81   2                              {
+  82   3                                      gc_LCMScrollTimer--;
+  83   3                              }
+  84   2      
+  85   2                              if(gc_PlayMenu_Timer!=0)
+  86   2                              {
+  87   3                                      gc_PlayMenu_Timer--;
+  88   3                              }
+  89   2      
+  90   2                              if(gc_ShowFMRVolTimer!=0)
+  91   2                              {
+  92   3                                      gc_ShowFMRVolTimer--;
+  93   3                              }
+  94   2      
+  95   2                              if(gc_IR_Timer!=0)
+  96   2                              {
+  97   3                                      gc_IR_Timer--;
+  98   3                              }
+  99   2                      break;
+ 100   2      
+ 101   2                      case 3:
+ 102   2                              gw_MinuteTimer++;
+ 103   2                              if(gw_MinuteTimer>33)
+ 104   2                              {
+ 105   3                                      gw_MinuteTimer=0;
+ 106   3                                      READ_SARADC(2);
+ 107   3                              }
+ 108   2      
+ 109   2                              if(gc_ShowRepeatTimer!=0)
+ 110   2                              {
+ 111   3                                      gc_ShowRepeatTimer--;
+ 112   3                                      if(gc_ShowRepeatTimer==0)
+ 113   3                                      {
+ 114   4                                              gb_FlashRepeatIcon=!gb_FlashRepeatIcon;
+ 115   4                                      }
+ 116   3                              }
+C51 COMPILER V9.00   ISR                                                                   07/09/2012 21:16:51 PAGE 3   
+
+ 117   2                      break;
+ 118   2      
+ 119   2                      default:
+ 120   2              break;
+ 121   2              }//switch
+ 122   1      
+ 123   1              if(gb_HostConnect==1)
+ 124   1              {       
+ 125   2                      if(XBYTE[0xB615]==0x00)
+ 126   2                      {
+ 127   3                              gc_Host_remove_detect_counter++;
+ 128   3                              if(gc_Host_remove_detect_counter>10)
+ 129   3                              {
+ 130   4                                      gb_HostConnect=0;       
+ 131   4                              }
+ 132   3                      }
+ 133   2                      else
+ 134   2                      {
+ 135   3                              gc_Host_remove_detect_counter=0;
+ 136   3                      }
+ 137   2              }
+ 138   1              else
+ 139   1              {
+ 140   2                      gc_Host_remove_detect_counter=0;
+ 141   2              }
+ 142   1      }
+ 143          
+ 144          
+ 145          void RTC_SnapValue(void)
+ 146          {
+ 147   1              xdata   U8      tc_RTC[5];
+ 148   1              data    U8      i;
+ 149   1      
+ 150   1              RTC_Write(0xB1,0x01);           // Snap time value
+ 151   1              i=10;
+ 152   1              while(--i)
+ 153   1              {
+ 154   2                      if(RTC_Read(0x00)==0x10)        // Wait snap done
+ 155   2                      {
+ 156   3                              break;
+ 157   3                      }
+ 158   2              }
+ 159   1      
+ 160   1              tc_RTC[0]=RTC_Read(0x11);
+ 161   1              tc_RTC[1]=RTC_Read(0x12);
+ 162   1              tc_RTC[2]=RTC_Read(0x13);
+ 163   1              tc_RTC[3]=RTC_Read(0x14);
+ 164   1              tc_RTC[4]=RTC_Read(0x15);
+ 165   1              gdw_RTC_Second=((U32)tc_RTC[4]<<24)+((U32)tc_RTC[3]<<16)+((U16)tc_RTC[2]<<8)+tc_RTC[1];
+ 166   1              gdw_RTC_Second=(gdw_RTC_Second<<1)+(tc_RTC[0]>>7);
+ 167   1              XBYTE[0xB068]=0xC0;
+ 168   1              XBYTE[0xB069]=0;
+ 169   1              XBYTE[0xB067]=1; // trigger write
+ 170   1              while((XBYTE[0xB06B]&0x01)==0);
+ 171   1      }
+ 172          
+ 173          void HostISR(void) interrupt 0 using 2
+ 174          {
+ 175   1              data    U8      tc_B5C0;
+ 176   1              data    U32     tdw_RTCTime;
+ 177   1      
+ 178   1              EX0=0;
+C51 COMPILER V9.00   ISR                                                                   07/09/2012 21:16:51 PAGE 4   
+
+ 179   1      
+ 180   1              if((XBYTE[0xB0C0]&0x08))        // RTC interrupt
+ 181   1              {
+ 182   2                      XBYTE[0xB0C0]&=~0x08;   // Clear RTC interrupt
+ 183   2                      gb_RTC_wakeup=1;
+ 184   2                      RTC_SnapValue();
+ 185   2                      tdw_RTCTime=gdw_RTC_Second%86400;
+ 186   2                      if(gb_OrderRecordConfirm==1)
+ 187   2                      {
+ 188   3                              if(tdw_RTCTime==gdw_OrderRecordTime)
+ 189   3                              {
+ 190   4                                      gb_OrderRecordConfirm=0;
+ 191   4                                      gb_OrderRecordTrigger=1;
+ 192   4                              }
+ 193   3                      }
+ 194   2      
+ 195   2                      if(gb_AlarmON==1)
+ 196   2                      {
+ 197   3                              if(tdw_RTCTime==gdw_AlarmTime)
+ 198   3                              {
+ 199   4                                      gb_AlarmTrigger=1;
+ 200   4                              }
+ 201   3                      }
+ 202   2      
+ 203   2                      if((gc_LCMBacklightTimer!=0)&&(gc_LCMBacklightTimer!=0xFF))
+ 204   2                      {
+ 205   3                              LCM_BACKLIGHT=0;
+ 206   3                              gc_LCMBacklightTimer--;
+ 207   3                              if(gc_LCMBacklightTimer==0)
+ 208   3                              {
+ 209   4                                      LCM_BACKLIGHT=1;
+ 210   4                              }
+ 211   3                      }
+ 212   2      
+ 213   2                      if(gc_MenuTimer!=0)
+ 214   2                      {
+ 215   3                              gc_MenuTimer--;
+ 216   3                      }
+ 217   2      
+ 218   2                      if(gc_Idle2Suspend!=0)
+ 219   2                      {
+ 220   3                              gc_Idle2Suspend--;
+ 221   3                      }
+ 222   2      
+ 223   2                      if(gw_AlarmClockTimer!=0)
+ 224   2                      {
+ 225   3                              gw_AlarmClockTimer--;
+ 226   3                      }
+ 227   2              }
+ 228   1      
+ 229   1              if(XBYTE[0xBA19]!=0)    // IR interrupt
+ 230   1              {
+ 231   2                      if(XBYTE[0xBA19]==1)
+ 232   2                      {
+ 233   3                              gb_IR_wakeup=1;
+ 234   3                              gc_IRLongKeyCount=1;
+ 235   3                              gc_IR_press_timer=17;
+ 236   3                      }
+ 237   2                      else if(XBYTE[0xBA19]==2)
+ 238   2                      {
+ 239   3                              if(gc_IRLongKeyCount!=0xEE)
+ 240   3                              {
+C51 COMPILER V9.00   ISR                                                                   07/09/2012 21:16:51 PAGE 5   
+
+ 241   4                                      gc_IRLongKeyCount++; //計算長按鍵
+ 242   4                                      gc_IR_press_timer=17;
+ 243   4                                      if(gc_IRLongKeyCount==IRKEY_REPEATTIMES) 
+ 244   4                                      {
+ 245   5                                              gc_IRCmdStatus=2; //長按鍵的狀態
+ 246   5                                              gc_IR_press_timer=0;
+ 247   5                                              gc_IRLongKeyCount=0xEE;
+ 248   5                                      }
+ 249   4                              }
+ 250   3                      }
+ 251   2                      else
+ 252   2                      {
+ 253   3                              gc_IRCmdStatus=0;
+ 254   3                      }
+ 255   2                      XBYTE[0xBA19]=0x07;
+ 256   2              }
+ 257   1      
+ 258   1              if(gb_USB_Plugin==1)    // USB interrupt
+ 259   1              {
+ 260   2                      XBYTE[0xB5D0]=0x00;
+ 261   2                      XBYTE[0xB5A0]=0x00;
+ 262   2                      if(XBYTE[0xB5C3]==0x10)
+ 263   2                      {
+ 264   3                      gc_USB_ADDR=XBYTE[0xB5F2];
+ 265   3                  } 
+ 266   2                  
+ 267   2                      if ((XBYTE[0xB5C2]&0x02)) 
+ 268   2                      { // End Point 2 in (Bulk Out)
+ 269   3                      XBYTE[0xB5C2]&=~0x02;   
+ 270   3                              gb_USB_CMD_IN=1;
+ 271   3                      }
+ 272   2                      else
+ 273   2                      {
+ 274   3                              tc_B5C0=XBYTE[0xB5C0];
+ 275   3                              if(tc_B5C0&0x08)
+ 276   3                              {
+ 277   4                                      gb_USBRST_ISR_Detected=1;
+ 278   4                                      XBYTE[0xB002]|=0x04;    // SW Reset
+ 279   4                                  XBYTE[0xB002]=0x03;
+ 280   4                                      XBYTE[0xB527]=0x00;
+ 281   4                                      XBYTE[0xB5E9]=0xFF;             // Clear ALL USB Buffer.
+ 282   4                                      XBYTE[0xB5EA]=0xFF;
+ 283   4                                      XBYTE[0xB5A0]&=0xFC;
+ 284   4                                      XBYTE[0xB5A1]=0x02;
+ 285   4                                      XBYTE[0xB5D2]=0x02;             //因為Reset完後要收Host端的Command.             
+ 286   4                              }   
+ 287   3                              else if(tc_B5C0&0x01)
+ 288   3                              {
+ 289   4                                      Read_Setup_Packet();    //Get the 8-byte setup packet and decode these commands                                 
+ 290   4                              }
+ 291   3                              else if(tc_B5C0&0x02)
+ 292   3                              { 
+ 293   4                                      while(XBYTE[0xB5A0]&0x01);
+ 294   4                              }
+ 295   3                              else if(tc_B5C0&0x04)
+ 296   3                              {                    
+ 297   4                                      while(XBYTE[0xB5A0]&0x02); 
+ 298   4                              }
+ 299   3                              else if(tc_B5C0&0x10)
+ 300   3                              {
+ 301   4                                      if(XBYTE[0xB5B1]&0xF0) 
+ 302   4                                      {
+C51 COMPILER V9.00   ISR                                                                   07/09/2012 21:16:51 PAGE 6   
+
+ 303   5                                              XBYTE[0xB5D0]|=0x10;
+ 304   5                                      }
+ 305   4                                      if(gb_USB_Connect_Flag)
+ 306   4                                      {
+ 307   5                                          gb_USER_Remove_Flag=1;
+ 308   5                                      }       
+ 309   4                              }
+ 310   3                              else if(tc_B5C0&0x20)
+ 311   3                              { 
+ 312   4                                      if(XBYTE[0xB5B1]&0xF0) 
+ 313   4                                      {
+ 314   5                                              XBYTE[0xB5D0]|=0x10;
+ 315   5                                      }
+ 316   4                              }
+ 317   3                              else if(tc_B5C0&0x80)
+ 318   3                              { 
+ 319   4                                      XBYTE[0xB5D0]&=0xEF;    //Disable Suspend INT
+ 320   4                                      XBYTE[0xB5D0]|=0x80;    //Enable Resume INT
+ 321   4                                      gb_USB_Connect_Flag=0;
+ 322   4                                      gb_USER_Remove_Flag=0;
+ 323   4                              }
+ 324   3                      XBYTE[0xB5C0]=0x00;
+ 325   3              
+ 326   3                      if(gc_CX_Status_flag&CX_STL)
+ 327   3                              {
+ 328   4                              XBYTE[0xB5E8]=0x03;
+ 329   4                              gc_CX_Status_flag =0;
+ 330   4                      }
+ 331   3                      else
+ 332   3                              {
+ 333   4                              XBYTE[0xB5E8]=0x00;
+ 334   4                      }
+ 335   3                      XBYTE[0xB5A0]=0x03;
+ 336   3                      }
+ 337   2                      XBYTE[0xB5D0]=0xFF;
+ 338   2                      XBYTE[0xB5C3]=0x00;  
+ 339   2                      XBYTE[0xB5D3]=0x10;
+ 340   2              }
+ 341   1              EX0=1;          // enable INT 0
+ 342   1      }
+ 343          
+ 344          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1049    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       5
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       6
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

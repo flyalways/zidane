@@ -1,0 +1,485 @@
+C51 COMPILER V9.00   LYRIC                                                                 07/10/2012 15:51:53 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE LYRIC
+OBJECT MODULE PLACED IN .\obj\Lyric.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE Play\Lyric.c LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDIR(..\libsource\head
+                    -er) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\Lyric.lst) OBJECT(.\obj\Lyric.obj)
+
+line level    source
+
+   1          #include "SPDA2K.h"
+   2          #include "dos\fs_struct.h"
+   3          #include "Memalloc.h"
+   4          #include "..\header\variables.h"
+   5          
+   6          extern UBYTE  xdata EXT_NameC[];
+   7          
+   8          void Lyric_GetTimeStamp(void);
+   9          U8 Lyric_NextReadLrcFile(U8 tc_ReadNextSector);
+  10          void Lyric_NextGetLyrics(void);
+  11          U8 Lyric_OffsetLRC_Full();
+  12          
+  13          void Lyric_GetTimeStamp(void)
+  14          {
+  15   1              data    U8 i=0;
+  16   1              U8 Time_Char[5];
+  17   1              U16 temp_gw_LrcOffset;
+  18   1              U32 temp_gdw_LrcFilePointer;    
+  19   1              U16     tw_Lrcoffset=0;
+  20   1              U32     tw_LrcFilePointer=0;    
+  21   1              U16     temp_timecon=0;                 //tangwei add these varibales 081111
+  22   1              U16     temp_timevar=0;
+  23   1              data    U16     temp_timelow=0;
+  24   1              data    bit     setflag=1;
+  25   1              U8      timevar[5];
+  26   1              U8      k=0;
+  27   1              
+  28   1              Time_Char[0]=(gw_Disp_CurrentSec%3600/60/10)+0x30;
+  29   1              Time_Char[1]=gw_Disp_CurrentSec%3600/60%10+0x30;
+  30   1              Time_Char[2]=':';
+  31   1              Time_Char[3]=gw_Disp_CurrentSec%60/10+0x30;
+  32   1              Time_Char[4]=gw_Disp_CurrentSec%60%10+0x30;     
+  33   1      
+  34   1              gdw_LrcFileCurrentCluster=gdw_LrcFileStartCluster;
+  35   1      
+  36   1              gw_LrcOffset=0;
+  37   1              gdw_LrcFilePointer=0;
+  38   1              gw_LrcNextOffset=0;
+  39   1              gdw_LrcNextFilePointer=0;       
+  40   1              gb_LrcGetTimeOrNot=0;
+  41   1              gb_LrcGetTimeNextOrNot=0;
+  42   1              Lyric_ReadLrcFile(0);
+  43   1              
+  44   1              while(1)
+  45   1              {
+  46   2                      if(gc_PlayRecordDataBuf[gw_LrcOffset]=='[')
+  47   2                      {
+  48   3                              
+  49   3                              for(i=0;i<5;i++)
+  50   3                              {
+  51   4                                      if(Lyric_OffsetLRC_Full()==0)
+  52   4                                              return;
+  53   4                                      if(Time_Char[i]!=gc_PlayRecordDataBuf[gw_LrcOffset])
+  54   4                                              break;
+C51 COMPILER V9.00   LYRIC                                                                 07/10/2012 15:51:53 PAGE 2   
+
+  55   4                              }
+  56   3                              if(i>=5)//(JC)matching timestamp 
+  57   3                              {
+  58   4                                      while(1)
+  59   4                                      {
+  60   5                                              while(gc_PlayRecordDataBuf[gw_LrcOffset]!=']')//(JC)bypass the decimal point and digits rite to it
+  61   5                                              {       
+  62   6                                                      if(Lyric_OffsetLRC_Full()==0)
+  63   6                                                              return; 
+  64   6                                              }
+  65   5                                              if(Lyric_OffsetLRC_Full()==0)//(JC)Bypass ']'
+  66   5                                                      return;         
+  67   5                                              if(gc_PlayRecordDataBuf[gw_LrcOffset]!='[')
+  68   5                                              {       
+  69   6                                                      gb_LrcGetTimeOrNot = 1;//(JC)matching time stamp, following the lyrics
+  70   6                                                      temp_gw_LrcOffset=gw_LrcOffset;
+  71   6                                                      temp_gdw_LrcFilePointer=gdw_LrcFilePointer;
+  72   6                                                      gdw_LrcFileCurrentCluster=gdw_LrcFileStartCluster;
+  73   6                                                      gw_LrcOffset=0;                         //tangwei add 081111
+  74   6                                                      gdw_LrcFilePointer=0;
+  75   6                                                      Lyric_ReadLrcFile(0);
+  76   6                                                      temp_timecon=((Time_Char[0]-0x30)*10+(Time_Char[1]-0x30))*60+(Time_Char[3]-0x30)*10+(Time_Char[4]-0x
+             -30);
+  77   6                                                      while(1)
+  78   6                                                      {       
+  79   7                                                              while(gc_PlayRecordDataBuf[gw_LrcOffset]!='[')
+  80   7                                                              {       
+  81   8                                                                      if(Lyric_OffsetLRC_Full()==0)
+  82   8                                                                      {
+  83   9                                                                              gw_LrcOffset=temp_gw_LrcOffset;
+  84   9                                                                              gdw_LrcFilePointer=temp_gdw_LrcFilePointer;
+  85   9                                                                              return;
+  86   9                                                                      }
+  87   8                                                              }       
+  88   7                                                      for(i=0;i<5;i++)                        //tangwei add all these below 081111
+  89   7                                                              {
+  90   8                                                                      if(Lyric_OffsetLRC_Full()==0)
+  91   8                                                                              return; 
+  92   8                                                                      if(i==2)
+  93   8                                                                      {       
+  94   9                                                                              if(gc_PlayRecordDataBuf[gw_LrcOffset]!=':')
+  95   9                                                                                      break;
+  96   9                                                                      }
+  97   8                                                                      else
+  98   8                                                                      {
+  99   9                                                                              if((gc_PlayRecordDataBuf[gw_LrcOffset]>0x39)||(gc_PlayRecordDataBuf[gw_LrcOffset]<0x30))
+ 100   9                                                                              {
+ 101  10                                                                                      break;
+ 102  10                                                                              }
+ 103   9                                                                      
+ 104   9                                                                              timevar[i]=gc_PlayRecordDataBuf[gw_LrcOffset];
+ 105   9                                                                      }
+ 106   8                                                              }
+ 107   7                                                              
+ 108   7                                                              if(i!=2)
+ 109   7                                                              {
+ 110   8                                                                      temp_timevar=((timevar[0]-0x30)*10+(timevar[1]-0x30))*60+(timevar[3]-0x30)*10+(timevar[4]-0x30);
+ 111   8      
+ 112   8                                                                      tw_Lrcoffset=gw_LrcOffset;
+ 113   8                                                                      tw_LrcFilePointer=gdw_LrcFilePointer;
+ 114   8                                                                      if(temp_timevar>temp_timecon)
+ 115   8                                                                      {   
+C51 COMPILER V9.00   LYRIC                                                                 07/10/2012 15:51:53 PAGE 3   
+
+ 116   9                                                                              if(setflag)
+ 117   9                                                                              {   
+ 118  10                                                                                      temp_timelow=temp_timevar;
+ 119  10                                                                                      setflag=0;
+ 120  10                                                                                      while(1)
+ 121  10                                                                                      {
+ 122  11                                                                                              while(gc_PlayRecordDataBuf[gw_LrcOffset]!=']')
+ 123  11                                                                                              {       
+ 124  12                                                                                                      if(Lyric_OffsetLRC_Full()==0)
+ 125  12                                                                                                              return; 
+ 126  12                                                                                              }
+ 127  11                                                                                              if(Lyric_OffsetLRC_Full()==0)
+ 128  11                                                                                                              return;         
+ 129  11                                                                                              if(gc_PlayRecordDataBuf[gw_LrcOffset]!='[')
+ 130  11                                                                                              {       
+ 131  12                                                                                                      gb_LrcGetTimeNextOrNot = 1;
+ 132  12                                                                                                      gw_LrcNextOffset=gw_LrcOffset;
+ 133  12                                                                                                      gdw_LrcNextFilePointer=gdw_LrcFilePointer;
+ 134  12                                                                                                      break;
+ 135  12                                                                                              }
+ 136  11                                                                                              else
+ 137  11                                                                                              {
+ 138  12                                                                                                      k++;
+ 139  12                                                                                              }
+ 140  11                                                                                      }
+ 141  10                                                                              }
+ 142   9                                                                      }
+ 143   8                                                              
+ 144   8                                                                      if((temp_timevar>temp_timecon)&&(temp_timevar<temp_timelow))
+ 145   8                                                                      {  
+ 146   9                                                                              temp_timelow=temp_timevar;
+ 147   9                                                                              while(1)
+ 148   9                                                                              {
+ 149  10                                                                                      while(gc_PlayRecordDataBuf[gw_LrcOffset]!=']')
+ 150  10                                                                                      {       
+ 151  11                                                                                              if(Lyric_OffsetLRC_Full()==0)
+ 152  11                                                                                                      return; 
+ 153  11                                                                                      }
+ 154  10                                                                                      if(Lyric_OffsetLRC_Full()==0)
+ 155  10                                                                                                      return;         
+ 156  10                                                                                      if(gc_PlayRecordDataBuf[gw_LrcOffset]!='[')
+ 157  10                                                                                      {       
+ 158  11                                                                                              gb_LrcGetTimeNextOrNot = 1;
+ 159  11                                                                                              gw_LrcNextOffset=gw_LrcOffset;
+ 160  11                                                                                              gdw_LrcNextFilePointer=gdw_LrcFilePointer;
+ 161  11                                                                                              break;
+ 162  11                                                                                      }
+ 163  10                                                                                      else
+ 164  10                                                                                      {
+ 165  11                                                                                              k++;
+ 166  11                                                                                      }
+ 167  10                                                                              }
+ 168   9                                                                      }
+ 169   8                                                              }
+ 170   7                              
+ 171   7                                                               if(k!=0)
+ 172   7                                                               {
+ 173   8                                                                      k=0;   //sunzhk add 090613
+ 174   8                                                                      gw_LrcOffset=tw_Lrcoffset;
+ 175   8                                                                      gdw_LrcFilePointer=tw_LrcFilePointer;
+ 176   8                                                               }
+ 177   7                                                      }               
+C51 COMPILER V9.00   LYRIC                                                                 07/10/2012 15:51:53 PAGE 4   
+
+ 178   6                                              }
+ 179   5                                      }
+ 180   4                              }
+ 181   3                      }
+ 182   2                      if(Lyric_OffsetLRC_Full()==0)
+ 183   2                              return; 
+ 184   2              }
+ 185   1      }
+ 186          
+ 187          U8 Lyric_NextReadLrcFile(U8 tc_ReadNextSector)  //0:Jump to right sector  1:Continue mode for Next sector 
+             -//yflin090401 
+ 188          {
+ 189   1              U32 tdw_DataLogicAddr;
+ 190   1              U16 tdw_ResidualSector;
+ 191   1              U32 tdw_prevCluster;
+ 192   1              U32 tdw_Sector;
+ 193   1      
+ 194   1              if(gdw_LrcFilePointer >= gdw_LrcFileSize)
+ 195   1              {
+ 196   2                      return 0;
+ 197   2              }
+ 198   1      
+ 199   1              tdw_Sector=gdw_LrcNextFilePointer>>9;
+ 200   1      
+ 201   1              if(tdw_Sector<gc_DOS_SectorPerCluster) //in start Cluster
+ 202   1              {
+ 203   2                      gdw_LrcFileCurrentCluster=gdw_LrcFileStartCluster;              
+ 204   2              }       
+ 205   1              else
+ 206   1              {
+ 207   2                      if(tc_ReadNextSector)
+ 208   2                      {
+ 209   3                              if (( (tdw_Sector&(gc_DOS_SectorPerCluster-1))==0) )
+ 210   3                              {
+ 211   4                                      tdw_prevCluster = gdw_LrcFileCurrentCluster;
+ 212   4                                      gdw_LrcFileCurrentCluster =     DOS_GetNextCluster(gdw_LrcFileCurrentCluster, 1);
+ 213   4                                      if(tdw_prevCluster==gdw_LrcFileCurrentCluster) return 0;
+ 214   4                              }
+ 215   3                      }
+ 216   2                      else  //tc_ReadNextSector=0   
+ 217   2                      {
+ 218   3                              tdw_prevCluster=tdw_Sector/gc_DOS_SectorPerCluster;
+ 219   3                              gdw_LrcFileCurrentCluster =     DOS_GetNextCluster(gdw_LrcFileStartCluster, tdw_prevCluster);   
+ 220   3                      }
+ 221   2      
+ 222   2                      if ((gdw_LrcFileCurrentCluster==0) || (gdw_LrcFileCurrentCluster >= 0x0ffffff8))
+ 223   2                      {
+ 224   3                              return 0;
+ 225   3                      }
+ 226   2              }
+ 227   1      
+ 228   1              tdw_ResidualSector = (tdw_Sector)&(gc_DOS_SectorPerCluster-1);
+ 229   1              tdw_DataLogicAddr = DOS_ClusterLogicAddr(gdw_LrcFileCurrentCluster)+(tdw_ResidualSector);
+ 230   1              
+ 231   1              gb_ReadWriteDataArea = 0;
+ 232   1              return (!DOS_Read_LogicSector(tdw_DataLogicAddr, 1));
+ 233   1      }
+ 234          
+ 235          void Lyric_NextGetLyrics(void)
+ 236          {
+ 237   1              data    U8 i;
+ 238   1      
+C51 COMPILER V9.00   LYRIC                                                                 07/10/2012 15:51:53 PAGE 5   
+
+ 239   1              i=0;
+ 240   1              Lyric_NextReadLrcFile(0);
+ 241   1       
+ 242   1              gw_LrcNextOffset=(gdw_LrcNextFilePointer&0x1ff);
+ 243   1      
+ 244   1              while(gc_PlayRecordDataBuf[gw_LrcNextOffset]!=0x0d && gc_PlayRecordDataBuf[gw_LrcNextOffset]!=0x0a)//(JC)
+             -not <CR> and <LF>
+ 245   1              {
+ 246   2                      gc_LrcDisplayBuf[D_LrcBuffLimit/2+i]=gc_PlayRecordDataBuf[gw_LrcNextOffset];
+ 247   2                      i++;
+ 248   2                      if(i>=D_LrcBuffLimit/2)//(JC)max char numbers of piece of lyrics for a time stamp 
+ 249   2                              break;
+ 250   2      
+ 251   2                      gw_LrcNextOffset++;
+ 252   2                      gdw_LrcNextFilePointer++;
+ 253   2                      if(gdw_LrcNextFilePointer >= gdw_LrcFileSize)
+ 254   2                      {
+ 255   3                              break;
+ 256   3                      }       
+ 257   2                      if(gw_LrcNextOffset==512)
+ 258   2                      {
+ 259   3                              gw_LrcNextOffset=0;
+ 260   3                              if(!Lyric_NextReadLrcFile(1))
+ 261   3                                      break;
+ 262   3                      }                               
+ 263   2              }
+ 264   1              gc_LrcCurrentLenNext=i;
+ 265   1      }
+ 266          
+ 267          U8 Lyric_OffsetLRC_Full()
+ 268          {
+ 269   1              gw_LrcOffset++;
+ 270   1              gdw_LrcFilePointer++;
+ 271   1              if(gdw_LrcFilePointer>=gdw_LrcFileSize)
+ 272   1              {
+ 273   2                      return 0;
+ 274   2              }       
+ 275   1              if(gw_LrcOffset==512)
+ 276   1              {
+ 277   2                      if(gc_Play_FileType==0)
+ 278   2                      {
+ 279   3                              if(MP3_DataIn()==DSP_DATAIN_COMMAND_ERROR)
+ 280   3                              {       
+ 281   4                                      gc_PhaseInx = 2;        //End of File for play
+ 282   4                                      return 0;//(JC)H0620
+ 283   4                              }
+ 284   3                      }
+ 285   2                      else if(gc_Play_FileType == 0x01)//(JC)H1128
+ 286   2                      {
+ 287   3                              if(WMA_DataIn()==DSP_DATAIN_COMMAND_ERROR)
+ 288   3                              {       
+ 289   4                                      gc_PhaseInx = 2;        //End of File for play
+ 290   4                                      return 0;//(JC)H0620
+ 291   4                              }
+ 292   3                      }
+ 293   2      //===========================================huiling.gu add 081212
+ 294   2                      gw_LrcOffset=0;
+ 295   2      
+ 296   2                      if(!Lyric_ReadLrcFile(1))
+ 297   2                      {
+ 298   3                              return 0;
+ 299   3                      }
+C51 COMPILER V9.00   LYRIC                                                                 07/10/2012 15:51:53 PAGE 6   
+
+ 300   2              }
+ 301   1              return 1;       
+ 302   1      }
+ 303          
+ 304          
+ 305          U8 Lyric_ReadLrcFile(U8 tc_ReadNextSector)  //0:Jump to right sector  1:Continue mode for Next sector//yfl
+             -in090401
+ 306          {
+ 307   1              U32 tdw_DataLogicAddr;
+ 308   1              U16 tdw_ResidualSector;
+ 309   1              U32 tdw_prevCluster;
+ 310   1              U32 tdw_Sector;
+ 311   1      
+ 312   1              if(gdw_LrcFilePointer >= gdw_LrcFileSize)
+ 313   1              {
+ 314   2                      return 0;
+ 315   2              }
+ 316   1      
+ 317   1              tdw_Sector=gdw_LrcFilePointer>>9;
+ 318   1      
+ 319   1              if(tdw_Sector<gc_DOS_SectorPerCluster) //in start Cluster
+ 320   1              {
+ 321   2                      gdw_LrcFileCurrentCluster=gdw_LrcFileStartCluster;              
+ 322   2              }       
+ 323   1              else
+ 324   1              {
+ 325   2                      if(tc_ReadNextSector)
+ 326   2                      {
+ 327   3                              if (( (tdw_Sector&(gc_DOS_SectorPerCluster-1))==0) )
+ 328   3                              {
+ 329   4                                      tdw_prevCluster = gdw_LrcFileCurrentCluster;
+ 330   4                                      gdw_LrcFileCurrentCluster =     DOS_GetNextCluster(gdw_LrcFileCurrentCluster, 1);
+ 331   4                                      if(tdw_prevCluster==gdw_LrcFileCurrentCluster) return 0;
+ 332   4                              }
+ 333   3                      }
+ 334   2                      else  //tc_ReadNextSector=0   
+ 335   2                      {
+ 336   3                              tdw_prevCluster=tdw_Sector/gc_DOS_SectorPerCluster;
+ 337   3                              gdw_LrcFileCurrentCluster =     DOS_GetNextCluster(gdw_LrcFileStartCluster, tdw_prevCluster);   
+ 338   3                      }
+ 339   2      
+ 340   2                      if ((gdw_LrcFileCurrentCluster==0) || (gdw_LrcFileCurrentCluster >= 0x0ffffff8))
+ 341   2                      {
+ 342   3                              return 0;
+ 343   3                      }
+ 344   2              }
+ 345   1      
+ 346   1              tdw_ResidualSector = (tdw_Sector)&(gc_DOS_SectorPerCluster-1);
+ 347   1              tdw_DataLogicAddr = DOS_ClusterLogicAddr(gdw_LrcFileCurrentCluster)+(tdw_ResidualSector);
+ 348   1              
+ 349   1              gb_ReadWriteDataArea = 0;
+ 350   1              return (!DOS_Read_LogicSector(tdw_DataLogicAddr, 1));
+ 351   1      }
+ 352          
+ 353          
+ 354          void Lyric_GetLyrics(void)
+ 355          {
+ 356   1              data    U8 i;
+ 357   1      
+ 358   1              i=0;
+ 359   1              Lyric_ReadLrcFile(0);
+ 360   1      
+C51 COMPILER V9.00   LYRIC                                                                 07/10/2012 15:51:53 PAGE 7   
+
+ 361   1              gw_LrcOffset=(gdw_LrcFilePointer&0x1ff);
+ 362   1              while(gc_PlayRecordDataBuf[gw_LrcOffset]!=0x0d && gc_PlayRecordDataBuf[gw_LrcOffset]!=0x0a)//(JC)not <CR>
+             - and <LF>
+ 363   1              {
+ 364   2                      gc_LrcDisplayBuf[i]=gc_PlayRecordDataBuf[gw_LrcOffset];
+ 365   2                      i++;
+ 366   2                      if(i>=D_LrcBuffLimit/2)//(JC)max char numbers of piece of lyrics for a time stamp 
+ 367   2                              break;
+ 368   2      
+ 369   2                      gw_LrcOffset++;
+ 370   2                      gdw_LrcFilePointer++;
+ 371   2                      if(gdw_LrcFilePointer >= gdw_LrcFileSize)
+ 372   2                      {
+ 373   3                              break;
+ 374   3                      }       
+ 375   2                      if(gw_LrcOffset==512)
+ 376   2                      {
+ 377   3                              gw_LrcOffset=0;
+ 378   3                              if(!Lyric_ReadLrcFile(1))
+ 379   3                                      break;
+ 380   3                      }                               
+ 381   2              }
+ 382   1              gc_LrcCurrentLen=i;
+ 383   1      }
+ 384          
+ 385          
+ 386          
+ 387          U8 Lyric_FileSearch()
+ 388          {
+ 389   1              data    U8 tc_Status;
+ 390   1              data    U8 tc_TempBuff[3];
+ 391   1              data    U16 tw_Lenth;
+ 392   1      
+ 393   1              {
+ 394   2                      EXT_NameC[0]=1;
+ 395   2                      gs_File_FCB[2].dw_FDB_StartCluster=gs_File_FCB[0].dw_FDB_StartCluster;
+ 396   2                      if (!gc_FileLongName[2])
+ 397   2                      {//0:long
+ 398   3                              ((U8 *)(&tw_Lenth))[0] = gc_FileLongName[3];
+ 399   3                              ((U8 *)(&tw_Lenth))[1] = gc_FileLongName[4];
+ 400   3                              tw_Lenth+=5;    
+ 401   3                                      
+ 402   3                              tc_TempBuff[0] = gc_FileLongName[tw_Lenth-2];
+ 403   3                              tc_TempBuff[1] = gc_FileLongName[tw_Lenth-4];                   
+ 404   3                              tc_TempBuff[2] = gc_FileLongName[tw_Lenth-6];                   
+ 405   3                              gc_FileLongName[tw_Lenth-6] = 'L';
+ 406   3                              gc_FileLongName[tw_Lenth-4] = 'R';
+ 407   3                              gc_FileLongName[tw_Lenth-2] = 'C';                      
+ 408   3                              tc_Status = DOS_Search_File(C_File_OneDir|C_By_LName, C_OtherFileType, C_CmpExtName|C_Next);                    
+ 409   3                      }
+ 410   2                      else
+ 411   2                      {
+ 412   3                              EXT_NameC[0]=1;         
+ 413   3                              EXT_NameC[1]='L';
+ 414   3                              EXT_NameC[2]='R';
+ 415   3                      EXT_NameC[3]='C';
+ 416   3                      
+ 417   3                              tc_Status = DOS_Search_File(C_File_OneDir|C_By_SName, C_OtherFileType, C_CmpExtName|C_Next);
+ 418   3                      }       
+ 419   2                      
+ 420   2                      if (!gc_FileLongName[2])//(JC)finish searching, restore file name
+ 421   2                      {
+C51 COMPILER V9.00   LYRIC                                                                 07/10/2012 15:51:53 PAGE 8   
+
+ 422   3                              gc_FileLongName[tw_Lenth-2] = tc_TempBuff[0];
+ 423   3                              gc_FileLongName[tw_Lenth-4] = tc_TempBuff[1]; 
+ 424   3                              gc_FileLongName[tw_Lenth-6] = tc_TempBuff[2];
+ 425   3                      }
+ 426   2                      if (tc_Status)
+ 427   2                      {//no LRC file
+ 428   3                              return 0;
+ 429   3                      }
+ 430   2                      else
+ 431   2                      {//LRC file is exist    
+ 432   3                              DOS_Open_File_r(C_OtherFHandle, C_Open_FoundFile, C_NullFileName);//get file_totalsize and startcluster
+ 433   3                              gdw_LrcFileStartCluster = gs_File_FCB[2].dw_File_StartCluster;
+ 434   3                              gdw_LrcFileSize = gs_File_FCB[2].dw_File_TotalSize;
+ 435   3                              return 1;
+ 436   3                      }
+ 437   2              }
+ 438   1      }
+ 439          
+ 440          
+ 441          
+ 442          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1952    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----      49
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      11
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

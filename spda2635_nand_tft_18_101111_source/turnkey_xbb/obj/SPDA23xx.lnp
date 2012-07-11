@@ -1,0 +1,328 @@
+COMMON {".\obj\STARTUP.obj"},
+COMMON {".\obj\L51_BANK.obj"},
+COMMON {".\obj\L51_BankingLoader.obj"},
+COMMON {".\obj\util.obj"},
+COMMON {".\obj\lib.obj"},
+BANK2 {".\obj\USB.obj"},
+BANK2 {".\obj\USB_BULK.obj"},
+BANK2 {".\obj\usb_cmds.obj"},
+BANK2 {".\obj\USB_EP0.obj"},
+BANK2 {".\obj\usbComm.obj"},
+BANK2 {".\obj\USB_I2C.obj"},
+COMMON {".\obj\SD_CMD.obj"},
+COMMON {".\obj\SD_HW.obj"},
+COMMON {".\obj\Flash.obj"},
+COMMON {".\obj\Flash_COMM.obj"},
+COMMON {".\obj\Flash_Init.obj"},
+COMMON {".\obj\FLSHSCAN.obj"},
+COMMON {".\obj\Flash_Read.obj"},
+COMMON {".\obj\Flash_EnHance.obj"},
+BANK3 {".\obj\dspphysic.obj"},
+BANK3 {".\obj\dspuser.obj"},
+COMMON {".\obj\system.obj"},
+COMMON {".\obj\ISR.obj"},
+BANK4 {".\obj\St_cmds.obj"},
+BANK0 {".\obj\const_timer_init.obj"},
+BANK0 {".\obj\init.obj"},
+COMMON {".\obj\variables.obj"},
+COMMON {".\obj\Dos.obj"},
+BANK2 {".\obj\dosfat.obj"},
+BANK1 {".\obj\dosfdb.obj"},
+BANK1 {".\obj\dosfile.obj"},
+COMMON {".\obj\dosinit.obj"},
+BANK2 {".\obj\free_cluster.obj"},
+COMMON {".\obj\dosComm.obj"},
+BANK3 {".\obj\dos_fileplay.obj"},
+COMMON {".\obj\Memalloc.obj"},
+BANK3 {".\obj\Play_process.obj"},
+BANK3 {".\obj\Lyric.obj"},
+BANK3 {".\obj\id3.obj"},
+BANK0 {".\obj\mcu_dspinit.obj"},
+BANK3 {".\obj\FFR1.obj"},
+COMMON {".\obj\ProcessKey.obj"},
+COMMON {".\obj\USB_process.obj"},
+BANK0 {".\obj\logData.obj"},
+BANK6 {".\obj\remote.obj"},
+BANK6 {".\obj\FM.obj"},
+BANK3 {".\obj\Host_command_scsi.obj"},
+BANK3 {".\obj\Host_init.obj"},
+BANK3 {".\obj\Host_phy.obj"},
+BANK6 {".\obj\Dir_process.obj"},
+BANK6 {".\obj\Dir_process1.obj"},
+BANK7 {".\obj\PlayMenu.obj"},
+COMMON {".\obj\Indep_LCM_Func.obj"},
+BANK3 {".\obj\TFT_display.obj"},
+BANK7 {".\obj\TFT_displayB7.obj"},
+COMMON {".\obj\LCM_driver.obj"},
+BANK7 {".\obj\LCM_init.obj"},
+BANK7 {".\obj\Jpeg_process.obj"},
+BANK7 {".\obj\Mjpeg_process.obj"},
+COMMON {".\obj\Menu_hzk1.obj"},
+COMMON {".\obj\Menu_hzk2.obj"} 
+TO ".\obj\SPDA23xx"
+//NOOVERLAY
+OVERLAY(
+	// Function pointer table Music_Download
+	?CO?PLAY_PROCESS ~ (MP3_Download, WMA_Download),
+	play_playpause ! (MP3_Download, WMA_Download),
+
+	// Function pointer table Music_Data_In
+	?CO?PLAY_PROCESS ~ (MP3_DataIn, WMA_DataIn), 
+	play_proc ! (MP3_DataIn, WMA_DataIn),
+
+	// Function pointer table Music_ReadTime
+	?CO?PLAY_PROCESS ~ (MP3_ReadTime, WMA_ReadTime),
+	play_proc ! (MP3_ReadTime, WMA_ReadTime),
+
+	// Function pointer table Music_Bitrate
+	?CO?PLAY_PROCESS ~ (MP3_Bitrate, WMA_Bitrate),
+	play_playpause ! (MP3_Bitrate, WMA_Bitrate),
+
+	// Function pointer table Music_EOF_Proc
+	?CO?PLAY_PROCESS ~ (MP3_EOF_Proc, WMA_EOF_Proc),
+	play_endfile ! (MP3_EOF_Proc, WMA_EOF_Proc)
+)
+
+BankArea(0x6000,0x8FFF) 
+XDATA( 0X7000-0X7FFF )
+
+
+COMMON
+(	
+	?PR?L51_BANKINGLOADER(0x000E)
+,	?PR?*?L51_BANKINGLOADER	
+
+,	?PR?_SET_CLOCK_MODE?SYSTEM
+
+,	?PR?FLASH_COMM
+,	?PR?*?FLASH_COMM
+
+,	?CO?DSPUser
+,	?PR?DSPUser
+,	?PR?*?DSPUser
+
+,	?PR?dspphysic
+,	?PR?*?dspphysic	
+
+,	?PR?Host_phy
+,	?PR?*?Host_phy
+
+,	?CO?Host_command_scsi
+,	?PR?Host_command_scsi
+,	?PR?*?Host_command_scsi
+	
+,	?PR?DOS_FILEPLAY
+,	?PR?*?DOS_FILEPLAY
+
+,	?PR?DOSCOMM
+,	?PR?*?DOSCOMM
+
+,	?PR?DOS
+,	?PR?*?DOS
+
+,	?PR?SD_CMD
+,	?PR?*?SD_CMD
+
+,	?PR?SD_HW
+,	?PR?_SD_RECEIVE_RESPOND?SD_HW
+,	?PR?_SD_SEND_DUMMYCLK?SD_HW
+,	?PR?SD_CMD12_STOP?SD_HW
+,	?PR?SD_TRIGGER_CMD?SD_HW
+,	?PR?SD_CHECK_IDLE?SD_HW
+,	?PR?SD_TRIGCMD_RECEIVE_RESPOND?SD_HW			
+
+,	?PR?INDEP_LCM_FUNC
+,	?PR?*?INDEP_LCM_FUNC
+
+,	?PR?LCM_DRIVER
+,	?PR?*?LCM_DRIVER
+
+,	?PR?_UNICODE_HZK_GET_BMP?DIR_PROCESS
+,	?PR?*?ProcessKey
+
+,	?PR?IR_SERVICE_PROCESS?PLAY_PROCESS
+
+,	?PR?FLASH
+,	?PR?_USB_CHK_Bank0_1_BulkOut_Done?Flash
+,	?PR?_USB_Bank0_1_BulkOut?Flash
+,	?PR?_NAND_Set_Mark_Register?Flash
+,	?PR?_RW_Data_Stage?Flash
+,	?PR?_NAND_Set_FBlock?Flash
+,	?PR?_NAND_SequentWrite_Mode?Flash
+,	?PR?_NAND_Set_Spare_Data?Flash
+,	?PR?_NAND_OverWrite_Mode?Flash
+,	?PR?_USB_Rcevie_Data_To_BUf?Flash
+,	?PR?_USB_To_BUf?Flash
+,	?PR?_NAND_Laod_Data_To_Buf?Flash
+,	?PR?_NAND_Erase_Block_LEDR?Flash
+,	?PR?_NAND_Update_PWR_INX?Flash
+,	?PR?_NAND_Fill_H2E_SBlock?Flash
+,	?PR?_NAND_Fill_H2E_SPage?Flash
+,	?PR?_CHK_RandomPage_Space?Flash
+
+,	?PR?FFR1
+,	?PR?*?FFR1
+)   
+	
+
+BANK0
+(
+	?PR?DOSINIT(0x6000)
+,	?PR?*?DOSINIT
+
+,	?PR?MAIN?SYSTEM
+
+//,	?CO?FLASH_INIT
+,	?PR?FLASH_INIT
+,	?PR*?FLASH_INIT
+)   
+    
+BANK1
+(
+	?PR?LOGDATA(0x6000)
+,	?PR?*?LOGDATA
+
+,	?PR?FLSHSCAN
+,	?PR?*?FLSHSCAN
+
+,	?PR?MCU_DSPINIT
+,	?PR?*?MCU_DSPINIT
+
+,	?PR?*?SD_HW
+)	
+  
+BANK2
+(
+	?PR?DOSFAT(0x6000)
+,	?PR?*?DOSFAT
+
+,	?CO?DOSFDB
+,	?PR?DOSFDB
+,	?PR?*?DOSFDB
+
+,	?PR?DOSFILE
+,	?PR?*?DOSFILE
+
+,	?CO?ID3
+,	?PR?ID3
+,	?PR?*?ID3
+) 
+
+BANK3
+(
+	?CO?PLAY_PROCESS(0x6000)
+,	?PR?PLAY_PROCESS
+,	?PR?*?PLAY_PROCESS
+
+,	?PR?LYRIC
+,	?PR?*?LYRIC
+
+,	?PR?TFT_DISPLAY
+,	?PR?*?TFT_DISPLAY
+)
+
+BANK4
+(	
+	?PR?USB_EP0(0x6000)
+,	?PR?*?USB_EP0	
+
+,	?PR?USB_BULK
+,	?PR?*?USB_BULK
+
+,	?PR?USB_CMDS
+,	?PR?*?USB_CMDS
+
+,	?PR?USB
+,	?PR?*?USB
+
+,	?PR?FLASH_READ
+,	?PR?*?FLASH_READ
+)
+
+BANK5
+(
+	?PR?*?FLASH(0x6000)
+)	
+	
+BANK6(
+	?PR?FM(0x6000)
+,	?PR?*?FM
+
+,	?PR?remote
+,	?PR?*?remote
+)
+
+
+BANK7
+(
+	?PR?_DSP_DOWNLOAD?DSPUSER(0x6000),
+	?PR?DSP_PLAYINIT?DSPUSER,
+
+	?CO?MJPEG_PROCESS,
+
+	?PR?DSP_SURROUNDDISABLE?DSPUSER,
+	?PR?DSP_SURROUNDENABLE?DSPUSER
+
+,	?PR?TFT_DISPLAYB7
+,	?PR?*?TFT_DISPLAYB7
+
+,	?CO?PlayMenu
+,	?PR?PlayMenu
+,	?PR?*?PlayMenu
+)
+
+
+BANK8
+(
+	?PR?USB_I2C(0x6000)
+,	?PR?*?USB_I2C
+
+//,	?CO?FLASH_ENHANCE
+,	?PR?FLASH_ENHANCE
+,	?PR?*?FLASH_ENHANCE
+)
+
+BANK9
+(
+	?PR?JPEG_PROCESS(0x6000)
+,	?PR?*?JPEG_PROCESS
+
+,	?CO?HOST_INIT
+,	?PR?HOST_INIT
+,	?PR?*?HOST_INIT
+)
+
+
+BANK10
+(
+	?CO?DIR_PROCESS(0x6000)
+,	?PR?DIR_PROCESS
+,	?PR?*?DIR_PROCESS
+)
+
+
+BANK11
+(
+	?PR?ST_CMDS(0x6000)
+,	?PR?*?ST_CMDS
+
+,	?PR?DIR_PROCESS1
+,	?PR?*?DIR_PROCESS1
+)
+
+BANK12
+(
+	?CO*?MENU_HZK1(0x6000)
+,	?PR?MENU_HZK1
+,	?PR?*?MENU_HZK1
+)
+
+BANK13
+(
+	?CO*?MENU_HZK2(0x6000)
+,	?PR?MENU_HZK2
+,	?PR?*?MENU_HZK2
+)
+
+PRINT(".\lst\SPDA23xx.m51") RAMSIZE(256) 
+  

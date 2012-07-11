@@ -1,0 +1,856 @@
+C51 COMPILER V9.00   FLASH_INIT                                                            07/10/2012 15:51:47 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE FLASH_INIT
+OBJECT MODULE PLACED IN .\obj\Flash_Init.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE ..\libsource\FLASH\Flash_Init.C LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDI
+                    -R(..\libsource\header) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\Flash_Init.lst) OBJECT(.\obj\Flash_Init.obj)
+
+line level    source
+
+   1          /*
+   2           *                          Sunplus mMedia Inc.
+   3           *
+   4           *   (c) Copyright 2008~, Sunplus mMedia Inc., Hsinchu, Taiwan R.O.C.
+   5           *                          All Right Reserved
+   6           */
+   7          /*! \file       Flash_Init.c
+   8           *      \brief  
+   9           *
+  10           *      \author jay
+  11           */
+  12          
+  13          #include "SPDA2K.h"
+  14          static U16 Search_Last_Page(U16 TBlock);
+  15          static U8 CHK_ECCData_FF(void);
+  16          /*********************************************************************************
+  17          * NAME:                        void Chk_infor(void)
+  18          * DESCRIPTION:
+  19          *********************************************************************************/
+  20          void Chk_infor(void) {// ©ñ¦b CIS_Block[0]  ªº¦a¤è      
+  21   1      #if 1           
+  22   1              Device_Read_SRAM_Index.WD = 0x9200;
+  23   1              DEVICE_REG[0x0F] =0;
+  24   1              FDBP.cFPlane =0;
+  25   1              FDBP.wFBlock = CIS_Block[0]; 
+  26   1              FDBP.wFPage = 0;
+  27   1              FDBP.cFInAddr =0;
+  28   1              for( FDBP.wFPage=0; FDBP.wFPage< NAND_INFO.wPAGE_NUM; FDBP.wFPage++){
+  29   2                      FDBP.cFInAddr = 0;
+  30   2                  if(!Flash_ReadPage()){
+  31   3                              if(XWORD_9200[255]==0xDC54){
+  32   4                                      if (XBYTE_9200[0] == 'M') {
+  33   5                                              //gbt_Multi_Block = 1;
+  34   5                                      }
+  35   4                                      if (XBYTE_9200[1] == 'G') {
+  36   5                                              SYS_ZONE.wZONE_SIZE = XBYTE_9200[2];
+  37   5                                              SYS_ZONE.wZONE_SIZE = (SYS_ZONE.wZONE_SIZE<<8)+ XBYTE_9200[3];                  
+  38   5                                      }
+  39   4                                      if (XBYTE_9200[4] == 'C') {
+  40   5      //                                      gbt_Copy_Back = 1;//08/11/14,joyce close copyback function
+  41   5                                      }
+  42   4                                      if (XBYTE_9200[5] == 'R') {
+  43   5                                              // gbt_Enable_Replacement   =1;
+  44   5                                      }
+  45   4                                      if (XBYTE_9200[6] == 'R') {
+  46   5                                              //gc_RW_Strobe=XBYTE_9200[7];
+  47   5                                      }               
+  48   4                                      if (XBYTE_9200[8] == 'W') {
+  49   5                                              //gc_Write_T = XBYTE_9200[9];
+  50   5                                      }
+  51   4                                      if (XBYTE_9200[10] == 'R') {
+  52   5                                      }
+  53   4                                      if (XBYTE_9200[11] == 'D') {
+  54   5                              gbt_Support_Dummy_Capacity=1;  //090416 add for dummy capacity
+C51 COMPILER V9.00   FLASH_INIT                                                            07/10/2012 15:51:47 PAGE 2   
+
+  55   5                                       Dummy_Capacity.BY[0] = XBYTE_9200[12];         
+  56   5                                          Dummy_Capacity.BY[1] = XBYTE_9200[13];      
+  57   5                                          Dummy_Capacity.BY[2] = XBYTE_9200[14];      
+  58   5                                          Dummy_Capacity.BY[3] = XBYTE_9200[15];
+  59   5      //                                  dbprintf("\nDummy_Capacity.LW=%lX \n",Dummy_Capacity.LW);   
+  60   5                              }
+  61   4                                      //XBYTE_9200[16] XBYTE_9200[17] for MP use
+  62   4                                      if (XBYTE_9200[18] == 'C' && XBYTE_9200[19] == 'D' ) {
+  63   5                                              gbt_enableCDROM   =1;
+  64   5                                              gc_CDROM_Size=XBYTE_9200[20];
+  65   5      //                                      dbprintf("CD-ROM 0x%bx MB\n",gc_CDROM_Size);
+  66   5                          }
+  67   4                              }                               
+  68   3                              break;
+  69   3                      }
+  70   2              }
+  71   1              #endif
+  72   1              
+  73   1              
+  74   1              
+  75   1              
+  76   1              
+  77   1              
+  78   1              
+  79   1              
+  80   1              
+  81   1              
+  82   1      }
+  83          
+  84          
+  85          
+  86          /*********************************************************************************
+  87          * NAME:         bit FlashReadID(void)
+  88          * DESCRIPTION:// SPDA26xx flash  plan
+  89          *      
+  90          *********************************************************************************/
+  91          #define ID_1    XBYTE_8000[0]           //Maker Code
+  92          #define ID_2    XBYTE_8000[1]           //Device Code
+  93          #define ID_3    XBYTE_8000[2]           
+  94          #define ID_4    XBYTE_8000[3]           
+  95          #define ID_5    XBYTE_8000[4]           
+  96          
+  97          bit FlashReadID(void){
+  98   1              U8 tbt_newFlash=0;
+  99   1          DEVICE_REG[0x21] = 0x55;
+ 100   1              CHK_Flash_Ready();
+ 101   1              FLASH_REG [0x00] = 0x00;                //±j­¢¶iIO Mode     
+ 102   1              DEVICE_REG[0x23] = 0x0A;        //CLE = '1', ALE = '0', nWP = '1', nCE = '0'
+ 103   1              DEVICE_REG[0x20] = 0xFF;
+ 104   1              DEVICE_REG[0x23] = 0x02;        //CLE = '0', ALE = '0', nWP = '1', nCE = '0'
+ 105   1              CHK_Flash_Ready();
+ 106   1              DEVICE_REG[0x23] = 0x0A;        //CLE = '1', ALE = '0', nWP = '1', nCE = '0'
+ 107   1              DEVICE_REG[0x20] = 0x90;
+ 108   1              DEVICE_REG[0x23] = 0x06;        //CLE = '0', ALE = '1', nWP = '1', nCE = '0'
+ 109   1              DEVICE_REG[0x20] = 0x00;
+ 110   1              DEVICE_REG[0x23] = 0x02;        //CLE = '0', ALE = '0', nWP = '1', nCE = '0'
+ 111   1              CHK_Flash_Ready();
+ 112   1              ID_1 = DEVICE_REG[0x20];
+ 113   1              gc_Global_I = 0;
+ 114   1              ID_2 = DEVICE_REG[0x20];
+ 115   1              gc_Global_I = 0;
+ 116   1              ID_3 = DEVICE_REG[0x20];
+C51 COMPILER V9.00   FLASH_INIT                                                            07/10/2012 15:51:47 PAGE 3   
+
+ 117   1              gc_Global_I = 0;
+ 118   1              ID_4 = DEVICE_REG[0x20];        
+ 119   1              gc_Global_I = 0;
+ 120   1              ID_5 = DEVICE_REG[0x20];
+ 121   1              DEVICE_REG[0x23] = 0x03;        //CLE = '0', ALE = '0', nWP = '1', nCE = '1'    
+ 122   1              FLASH_REG [0x00] = 0x01;     
+ 123   1              
+ 124   1              if(FDBP.cFDev==0){
+ 125   2                      for(gc_Global_I=0; gc_Global_I<5;gc_Global_I++){
+ 126   3                              ID_Table[gc_Global_I] =XBYTE_8000[gc_Global_I];
+ 127   3                      }
+ 128   2              }
+ 129   1              else{
+ 130   2                      if((ID_Table[0]==ID_1)&&(ID_Table[1]==ID_2)){
+ 131   3                              return FALSE;
+ 132   3                      }
+ 133   2                      else{
+ 134   3                              return 1;
+ 135   3                      }
+ 136   2              }       
+ 137   1              if((ID_1==0xec)&&(ID_4&0x4c)==0x08)//09/02/06,joyce add for new flash
+ 138   1              {
+ 139   2                      
+ 140   2                      tbt_newFlash=1;
+ 141   2              }
+ 142   1          if((ID_1==0xAD)&&(ID_4==0x25))//090924 JAY Add
+ 143   1              {
+ 144   2                      
+ 145   2                      tbt_newFlash=1;
+ 146   2              }
+ 147   1              NAND_INFO.cADDR_CYCLE = 5;  //default 5 cycle 
+ 148   1              NAND_INFO.cSUPPORT_MULT_PLANE = 0;
+ 149   1              NAND_INFO.cDEVICE_NUM   = 1;
+ 150   1              NAND_INFO.cPLANE_NUM    = 1;
+ 151   1              NAND_INFO.cSUPPORT_CACHE_RW =0;
+ 152   1              switch (ID_2) {
+ 153   2                      case    SamsungF1024M33V:                               //0xF1                  
+ 154   2                      case    0xD1:   // 128MB(1Gb)
+ 155   2                              NAND_INFO.wBLOCK_NUM    = 1024;
+ 156   2                              NAND_INFO.wPAGE_NUM             = 64;
+ 157   2                              NAND_INFO.cINADDRMAX    = 4;
+ 158   2                              NAND_INFO.cFMAP                 = 0x01;
+ 159   2                              NAND_INFO.cADDR_CYCLE   = 4;  // 4 cycle
+ 160   2                              NAND_INFO.cFLASH_TYPE   = 0;//SLC
+ 161   2                              NAND_INFO.cECC_MODE             = 1;// 0-->24 1-->16
+ 162   2                      
+ 163   2                              break;
+ 164   2                      case    SamsungF2048M33V:                               //0xDA
+ 165   2                              
+ 166   2                              NAND_INFO.wBLOCK_NUM    = 2048;
+ 167   2                              NAND_INFO.wPAGE_NUM             = 64;
+ 168   2                              NAND_INFO.cINADDRMAX    = 4;
+ 169   2                              NAND_INFO.cFMAP                 = 0x01;
+ 170   2                              NAND_INFO.cFLASH_TYPE   = 0;//SLC
+ 171   2                              NAND_INFO.cECC_MODE             = 1;// 0-->24 1-->16
+ 172   2                                              
+ 173   2                              if (((ID_3 & 0x0C) == 0x04)) {  //ID_4: Block Size = 256KB
+ 174   3                                      
+ 175   3                                      NAND_INFO.wBLOCK_NUM    = 1024;
+ 176   3                                      NAND_INFO.wPAGE_NUM             = 128;
+ 177   3                                      NAND_INFO.cFMAP                 = 0x03;
+ 178   3                                      NAND_INFO.cFLASH_TYPE   = 1;//MLC
+C51 COMPILER V9.00   FLASH_INIT                                                            07/10/2012 15:51:47 PAGE 4   
+
+ 179   3                                                              
+ 180   3                              }
+ 181   2                              break;
+ 182   2      
+ 183   2                      case    SamsungF4096M33V:                               //0xDC
+ 184   2                              
+ 185   2                              NAND_INFO.wBLOCK_NUM    = 4096;
+ 186   2                              NAND_INFO.wPAGE_NUM             = 64;
+ 187   2                              NAND_INFO.cINADDRMAX    = 4;
+ 188   2                              NAND_INFO.cFMAP                 = 0x01;
+ 189   2                              NAND_INFO.cFLASH_TYPE   = 0;//SLC
+ 190   2                              NAND_INFO.cECC_MODE             = 1;// 0-->24 1-->16
+ 191   2                                              
+ 192   2                              if (((ID_3 & 0x0C) == 0x04)) {  //ID_4: Block Size = 256KB
+ 193   3                              
+ 194   3                                      NAND_INFO.wBLOCK_NUM    = 2048;
+ 195   3                                      NAND_INFO.wPAGE_NUM             = 128;
+ 196   3                                      NAND_INFO.cFMAP                 = 0x03;
+ 197   3                                      NAND_INFO.cFLASH_TYPE   = 1;//MLC
+ 198   3                                                              
+ 199   3                              }
+ 200   2                              break;
+ 201   2                      case    SamsungF8192M33V:                               //0xD3
+ 202   2                              if (((ID_3 & 0x0C) == 0x00)){//SLC
+ 203   3                                      NAND_INFO.wBLOCK_NUM    = 8192;
+ 204   3                                      NAND_INFO.wPAGE_NUM             = 64;
+ 205   3                                      NAND_INFO.cINADDRMAX    = 4;
+ 206   3                                      NAND_INFO.cFMAP                 = 0x01;
+ 207   3                                      NAND_INFO.cFLASH_TYPE   = 0;//SLC
+ 208   3                                      NAND_INFO.cECC_MODE             = 1;// 0-->24 1-->16
+ 209   3                                      if(((ID_3&0x03)==0x00)&(ID_1!=0xAD)){
+ 210   4                                              NAND_INFO.wBLOCK_NUM    = 4096;
+ 211   4                                              NAND_INFO.wPAGE_NUM             = 64;
+ 212   4                                              NAND_INFO.cINADDRMAX    = 8;
+ 213   4                                      }
+ 214   3                              }
+ 215   2                              else{
+ 216   3                                      
+ 217   3                                      NAND_INFO.wBLOCK_NUM    = 4096;
+ 218   3                                      NAND_INFO.wPAGE_NUM             = 128;
+ 219   3                                      NAND_INFO.cINADDRMAX    = 4;
+ 220   3                                      NAND_INFO.cFMAP                 = 0x03;
+ 221   3                                      NAND_INFO.cFLASH_TYPE   = 1;//MLC
+ 222   3                                      NAND_INFO.cECC_MODE             = 1;// 0-->24 1-->16
+ 223   3                                      if((ID_4&0x03)==0x02){//H27U8G8T2BTR , TC58NVG3D1DTGIO
+ 224   4                                              NAND_INFO.wBLOCK_NUM    = 2048;
+ 225   4                                              NAND_INFO.cINADDRMAX    = 8;                    
+ 226   4                                      }                               
+ 227   3                                      if((ID_1==0xEC)&&(ID_4==0x72)){// 8KB
+ 228   4                                              if(ID_3&0x80){//0603 Jay fix
+ 229   5                                                      NAND_INFO.cSUPPORT_CACHE_RW =1;
+ 230   5                                              }
+ 231   4                                              NAND_INFO.wBLOCK_NUM    = 1038;
+ 232   4                                              NAND_INFO.wPAGE_NUM             = 128;
+ 233   4                                              NAND_INFO.cINADDRMAX    = 16;
+ 234   4                                              NAND_INFO.cFMAP                 = 0x03;
+ 235   4                                              NAND_INFO.cFLASH_TYPE   = 1;//MLC
+ 236   4                                              NAND_INFO.cECC_MODE             = 0;// 0-->24 1-->16
+ 237   4                                                      
+ 238   4                                      }
+ 239   3                              }
+ 240   2                              break;
+C51 COMPILER V9.00   FLASH_INIT                                                            07/10/2012 15:51:47 PAGE 5   
+
+ 241   2                      case    SamsungF16384M33V:                              //0xD5 090512Jay ÅÜ¦¨¥HMLC¬°¥D
+ 242   2                              if (((ID_3 & 0x0C) == 0x00)){//SLC
+ 243   3                                      NAND_INFO.wBLOCK_NUM    = 8192;
+ 244   3                                      NAND_INFO.wPAGE_NUM             = 64;
+ 245   3                                      NAND_INFO.cINADDRMAX    = 8;
+ 246   3                                      NAND_INFO.cFMAP                 = 0x01;
+ 247   3                                      NAND_INFO.cFLASH_TYPE   = 0;//SLC
+ 248   3                                      NAND_INFO.cECC_MODE             = 1;// 0-->24 1-->16            
+ 249   3                              }
+ 250   2                              else{                   
+ 251   3                                      NAND_INFO.wBLOCK_NUM    = 4096;
+ 252   3                                      NAND_INFO.wPAGE_NUM             = 128;
+ 253   3                                      NAND_INFO.cINADDRMAX    = 8;
+ 254   3                                      NAND_INFO.cFMAP                 = 0x03;
+ 255   3                                      NAND_INFO.cFLASH_TYPE   = 1;//MLC
+ 256   3                                      NAND_INFO.cECC_MODE             = 1;// 0-->24 1-->16
+ 257   3                                      if(ID_3&0x80){//0603 Jay fix
+ 258   4                                              NAND_INFO.cSUPPORT_CACHE_RW =1;
+ 259   4                                      }
+ 260   3                                      if((ID_3&0x03)==0x01){//2 k page 2_Die 
+ 261   4                                              NAND_INFO.wBLOCK_NUM    = 8192;
+ 262   4                                              NAND_INFO.cINADDRMAX    = 4;
+ 263   4                                              NAND_INFO.cSUPPORT_CACHE_RW =0;
+ 264   4                                      }
+ 265   3                                      if((ID_1==0xEC)&&(ID_4==0x72)){// 8KB
+ 266   4                                              NAND_INFO.wBLOCK_NUM    = 2076;
+ 267   4                                              NAND_INFO.wPAGE_NUM             = 128;
+ 268   4                                              NAND_INFO.cINADDRMAX    = 16;
+ 269   4                                              NAND_INFO.cFMAP                 = 0x03;
+ 270   4                                              NAND_INFO.cFLASH_TYPE   = 1;//MLC
+ 271   4                                              NAND_INFO.cECC_MODE             = 0;// 0-->24 1-->16
+ 272   4                                      
+ 273   4                                      }
+ 274   3                                      if((ID_1==0x98)&&((ID_4&0xB3)==0x32)){// toshiba 8KB
+ 275   4                                              NAND_INFO.wBLOCK_NUM    = 2076;// ¦]¬°TC58NVG4D2ETA00 :2084 ¦ý¬O TC58NVG4D2FTA00¡G2076
+ 276   4                                              NAND_INFO.wPAGE_NUM             = 128;  //¦ýID table§¹¥þ¬Û¦P¬G¨ú³Ì¤p­È  2076
+ 277   4                                              NAND_INFO.cINADDRMAX    = 16;
+ 278   4                                              NAND_INFO.cFMAP                 = 0x03;
+ 279   4                                              NAND_INFO.cFLASH_TYPE   = 1;//MLC
+ 280   4                                              NAND_INFO.cECC_MODE             = 0;// 0-->24 1-->16
+ 281   4                                      }
+ 282   3                                      if(tbt_newFlash){
+ 283   4                                              NAND_INFO.cECC_MODE             = 0;// 0-->24 1-->16
+ 284   4                                              
+ 285   4                                      }
+ 286   3                              }
+ 287   2                              break;
+ 288   2                      case    SamsungF32768M33V:                              //0xD7 À³¸Ó·|¨Ï¥Î·sªºID table
+ 289   2                      
+ 290   2                              NAND_INFO.wBLOCK_NUM    = 8192;// L63a
+ 291   2                              NAND_INFO.wPAGE_NUM             = 128;
+ 292   2                              NAND_INFO.cINADDRMAX    = 8;
+ 293   2                              NAND_INFO.cFMAP                 = 0x03;
+ 294   2                              NAND_INFO.cFLASH_TYPE   = 1;//MLC
+ 295   2                              NAND_INFO.cECC_MODE             = 0;// 0-->24 1-->16            
+ 296   2                              if(ID_3&0x80){//0603 Jay fix
+ 297   3                                      NAND_INFO.cSUPPORT_CACHE_RW =1;
+ 298   3                              }                       
+ 299   2                              if(NAND_INFO.cSUPPORT_CACHE_RW ==0){//M Die 1j¤£¤ä«ùcach 
+ 300   3                                      NAND_INFO.cECC_MODE             = 1;// 0-->24 1-->16                            
+ 301   3                              }
+ 302   2                              else if((ID_1!=0x89)&&(ID_1!=0x2C)){//«DL63a
+C51 COMPILER V9.00   FLASH_INIT                                                            07/10/2012 15:51:47 PAGE 6   
+
+ 303   3                                      if((ID_3&0x03)==0x01){//4 k page 2_Die // toshiba
+ 304   4                                              NAND_INFO.wBLOCK_NUM    = 8192;// TH58NVG6D1DTG20
+ 305   4                                              NAND_INFO.cINADDRMAX    = 8;
+ 306   4                                      }
+ 307   3                                      else if((ID_4&0x03)==0x02){//8KB                                        
+ 308   4                                              NAND_INFO.cINADDRMAX    = 16;
+ 309   4                                              NAND_INFO.cFMAP                 = 0x03;
+ 310   4                                              NAND_INFO.cFLASH_TYPE   = 1;//MLC
+ 311   4                                              NAND_INFO.cECC_MODE             = 0;// 0-->24 1-->16                                    
+ 312   4                                              if(ID_1==0xAD){
+ 313   5                                                      NAND_INFO.cFMAP                 = 0x10;//Bit 4~7 ªí¥ÜHW¤£¤ä«ù»Ý­n¨Ï¥ÎSW¤è¦¡Âà´«
+ 314   5                                                      NAND_INFO.wBLOCK_NUM    = 2048;
+ 315   5                                                      NAND_INFO.wPAGE_NUM             = 256;                          
+ 316   5                                              }
+ 317   4                                              if(ID_1==0xEC){
+ 318   5                                                      NAND_INFO.wBLOCK_NUM    = 4152;
+ 319   5                                                      NAND_INFO.wPAGE_NUM             = 128;          
+ 320   5                                              }
+ 321   4                                              if(ID_1==0x98){
+ 322   5                                                      NAND_INFO.wBLOCK_NUM    = 4096;
+ 323   5                                                      NAND_INFO.wPAGE_NUM             = 128;          
+ 324   5                                              }
+ 325   4                                      }                       
+ 326   3                              }
+ 327   2                              break;
+ 328   2                      case    SamsungF65536M33V:                              //0xDE
+ 329   2                      case    0xD9:     // Micron 64G Device code     
+ 330   2      
+ 331   2                              NAND_INFO.cINADDRMAX    = 16;
+ 332   2                              NAND_INFO.cFMAP                 = 0x03;
+ 333   2                              NAND_INFO.cFLASH_TYPE   = 1;//MLC
+ 334   2                              NAND_INFO.cECC_MODE             = 0;// 0-->24 1-->16
+ 335   2                              if(ID_3&0x80){//0603 Jay fix
+ 336   3                                      NAND_INFO.cSUPPORT_CACHE_RW =1;
+ 337   3                              }
+ 338   2                              if(ID_1==0xAD){
+ 339   3                                      NAND_INFO.cFMAP                 = 0x10;//Bit 4~7 ªí¥ÜHW¤£¤ä«ù»Ý­n¨Ï¥ÎSW¤è¦¡Âà´«
+ 340   3                                      NAND_INFO.wBLOCK_NUM    = 4096;
+ 341   3                                      NAND_INFO.wPAGE_NUM             = 256;                          
+ 342   3                              }
+ 343   2                              if(ID_1==0xEC){
+ 344   3                                      NAND_INFO.wBLOCK_NUM    = 8304;
+ 345   3                                      NAND_INFO.wPAGE_NUM             = 128;          
+ 346   3                              }
+ 347   2                              if(ID_1==0x98){
+ 348   3                                      NAND_INFO.wBLOCK_NUM    = 8192;
+ 349   3                                      NAND_INFO.wPAGE_NUM             = 128;
+ 350   3                                                                              
+ 351   3                              }
+ 352   2                              break;  
+ 353   2                      case 0x48: // 16Gb Micron 12bit flash  //090820  Jay add 
+ 354   2                              
+ 355   2                              NAND_INFO.wBLOCK_NUM    = 2048;
+ 356   2                              NAND_INFO.wPAGE_NUM             = 256;
+ 357   2                              NAND_INFO.cINADDRMAX    = 8;
+ 358   2                              NAND_INFO.cFMAP                 = 0x10;//Bit 4~7 ªí¥ÜHW¤£¤ä«ù»Ý­n¨Ï¥ÎSW¤è¦¡Âà´«
+ 359   2                              NAND_INFO.cFLASH_TYPE   = 1;//0:SLC 1:MLC, 2:TLC
+ 360   2                              NAND_INFO.cECC_MODE             = 0;// 0-->24 1-->16
+ 361   2                      
+ 362   2                              NAND_INFO.cSUPPORT_CACHE_RW =1;
+ 363   2                              break;
+ 364   2                      case 0x68 : // 32 Gb Micron 12 bit flash //090820  Jay add
+C51 COMPILER V9.00   FLASH_INIT                                                            07/10/2012 15:51:47 PAGE 7   
+
+ 365   2                              
+ 366   2                              NAND_INFO.wBLOCK_NUM    = 4096;
+ 367   2                              NAND_INFO.wPAGE_NUM             = 256;
+ 368   2                              NAND_INFO.cINADDRMAX    = 8;
+ 369   2                              NAND_INFO.cFMAP                 = 0x10;//Bit 4~7 ªí¥ÜHW¤£¤ä«ù»Ý­n¨Ï¥ÎSW¤è¦¡Âà´«
+ 370   2                              NAND_INFO.cFLASH_TYPE   = 1;//0:SLC 1:MLC, 2:TLC
+ 371   2                              NAND_INFO.cECC_MODE             = 0;// 0-->24 1-->16
+ 372   2                                          
+ 373   2                              NAND_INFO.cSUPPORT_CACHE_RW =1;
+ 374   2                              break; 
+ 375   2                      case 0x88:  // 64 Gb Micron 12 bit flash  //090820  Jay add
+ 376   2                      
+ 377   2                              NAND_INFO.wBLOCK_NUM    = 4096;
+ 378   2                              NAND_INFO.wPAGE_NUM             = 256;
+ 379   2                              NAND_INFO.cINADDRMAX    = 16;
+ 380   2                              NAND_INFO.cFMAP                 = 0x10;//Bit 4~7 ªí¥ÜHW¤£¤ä«ù»Ý­n¨Ï¥ÎSW¤è¦¡Âà´«
+ 381   2                              NAND_INFO.cFLASH_TYPE   = 1;//0:SLC 1:MLC, 2:TLC
+ 382   2                              NAND_INFO.cECC_MODE             = 0;// 0-->24 1-->16
+ 383   2                                      
+ 384   2                              NAND_INFO.cSUPPORT_CACHE_RW =1;
+ 385   2                              if((ID_3&0x03)==0x01){//4 k page 2_Die 
+ 386   3                                      NAND_INFO.wBLOCK_NUM    = 8192;
+ 387   3                                      NAND_INFO.cINADDRMAX    = 8;
+ 388   3                              }
+ 389   2      
+ 390   2      
+ 391   2                              break;
+ 392   2                      default:
+ 393   2                              
+ 394   2                              break;
+ 395   2                              
+ 396   2              }
+ 397   1              if(NAND_INFO.cECC_MODE== 1){// 0-->24 1-->16
+ 398   2                      NAND_INFO.cECC_NUM      = 32;
+ 399   2                      gc_MAX_ERR_BIT_NUM = (16-MAX_ERRBIT_OFFSET);
+ 400   2                      
+ 401   2              }
+ 402   1              else{
+ 403   2                      NAND_INFO.cECC_NUM      = 46;
+ 404   2                      gc_MAX_ERR_BIT_NUM = (24-MAX_ERRBIT_OFFSET);
+ 405   2              }
+ 406   1              if(NAND_INFO.cINADDRMAX>=8){
+ 407   2                      gc_RW_Strobe =0x12;
+ 408   2              }
+ 409   1                      
+ 410   1              
+ 411   1              
+ 412   1              return FALSE;
+ 413   1      }
+ 414          /*********************************************************************************
+ 415          * NAME:                     void Init_Flash_Reg(void)
+ 416          * DESCRIPTION:// SPDA26xx flash  plan
+ 417          *********************************************************************************/
+ 418          void Init_Flash_Reg(void) {
+ 419   1              DEVICE_REG[0x05] = 0x04;
+ 420   1              DEVICE_REG[0x01] = 0x65;
+ 421   1              DEVICE_REG[0x00] = 0x01;
+ 422   1              DEVICE_REG[0x22] = 0x00;
+ 423   1              DEVICE_REG[0x23] = 0x03;
+ 424   1      
+ 425   1              if(MaxDevSize ==0x02){
+ 426   2                      DEVICE_REG[0x0D]=0x03;
+C51 COMPILER V9.00   FLASH_INIT                                                            07/10/2012 15:51:47 PAGE 8   
+
+ 427   2              }
+ 428   1              else{
+ 429   2                      DEVICE_REG[0x0D] = 0x0F;
+ 430   2              }                                                                       //Enable CE0   
+ 431   1              FLASH_REG[0x02]  = 0x55;                                                                        //FLASH CMD/ADDR 50ns
+ 432   1      }
+ 433          /*********************************************************************************
+ 434          * NAME:                     void Init_Flash_Variable(void)
+ 435          * DESCRIPTION:// SPDA26xx flash  plan
+ 436          *********************************************************************************/
+ 437          void Init_Flash_Variable(void) {  //Jay default  always disable
+ 438   1              gc_CardType                         = 0x00;
+ 439   1              gbt_Code_NeedRecover    = 0;    
+ 440   1              gc_WriteProof                   = 0x00; 
+ 441   1              gbt_Support_Dummy_Capacity =0;   //090416 add for initial value
+ 442   1              gbt_enableCDROM =0;                                     //09/04/24,joyce
+ 443   1              gc_CDROM_Size=0 ;                                       //09/04/24,joyce(unit:MB)
+ 444   1              SYS_ZONE.wZONE_SIZE =MAX_ZONE_SIZE;                     // default 240
+ 445   1          gc_RW_Strobe =0x13;
+ 446   1          gbt_USB_Data_In_Buf=0;
+ 447   1      }
+ 448          /*********************************************************************************
+ 449          * NAME:                         void InitFlash(void)
+ 450          * DESCRIPTION:// SPDA26xx flash  plan
+ 451          *********************************************************************************/
+ 452          void InitFlash(void) {
+ 453   1      
+ 454   1              bit tbt_ReadIDFail =0;
+ 455   1              U8 tc_DeviceCnt=0;
+ 456   1              for (FDBP.cFDev = PhyDevStart; FDBP.cFDev< MaxDevSize; FDBP.cFDev++) {
+ 457   2                      DMTTable[FDBP.cFDev] =0xFFFF;   
+ 458   2                      DEVICE_REG[0x0F] =FDBP.cFDev;
+ 459   2                      tbt_ReadIDFail = FlashReadID();
+ 460   2                      if (!tbt_ReadIDFail) {
+ 461   3                              Flash_State_Initial();                  
+ 462   3                              SearchBMT();
+ 463   3                              tc_DeviceCnt++;                 
+ 464   3                      }
+ 465   2                      else {
+ 466   3                              FLASH_REG[0x00] =0x01; 
+ 467   3                              Flash_State_Initial();   
+ 468   3                              break;
+ 469   3                      }
+ 470   2              }
+ 471   1              NAND_INFO.cDEVICE_NUM=tc_DeviceCnt;// updata NAND info  
+ 472   1              
+ 473   1              if (!NAND_INFO.cDEVICE_NUM) {
+ 474   2                      Capacity.LW = 1;
+ 475   2                      //CardExist = 0x00;
+ 476   2              }
+ 477   1              else {
+ 478   2                      // 0nly for User& HZK & DSP use 
+ 479   2                      gw_PagesPerBlock  = NAND_INFO.wPAGE_NUM;
+ 480   2                      gc_InAddrMax = NAND_INFO.cINADDRMAX;
+ 481   2                      gw_DataBlockSize  = (gw_PagesPerBlock*gc_InAddrMax);
+ 482   2                      //-----------------------------------------------------//
+ 483   2                      
+ 484   2                      
+ 485   2                      H_INFO.cHPAGESECTOR= NAND_INFO.cINADDRMAX*NAND_INFO.cPLANE_NUM;  // Hblock ¤¤page sector 
+ 486   2                      H_INFO.wHBLOCKSECTOR = NAND_INFO.wPAGE_NUM*H_INFO.cHPAGESECTOR; // Hblock ¤¤total sector num
+ 487   2                      H_INFO.wHBLOCKPAGE= NAND_INFO.wPAGE_NUM*NAND_INFO.cPLANE_NUM;   //Hblock  total page num        
+ 488   2                      //H_INFO.cSMALLPAGE_NUM = (EXT_SMALL_BLOCK_SIZE/NAND_INFO.cINADDRMAX)<<1;//Âà´«¦¨small block page num  /
+C51 COMPILER V9.00   FLASH_INIT                                                            07/10/2012 15:51:47 PAGE 9   
+
+             -/ 0520 Jay mark  
+ 489   2                      H_INFO.cSMALLPAGE_NUM = EXT_SMALL_BLOCK_SIZE;//0520 Jay add
+ 490   2                      H_INFO.cSMALLBLOCK_NUM = H_INFO.wHBLOCKPAGE/H_INFO.cSMALLPAGE_NUM;// ­pºâEX block ¤¤ªºsmall block num   
+ 491   2                      
+ 492   2                      
+ 493   2                      SYS_ZONE.cDEV_ZONE_NUM = NAND_INFO.wBLOCK_NUM>>8;
+ 494   2                      SYS_ZONE.wDEV_DATABLK_NUM = ((U16)SYS_ZONE.cDEV_ZONE_NUM*SYS_ZONE.wZONE_SIZE);
+ 495   2                      SYS_ZONE.cTOTALZONE_NUM = SYS_ZONE.cDEV_ZONE_NUM *NAND_INFO.cDEVICE_NUM;                                
+ 496   2                      #if 0//only test  
+                              Capacity.LW = ((LWORD)SYS_ZONE.wZONE_SIZE * H_INFO.wHBLOCKSECTOR)*3;    
+                              #else
+ 499   2                      Capacity.LW = ((LWORD)SYS_ZONE.wDEV_DATABLK_NUM * NAND_INFO.wPAGE_NUM)*NAND_INFO.cINADDRMAX;    
+ 500   2                      Capacity.LW = Capacity.LW * NAND_INFO.cDEVICE_NUM;      
+ 501   2                      #endif
+ 502   2      
+ 503   2              if(gbt_Support_Dummy_Capacity){//090416 add for error dummy capacity
+ 504   3                  if(Dummy_Capacity.LW<Capacity.LW){
+ 505   4      //              dbprintf("\n Error Dummy_Capacity:%lX",Dummy_Capacity.LW);
+ 506   4                      Dummy_Capacity.LW = Capacity.LW;
+ 507   4                  }       
+ 508   3              }
+ 509   2                      //CardExist = 0xFF;
+ 510   2                      Capacity_CDROM.LW=((U32)gc_CDROM_Size<<11);//09/04/15,joyce
+ 511   2                      Capacity_Remove.LW=Capacity.LW-Capacity_CDROM.LW;//09/04/15,joyce
+ 512   2              }
+ 513   1              if (!NAND_INFO.cDEVICE_NUM || gc_WriteProof) {
+ 514   2                      gc_CardExist &=0xFE;  // 081014 Jay Flash initial fail  disable flash system 
+ 515   2      //              dbprintf("\n Decice Not Ready"); 
+ 516   2              }
+ 517   1              else {          
+ 518   2      //              dbprintf("\n Capacity.lw:%lx",Capacity.LW);
+ 519   2                      gc_CardType = 0x01; //  081014 Jay now flash interface enable
+ 520   2                      gc_CardExist|=0x01;
+ 521   2                      LoadFirstTable();
+ 522   2              }
+ 523   1              Flash_State_Initial();
+ 524   1      }
+ 525          /*********************************************************************************
+ 526          * NAME:                    void LoadFirstTable(void)
+ 527          * DESCRIPTION:// SPDA26xx flash  plan
+ 528          *********************************************************************************/
+ 529          
+ 530          void LoadFirstTable(void) {
+ 531   1         gw_WhichGroup =0;
+ 532   1              gw_NowBMTPoint = 0;
+ 533   1              Mapping_Table = MAP_0;          // switch table pointer
+ 534   1              Wear_Table    = WEARTAB_0;      // switch table pointer
+ 535   1              MAP_Table[0] = gw_WhichGroup;           //¥ý±NBMT 0  load ¨ìmap ram 0
+ 536   1              MAP_Table[1] = 0xFF;    // oxFFªí¥Ü map ram 1 ¬OªÅªº    
+ 537   1              BMT_KEY[0]   = 0;
+ 538   1              BMT_KEY[1]   = 0;
+ 539   1              BMT.cFDev        = 0;
+ 540   1              BMT.cFPlane  = 0;
+ 541   1              BMT.wFBlock  = BMTTable[BMT.cFDev]; 
+ 542   1              BMT.wFPage       = 0;
+ 543   1              BMT.cFInAddr = 0;
+ 544   1              Create_Zone_Lookup_Table();     
+ 545   1              
+ 546   1      }
+ 547          
+ 548          
+ 549          
+C51 COMPILER V9.00   FLASH_INIT                                                            07/10/2012 15:51:47 PAGE 10  
+
+ 550          
+ 551          /*********************************************************************************
+ 552          * NAME:                  bit Search_Bank_Block(void)
+ 553          * DESCRIPTION:// SPDA26xx flash  plan
+ 554          *********************************************************************************/
+ 555          bit Search_BankCode_Block(void){
+ 556   1               bit tbt_Search_Fail=1;
+ 557   1          U8  tc_Index=0;
+ 558   1          gc_CodeBlock_Num =4096/(NAND_INFO.wPAGE_NUM*NAND_INFO.cINADDRMAX);
+ 559   1              gc_DSPBlock_Num =4096/(NAND_INFO.wPAGE_NUM*NAND_INFO.cINADDRMAX);
+ 560   1              //dbprintf("\ngc_CodeBlock_Num %bx",gc_CodeBlock_Num);
+ 561   1              //dbprintf("\ngc_DSPBlock_Num %bx",gc_DSPBlock_Num);    
+ 562   1              //gc_HZKBlock_Num =16384/(gc_PagesPerBlock*gc_InAddrMax);//¤£¥Î­pºâ¦]¬°ª½±µ°O¿ý¦btable ¤¤
+ 563   1          FLASH_REG[0xA5]= 0x0A;     //±j¨î¤Á´«¦¨24 bit ECC  
+ 564   1              FlashReset();
+ 565   1              FDBP.cFDev    = 0;
+ 566   1              FDBP.cFPlane  = 0;
+ 567   1              FDBP.wFBlock  = 0;
+ 568   1              FDBP.wFPage   = 0;
+ 569   1              FDBP.cFInAddr = 0;
+ 570   1              Device_Read_SRAM_Index.BY[0] = 0x80;
+ 571   1              Device_Read_SRAM_Index.BY[1] = 0x00;
+ 572   1              while(1){
+ 573   2                      for(FDBP.wFPage=0; FDBP.wFPage<NAND_INFO.wPAGE_NUM;FDBP.wFPage++){            
+ 574   3                      if(!Flash_ReadPage()){ // ²z½×¤W³o­ÓPageÀ³¸Ó¬OECC pass ¡A¦pªGECC fail ¥u¦n¸Õ¸Õ¬Ý¤U¤@­Ópage¡A¦pªG¤
+             -£¦æ¥u¦³¦b§ä¤U¤@­Ócode info block                
+ 575   4                          if((FLASH_REG[0x60]=='C')&& (FLASH_REG[0x61] == 'O')&&(FLASH_REG[0x62]=='D')&&(FLASH_REG[0x63
+             -] == 'E')){
+ 576   5                                      Bank_Info_Block[tc_Index]= FDBP.wFBlock;
+ 577   5                                              tbt_Search_Fail =0;
+ 578   5                                              tc_Index++;
+ 579   5                                              break;
+ 580   5                                      }
+ 581   4                              }
+ 582   3                      }
+ 583   2                      FDBP.wFBlock++;    
+ 584   2                      if((FDBP.wFBlock>20)||(tc_Index==0x02)){        // ·í¶W¹L1/16«áª½±µ¸õ¥X         
+ 585   3                              
+ 586   3                              break;          
+ 587   3                      }
+ 588   2              }
+ 589   1              if(!tbt_Search_Fail ){ //¦³§ä¨ìCode info block
+ 590   2              if((XBYTE_8000[508] == 'S' )&&(XBYTE_8000[509] == 'U' )&&(XBYTE_8000[510] == 'N')){
+ 591   3                  gc_Load_Code_Size = XBYTE_8000[100];    
+ 592   3      
+ 593   3                  for(tc_Index =0; tc_Index<gc_CodeBlock_Num;tc_Index++){
+ 594   4                      Bank_Block_A[tc_Index] =  XWORD_8000[(60+tc_Index)];    // 080328 Jay fix 2KB slc flash
+ 595   4                      Bank_Block_B[tc_Index] =  XWORD_8000[(80+tc_Index)];     // 080328 Jay fix 2KB slc flash  
+             -                   
+ 596   4      //              dbprintf("\n CodeA: %x , B:%x",Bank_Block_A[tc_Index],Bank_Block_B[tc_Index]);
+ 597   4                  }
+ 598   3         
+ 599   3                              for(tc_Index =0; tc_Index<gc_DSPBlock_Num;tc_Index++){
+ 600   4                                      DSP_Block_A[tc_Index] =  XWORD_8000[(112+tc_Index)];
+ 601   4                                      DSP_Block_B[tc_Index] =  XWORD_8000[(128+tc_Index)];  
+ 602   4      //                              dbprintf("\n DSP A: %x , B:%x",DSP_Block_A[tc_Index],DSP_Block_B[tc_Index]);
+ 603   4                              }
+ 604   3                              
+ 605   3                              gc_HZKBlock_Num =(U8)(((U32)(XBYTE_8000[114])<<10)/((NAND_INFO.wPAGE_NUM*NAND_INFO.cINADDRMAX)>>1));            
+ 606   3                              if(gc_HZKBlock_Num>64){
+ 607   4      //                              dbprintf("\nHZK_Block_Num %bx out of ram size \n",gc_HZKBlock_Num);
+ 608   4                              }
+C51 COMPILER V9.00   FLASH_INIT                                                            07/10/2012 15:51:47 PAGE 11  
+
+ 609   3                              for(tc_Index =0; tc_Index<gc_HZKBlock_Num;tc_Index++){
+ 610   4                                      HZK_Block_A[tc_Index] =  XWORD_8000[(256+tc_Index)];
+ 611   4      //                              dbprintf("\n HZK:%x" ,HZK_Block_A[tc_Index]);
+ 612   4                              }
+ 613   3      
+ 614   3                  Flash_State_Initial(); // ¤Á´«¦^default Ecc bit 
+ 615   3                  return 0;
+ 616   3              } 
+ 617   2                      
+ 618   2              }
+ 619   1              Flash_State_Initial(); // ¤Á´«¦^default Ecc bit 
+ 620   1              return 1;
+ 621   1      }
+ 622          
+ 623          /*********************************************************************************
+ 624          * NAME:                  void SearchBMT(void)
+ 625          * DESCRIPTION:// SPDA26xx flash  plan
+ 626          *********************************************************************************/
+ 627          void SearchBMT(void) {
+ 628   1              U8 tc_DevZoneNum; 
+ 629   1              
+ 630   1              DEVICE_REG[0x0F] =FDBP.cFDev;
+ 631   1              FlashReset();   
+ 632   1              FDBP.cFPlane  = 0;
+ 633   1              FDBP.cFInAddr = 0;
+ 634   1              FDBP.wFBlock  = NAND_INFO.wBLOCK_NUM - 2;
+ 635   1              Device_Read_SRAM_Index.BY[0] = 0x80;
+ 636   1              Device_Read_SRAM_Index.BY[1] = 0x00;
+ 637   1              gc_WriteProof =1;// 1 : system busy or fail 0: system ready      
+ 638   1              while(1){    // first  Search DMT Block                                                                                                                                                         //  ¥u­n¤T­ÓTag¤¤¦³¤@­Ó²Å¦X§Y¥i
+ 639   2                      for( FDBP.wFPage=0; FDBP.wFPage< NAND_INFO.wPAGE_NUM; FDBP.wFPage++){
+ 640   3                              FDBP.cFInAddr = 0;
+ 641   3                              if(!Flash_ReadPage()){// ECC OK 
+ 642   4                              if((FLASH_REG[0x60]==0x3E)&&(FLASH_REG[0x61]=='D')&&(FLASH_REG[0x62]=='M')&&(FLASH_REG[0x63]=='T'))
+             -{
+ 643   5                              DMTTable[FDBP.cFDev] = FDBP.wFBlock;
+ 644   5                                      DMT_Page[FDBP.cFDev] = FDBP.wFPage;
+ 645   5                                      gc_WriteProof =0;
+ 646   5                                  }
+ 647   4                          }
+ 648   3                          if(!gc_WriteProof){
+ 649   4                                      break;
+ 650   4                              }  
+ 651   3                      }
+ 652   2                      if(!gc_WriteProof){
+ 653   3                              break;
+ 654   3                      }
+ 655   2                      FDBP.wFBlock--;    
+ 656   2                      if (FDBP.wFBlock<(NAND_INFO.wBLOCK_NUM-15)) {
+ 657   3                              gc_WriteProof = 1;
+ 658   3                              DMTTable[FDBP.cFDev] = 0xFFFF;
+ 659   3      //                      dbprintf("\n Search BMT Fail");
+ 660   3                              return;                 
+ 661   3                      }
+ 662   2              }
+ 663   1              FDBP.wFBlock = DMTTable[FDBP.cFDev];
+ 664   1              FDBP.cFPlane =0;
+ 665   1              FDBP.wFPage  = DMT_Page[FDBP.cFDev];
+ 666   1              FDBP.cFInAddr =0;
+ 667   1              Device_Read_SRAM_Index.BY[0] = 0x90;
+ 668   1              Device_Read_SRAM_Index.BY[1] = 0x00;
+ 669   1              Flash_ReadPage();// ¤w¸g¤£»Ý­n¦A§PÂ_¤F¡ã¤§«e¤w¸g§PÂ_¹L¤@¦¸¤F¡ã
+C51 COMPILER V9.00   FLASH_INIT                                                            07/10/2012 15:51:47 PAGE 12  
+
+ 670   1              BMTTable[FDBP.cFDev]= XWORD_9000[0];  
+ 671   1              BMTTable_Backup[FDBP.cFDev] =  XWORD_9000[1];
+ 672   1              ReplacementBlock_Table[FDBP.cFDev] = XWORD_9000[2];
+ 673   1              //--------  100617 Jay fix -----------//
+ 674   1              gw_SourceBlock = ReplacementBlock_Table[FDBP.cFDev];
+ 675   1              ReplacementBlock_Page[FDBP.cFDev] =Search_Last_Page(gw_SourceBlock);    
+ 676   1              TempBlock_Table[FDBP.cFDev] = XWORD_9000[3];
+ 677   1              //-----------------------------------// 
+ 678   1              if(!FDBP.cFDev){ // ¥u¦³²Ä¤@Áû flash «O¯dCIS block 
+ 679   2                      for(gc_Global_I =0; gc_Global_I<CIS_Block_Num;gc_Global_I++) {
+ 680   3                              CIS_Block[gc_Global_I] = XWORD_9000[(BMTBLK_NUM+TEMPBLK_NUM+REPLACEBLK_NUM)+gc_Global_I];
+ 681   3                              
+ 682   3                      }
+ 683   2                      Chk_infor();  // Jay ©ñCIS[0] ªº¦ì¸m
+ 684   2              }
+ 685   1              if(!FDBP.cFDev){ // ¥u¦³²Ä¤@Áû flash «O¯dUserdata block 
+ 686   2                      for(gc_Global_I =0; gc_Global_I<User_Block_Num;gc_Global_I++) {
+ 687   3                              UserData_Block[gc_Global_I]=XWORD_9000[(BMTBLK_NUM+TEMPBLK_NUM+REPLACEBLK_NUM+CIS_Block_Num)+gc_Global_
+             -I];
+ 688   3                              
+ 689   3                      }       
+ 690   2              }
+ 691   1              tc_DevZoneNum = NAND_INFO.wBLOCK_NUM>>8;
+ 692   1              tc_DevZoneNum = tc_DevZoneNum>>1;
+ 693   1              if(!FDBP.cFDev){
+ 694   2                      for(gc_Global_I =0; gc_Global_I<64;gc_Global_I++) {  // initial fastbmt table
+ 695   3                              FAST_BMTTable[gc_Global_I]=0xFFFF;
+ 696   3                      FAST_BMTPage_Table[gc_Global_I]=0;
+ 697   3                 
+ 698   3                      }
+ 699   2              }
+ 700   1              
+ 701   1                
+ 702   1              
+ 703   1      }
+ 704          #if 0
+              /*********************************************************************************      
+              * NAME:                  void Flash_Set_Feature(U8 cAddr,U8 cdata )                              
+              * DESCRIPTION:                                             
+              *********************************************************************************/   
+              void Flash_Set_Feature(U8 cAddr,U8 cdata ){                                            
+                      DEVICE_REG[0x21] = 0x55;                                                                             
+                      CHK_Flash_Ready();                                                                                   
+                      FLASH_REG [0x00] = 0x00;                               
+                      CHK_Flash_Ready();                                 
+                      DEVICE_REG[0x23] = 0x0A;                               
+                      DEVICE_REG[0x20] = 0xEF;                      
+                      DEVICE_REG[0x23] = 0x06;                               
+                      DEVICE_REG[0x20] = cAddr;                         
+                      DEVICE_REG[0x23] = 0x02;                               
+                                                                                                                           
+                      DEVICE_REG[0x20]=cdata;                                                              
+                      DEVICE_REG[0x20]=0x00;                                                                               
+                      DEVICE_REG[0x20]=0x00;                                                                               
+                      DEVICE_REG[0x20]=0x00;                                                                               
+                                                                                                                           
+                      CHK_Flash_Ready();                                                                                   
+                      
+                                                                                                                       
+                  
+              }    
+              #endif
+C51 COMPILER V9.00   FLASH_INIT                                                            07/10/2012 15:51:47 PAGE 13  
+
+ 731          /*********************************************************************************
+ 732          * NAME:                  U16 Search_Last_Page(U16 TBlock)                         
+ 733          * DESCRIPTION: §ä´M³Ì«á¤@­Ó¦³¸ê®Æ page  // SPDA26xx flash  plan                                          
+ 734          *********************************************************************************/
+ 735          static U16 Search_Last_Page(U16 TBlock){                                               
+ 736   1          U8  tbt_Data_0xFF=0;                                                        
+ 737   1          FDBP.wFBlock = TBlock;
+ 738   1          gw_TargetPage=(NAND_INFO.wPAGE_NUM-1);//
+ 739   1          while(gw_TargetPage){    
+ 740   2          
+ 741   2              
+ 742   2              FDBP.cFPlane =gw_TargetPage%NAND_INFO.cPLANE_NUM;
+ 743   2              FDBP.wFPage = gw_TargetPage/NAND_INFO.cPLANE_NUM;
+ 744   2              if(CHK_ECCData_FF()){// ¦A¦¸ÀË¬d¬O§_¬°¯uªº¥þ³¡³£¬OFF
+ 745   3                              tbt_Data_0xFF =1;//ECC ¥þ³¡³£¬O0xFF                     
+ 746   3                      }
+ 747   2                      else{
+ 748   3                              tbt_Data_0xFF=0;  // «D¥þ³¡³£¬O0xFF;
+ 749   3                              break;
+ 750   3                      }
+ 751   2      
+ 752   2                      gw_TargetPage--;
+ 753   2          }  
+ 754   1          return gw_TargetPage;            
+ 755   1      
+ 756   1      }
+ 757          /*********************************************************************************
+ 758          * NAME:                bit CHK_ECCData_FF(void)
+ 759          * DESCRIPTION:
+ 760          *********************************************************************************/
+ 761          static U8 CHK_ECCData_FF(void){ 
+ 762   1              bit tbt_Data_0xFF;
+ 763   1              U8 tc_i;        
+ 764   1              Device_Read_SRAM_Index.BY[0] = 0x9C;//0601 Jay fix 0x80-->0x9C
+ 765   1              Device_Read_SRAM_Index.BY[1] = 0x00;
+ 766   1              Device_Xfer_DataLength.BY[0] = 0x00;
+ 767   1              Device_Xfer_DataLength.BY[1] = NAND_INFO.cECC_NUM;
+ 768   1              tbt_Data_0xFF      = 0;
+ 769   1              FLASH_REG[0xA3]  = 0x00;                                                                        // disable ECC  
+ 770   1              DEVICE_REG[0x0E] = 0x10;                                                                        // Enable Falsh data check oxFF
+ 771   1              SET_DEVICE_READ();
+ 772   1              FLASH_REG[0x06]  = 0x00;                                                                        // cmd1
+ 773   1              FLASH_REG[0x07]  = 0x30;                                                                        // cmd2 
+ 774   1              FLASH_REG[0x0C] =  0x00;                                                                        //column_L
+ 775   1              FLASH_REG[0x0B] =  0x04;                                                                        //column_H
+ 776   1              NAND_FBlock_FPage_FBank_To_PhyAddr_NAND();                                      // set FBank Fblock FPage       
+ 777   1              FLASH_REG[0x04]  = 0x01;                                                                        // CMD0+ADDR+CMD1       
+ 778   1              FLASH_REG[0x01] &= 0xF0;                                                                        // don't atuo read redunt
+ 779   1              CHK_Flash_Ready();
+ 780   1              TRIGGER_FLASH_CMD();    
+ 781   1              FLASH_REG[0x1A]  = 0x11; 
+ 782   1              CHK_Flash_Ready();
+ 783   1              Trigger_Data_Transfer_Done();           
+ 784   1              if(DEVICE_REG[0x0E]&0x20){ // Flash Data is not 0xFF  
+ 785   2                      gc_Global_I =0;
+ 786   2                      tbt_Data_0xFF= 0;
+ 787   2                      for(tc_i =0; tc_i<NAND_INFO.cECC_NUM;tc_i++){ // Double check 
+ 788   3                              if(XBYTE_9C00[tc_i] ==0xFF){//0601 Jay fix 0x80-->0x9c
+ 789   4                                      gc_Global_I ++;
+ 790   4                              }
+ 791   3                      }
+ 792   2                      if(gc_Global_I>(NAND_INFO.cECC_NUM>>1)){ //¦³¥i¯à¥u¬Oflash bit error »~§P
+C51 COMPILER V9.00   FLASH_INIT                                                            07/10/2012 15:51:47 PAGE 14  
+
+ 793   3                              tbt_Data_0xFF =1;
+ 794   3                      }
+ 795   2              }
+ 796   1              else{
+ 797   2                      tbt_Data_0xFF =1;
+ 798   2              }
+ 799   1              return tbt_Data_0xFF;
+ 800   1      }  
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   3332    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       4
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       3
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

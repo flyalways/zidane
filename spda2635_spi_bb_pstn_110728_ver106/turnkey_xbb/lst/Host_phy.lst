@@ -1,0 +1,270 @@
+C51 COMPILER V9.00   HOST_PHY                                                              07/09/2012 21:16:48 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE HOST_PHY
+OBJECT MODULE PLACED IN .\obj\Host_phy.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE Host\Host_phy.c LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDIR(..\libsource\h
+                    -eader) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\Host_phy.lst) OBJECT(.\obj\Host_phy.obj)
+
+line level    source
+
+   1          #include "..\header\SPDA2K.h"
+   2          #include "..\header\host_init.h"
+   3          #include "..\header\variables.h"
+   4          
+   5          
+   6          void tran_in_(U8 addr,U8 amount,U16 offset)
+   7          {
+   8   1              XBYTE[0xB602]=addr;
+   9   1              XBYTE[0xB603]=gc_Host_EPIN;
+  10   1              XBYTE[0xB604]=0;
+  11   1              XBYTE[0xB605]=((offset>>8)&0xFF)+((HOST_BUF_SA>>8)&0xFF);
+  12   1              XBYTE[0xB606]=amount;
+  13   1              XBYTE[0xB607]=0;
+  14   1              if(gb_dtg_in==0)
+  15   1              {
+  16   2                      XBYTE[0xB601]=0x91;
+  17   2              }
+  18   1              else
+  19   1              {
+  20   2              XBYTE[0xB601]=0x93;
+  21   2              }
+  22   1      }
+  23          
+  24          void tran_in(U8 addr,U8 amount,U16 offset)
+  25          {
+  26   1              tran_in_(addr,amount,offset);
+  27   1              gb_dtg_in=(!gb_dtg_in);
+  28   1      }
+  29          
+  30          
+  31          void tran_out(U8 addr,U8 amount)
+  32          {
+  33   1              XBYTE[0xB602]=addr;
+  34   1              XBYTE[0xB603]=gc_Host_EPOUT;
+  35   1              XBYTE[0xB604]=0;
+  36   1              XBYTE[0xB605]=0;
+  37   1              XBYTE[0xB606]=amount;
+  38   1              XBYTE[0xB607]=0;
+  39   1              if(gb_dtg_out==0)       
+  40   1              {
+  41   2                      XBYTE[0xB601]=0x11;
+  42   2              }
+  43   1              else
+  44   1              {
+  45   2                      XBYTE[0xB601]=0x13;
+  46   2              }
+  47   1              gb_dtg_out=(!gb_dtg_out);
+  48   1      }
+  49          
+  50          void tran_setup(U8 addr)
+  51          {
+  52   1              XBYTE[0xB602]=addr;
+  53   1              XBYTE[0xB603]=0x00;
+  54   1              XBYTE[0xB604]=0x00;
+C51 COMPILER V9.00   HOST_PHY                                                              07/09/2012 21:16:48 PAGE 2   
+
+  55   1              XBYTE[0xB605]=0x00;
+  56   1              XBYTE[0xB606]=0x08;
+  57   1              XBYTE[0xB607]=0x00;
+  58   1              XBYTE[0xB601]=0xD1;     //go
+  59   1      }
+  60          
+  61          
+  62          void setup_in(U8 addr,U8 amount,U8 offset,U8 setup_dtg) 
+  63          {
+  64   1              XBYTE[0xB602]=addr;
+  65   1              XBYTE[0xB603]=0x00;
+  66   1              XBYTE[0xB604]=offset&0xFF;
+  67   1              XBYTE[0xB605]=0x00;
+  68   1              XBYTE[0xB606]=amount&0xFF;
+  69   1              XBYTE[0xB607]=0x00;
+  70   1      
+  71   1              if(setup_dtg==0)
+  72   1              {
+  73   2                      XBYTE[0xB601]=0x91;
+  74   2              }
+  75   1              else
+  76   1              {
+  77   2                      XBYTE[0xB601]=0x93;
+  78   2              }
+  79   1      }
+  80          
+  81          
+  82          void setup_out (U8 addr,U8 endpoint,U16 amount,U16 offset,U8 setup_dtg)
+  83          {
+  84   1              XBYTE[0xB602]=addr;
+  85   1              XBYTE[0xB603]=endpoint;
+  86   1              XBYTE[0xB604]=offset&0xFF;
+  87   1              XBYTE[0xB605]=((offset>>8)&0xFF)+((HOST_BUF_SA>>8)&0xFF);
+  88   1              XBYTE[0xB606]=amount&0xFF;
+  89   1              XBYTE[0xB607]=(amount>>8)&0xFF;
+  90   1      
+  91   1              if(!setup_dtg)
+  92   1              {
+  93   2                      XBYTE[0xB601]=0x11;
+  94   2              }
+  95   1              else
+  96   1              {
+  97   2                      XBYTE[0xB601]=0x13;
+  98   2              }
+  99   1      }
+ 100          
+ 101          
+ 102          U8 Host_phy_Command_check(void)
+ 103          {
+ 104   1              xdata   U8      tc_b611_data;
+ 105   1              data    U32 i=0;
+ 106   1      
+ 107   1              gb_HostShortPack=0;
+ 108   1              gb_HostStallFlag=0;
+ 109   1              while(XBYTE[0xB601]&0x01)
+ 110   1              {//during transaction
+ 111   2                      if(gb_HostConnect==0) 
+ 112   2                      {
+ 113   3                              return HOST_PHYCOUNECT_FAIL;
+ 114   3                      }
+ 115   2                      if (i>gdw_pollingtime) 
+ 116   2                      {
+C51 COMPILER V9.00   HOST_PHY                                                              07/09/2012 21:16:48 PAGE 3   
+
+ 117   3                              return HOST_TEST_ERROR; //TONY
+ 118   3                      }
+ 119   2                      else if(XBYTE[0xB611]&0x01)
+ 120   2                      {
+ 121   3                              return  HOST_TimeOut_ERROR;
+ 122   3                      }
+ 123   2                      else
+ 124   2                      {
+ 125   3                              i++;
+ 126   3                      }
+ 127   2              }
+ 128   1      
+ 129   1              tc_b611_data=XBYTE[0xB611];
+ 130   1              
+ 131   1              if(tc_b611_data&0x01)
+ 132   1              {
+ 133   2                      return  HOST_TEST_ERROR1;
+ 134   2              }
+ 135   1      
+ 136   1              if(tc_b611_data==0)
+ 137   1              {//no any error
+ 138   2                      return 0;
+ 139   2              }
+ 140   1              else
+ 141   1              {//different kinds of error
+ 142   2                      if(tc_b611_data&0x10)
+ 143   2                      {
+ 144   3                              gb_HostStallFlag=1;
+ 145   3                              return  HOST_STALL;
+ 146   3                      }
+ 147   2                      else if(tc_b611_data&0x20)
+ 148   2                      {
+ 149   3                              gb_HostShortPack=1;
+ 150   3                              return 0;
+ 151   3                      }
+ 152   2                      else
+ 153   2                      {
+ 154   3                              return HOST_PHYCOUNECT_FAIL;
+ 155   3                      }               
+ 156   2              }
+ 157   1      }
+ 158          
+ 159          
+ 160          U8 Host_phy_Command_check_(U8 offset,U16 toggle)
+ 161          {
+ 162   1              xdata   U8      tc_b611_data;
+ 163   1              data    U16     time_out=0;
+ 164   1              data    U32     i=0;
+ 165   1      
+ 166   1              //***************************************************************************
+ 167   1              //important! if open SOF, it will cause TG_Match(B01C's bit6) be cleared to 0
+ 168   1              //so when Ack-in, it must close sof and re-open after receiving data
+ 169   1              //it can also adjust data if is received by 0xb608=0
+ 170   1              //***************************************************************************
+ 171   1      
+ 172   1              while(1)
+ 173   1              {
+ 174   2                      while(XBYTE[0xB601] & 0x01)
+ 175   2                      {
+ 176   3                              if(gb_HostConnect == 0) 
+ 177   3                              {
+ 178   4                                      return HOST_PHYCOUNECT_FAIL;
+C51 COMPILER V9.00   HOST_PHY                                                              07/09/2012 21:16:48 PAGE 4   
+
+ 179   4                              }
+ 180   3      
+ 181   3                              if (i>gdw_pollingtime) 
+ 182   3                              {
+ 183   4                                      i = 0;
+ 184   4                                      return HOST_TEST_ERROR; //TONY
+ 185   4                              }
+ 186   3                              else
+ 187   3                              {
+ 188   4                                       i++;
+ 189   4                              }
+ 190   3                      }
+ 191   2                      if((XBYTE[0xB611] & 0x10) || (XBYTE[0xB608]==0x00))
+ 192   2                      {
+ 193   3                              break;
+ 194   3                      }
+ 195   2                      if(time_out==0x5000)
+ 196   2                      {
+ 197   3                              break;
+ 198   3                      }
+ 199   2      
+ 200   2      //*****************************************************************
+ 201   2                      XBYTE[0xB604] = offset & 0xFF;
+ 202   2                      XBYTE[0xB605] = ((offset>>8) & 0xFF) + ((HOST_BUF_SA>>8)&0xFF); 
+ 203   2      //*************************************************F****************
+ 204   2      
+ 205   2                      time_out++;
+ 206   2                      if(toggle==0) 
+ 207   2                      {
+ 208   3                              XBYTE[0xB601]=0x91;
+ 209   3                      }
+ 210   2                      else
+ 211   2                      {
+ 212   3                              XBYTE[0xB601]=0x93;
+ 213   3                      }
+ 214   2              }
+ 215   1      
+ 216   1              tc_b611_data = XBYTE[0xB611];
+ 217   1              if(tc_b611_data == 0)
+ 218   1              {
+ 219   2                      return 0;
+ 220   2              }
+ 221   1              else
+ 222   1              {
+ 223   2                      if(tc_b611_data&0x10)
+ 224   2                      {
+ 225   3                              gb_HostStallFlag=1;
+ 226   3                              return  HOST_STALL;
+ 227   3                      }
+ 228   2                      else if(tc_b611_data & 0x20)
+ 229   2                      {
+ 230   3                              gb_HostShortPack=1;
+ 231   3                              return 0;
+ 232   3                      }
+ 233   2                      else
+ 234   2                      {
+ 235   3                              return HOST_PHYCOUNECT_FAIL;
+ 236   3                      }
+ 237   2              }
+ 238   1      }
+
+
+C51 COMPILER V9.00   HOST_PHY                                                              07/09/2012 21:16:48 PAGE 5   
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    503    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----      14
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      10
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

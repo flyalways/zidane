@@ -1,0 +1,358 @@
+C51 COMPILER V9.00   DOSFILE1                                                              07/09/2012 21:16:46 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE DOSFILE1
+OBJECT MODULE PLACED IN .\obj\dosfile1.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE DOS\dosfile1.c LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDIR(..\libsource\he
+                    -ader) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\dosfile1.lst) OBJECT(.\obj\dosfile1.obj)
+
+line level    source
+
+   1          #include <string.h>
+   2          #include "..\header\SPDA2K.h"
+   3          #include "..\header\variables.h"
+   4          
+   5          U8 DOS_Open_File_r(U8 tc_FileHandle, U8 tc_OpenMode, U8 *tpc_FileName)
+   6          {
+   7   1              data    U16     tw_Fdb_offset;
+   8   1              data    U32     tdw_temp;
+   9   1              idata   SearchFdb *p_mp;
+  10   1              xdata   SearchFdb temp;
+  11   1      
+  12   1              p_mp=&temp;
+  13   1      
+  14   1              if(!gs_File_FCB[tc_FileHandle].dw_FDB_LogAdd)
+  15   1              {
+  16   2                      return 1;       
+  17   2              }
+  18   1      
+  19   1              if(tc_OpenMode==0)//open SPECIFIC name file
+  20   1              {
+  21   2                      if(tpc_FileName[2]==K_LongFileName)
+  22   2                      {
+  23   3                              p_mp->c_Search_Mode=K_SPECIFIC_LONG_FILENAME;
+  24   3                      }
+  25   2                      else if(tpc_FileName[2]==K_ShortFileName) 
+  26   2                      {
+  27   3                              p_mp->c_Search_Mode=K_SPECIFIC_SHORT_FILENAME;
+  28   3                      }
+  29   2                      p_mp->pc_LongFileName=tpc_FileName;
+  30   2                      p_mp->dw_FDB_StartCluster=gs_File_FCB[tc_FileHandle].dw_FDB_StartCluster;//(JC)start cluster of DIR that
+             - the file is in       
+  31   2                      Find_Fdb(p_mp);
+  32   2              } 
+  33   1              else 
+  34   1              {//open found file
+  35   2                      p_mp->w_FDB_Offset =gs_File_FCB[tc_FileHandle].w_FDB_Offset;
+  36   2                      p_mp->dw_FDB_LogAdd =gs_File_FCB[tc_FileHandle].dw_FDB_LogAdd;
+  37   2              }
+  38   1              tw_Fdb_offset=p_mp->w_FDB_Offset;
+  39   1              gb_ReadWriteDataArea=1;
+  40   1              DOS_Read_LogicSector(p_mp->dw_FDB_LogAdd);
+  41   1                      
+  42   1              ((U8 *)(&tdw_temp))[0]=gc_UserDataBuf[tw_Fdb_offset+31];//(JC)store file size(in FDB) into tdw_temp then 
+             -dw_File_TotalSize
+  43   1              ((U8 *)(&tdw_temp))[1]=gc_UserDataBuf[tw_Fdb_offset+30];
+  44   1              ((U8 *)(&tdw_temp))[2]=gc_UserDataBuf[tw_Fdb_offset+29];
+  45   1              ((U8 *)(&tdw_temp))[3]=gc_UserDataBuf[tw_Fdb_offset+28];
+  46   1              gs_File_FCB[tc_FileHandle].dw_File_TotalSize= tdw_temp;
+  47   1              if (tc_OpenMode != 2)//(JC)specific name file
+  48   1              {//in mode 2 these value is got in searchfile() at first 
+  49   2                      gs_File_FCB[tc_FileHandle].dw_LongFDB_LogAdd1=p_mp->dw_LongFDB_LogAdd1;
+  50   2                      gs_File_FCB[tc_FileHandle].dw_LongFDB_LogAdd0=p_mp->dw_LongFDB_LogAdd0;
+  51   2                      gs_File_FCB[tc_FileHandle].dw_FDB_Cluster=p_mp->dw_FDB_Cluster;
+  52   2                      gs_File_FCB[tc_FileHandle].dw_FDB_LogAdd=p_mp->dw_FDB_LogAdd;
+C51 COMPILER V9.00   DOSFILE1                                                              07/09/2012 21:16:46 PAGE 2   
+
+  53   2                      gs_File_FCB[tc_FileHandle].w_FDB_Offset=p_mp->w_FDB_Offset;
+  54   2              }
+  55   1              //get the File_StartCluster
+  56   1              ((U8 *)(&tdw_temp))[0]=gc_UserDataBuf[tw_Fdb_offset+21];
+  57   1              ((U8 *)(&tdw_temp))[1]=gc_UserDataBuf[tw_Fdb_offset+20];
+  58   1              ((U8 *)(&tdw_temp))[2]=gc_UserDataBuf[tw_Fdb_offset+27];
+  59   1              ((U8 *)(&tdw_temp))[3]=gc_UserDataBuf[tw_Fdb_offset+26];
+  60   1              gs_File_FCB[tc_FileHandle].dw_File_StartCluster=tdw_temp;
+  61   1              gs_File_FCB[tc_FileHandle].dw_File_CurrentCluster=tdw_temp;             
+  62   1              gs_File_FCB[tc_FileHandle].dw_File_DataPoint = 0;        
+  63   1              if(gs_File_FCB[tc_FileHandle].dw_File_StartCluster>=2&&gs_File_FCB[tc_FileHandle].dw_File_StartCluster!=0
+             -xffffffff)
+  64   1              {//(JC)data cluster is from cluster 2
+  65   2                      return 0;
+  66   2              }
+  67   1              else
+  68   1              {
+  69   2                      return 1;
+  70   2              }
+  71   1      
+  72   1              return 0;       
+  73   1      }
+  74          
+  75          U8 DOS_Open_File_w(void)
+  76          {
+  77   1              data    U32     tdw_ClusterCnt;
+  78   1              idata   SearchFdb *p_mp;
+  79   1              idata   SearchFdb temp;
+  80   1      
+  81   1              p_mp=&temp;
+  82   1              p_mp->c_Search_Mode=K_FIND_FREE_FDB;
+  83   1              p_mp->dw_FDB_StartCluster=gs_File_FCB[1].dw_FDB_StartCluster;
+  84   1              p_mp->c_Search_Attribute=0;
+  85   1              //(JC)start to find a free FDB
+  86   1              if(Find_Fdb(p_mp))      //no free fdb
+  87   1              {               
+  88   2                      if(gs_File_FCB[1].dw_FDB_StartCluster<2)        //(JC)find no free FDB in root dir entry(FAT16)
+  89   2                      {//if root dir is full
+  90   3                              return 1;
+  91   3                      }
+  92   2                      tdw_ClusterCnt=DOS_GetAFreeCluster();                           //get a free cluster for FDB(FAT32)
+  93   2                      if(!tdw_ClusterCnt)
+  94   2                      {
+  95   3                              return 1;
+  96   3                      }
+  97   2                      else
+  98   2                      {
+  99   3                              gs_File_FCB[1].dw_FDB_Cluster=tdw_ClusterCnt;//(JC)cluster no.
+ 100   3                              gs_File_FCB[1].dw_FDB_LogAdd=((tdw_ClusterCnt-2)*gc_DOS_SectorPerCluster)+gdw_DOS_DataAddr;//xyq040811
+ 101   3                              gs_File_FCB[1].w_FDB_Offset=0;
+ 102   3                      }
+ 103   2      
+ 104   2                      tdw_ClusterCnt=DOS_GetAFreeCluster();                           //(JC)Get a free cluster for file content
+ 105   2                      if(!tdw_ClusterCnt)
+ 106   2                      {
+ 107   3                              return 1;
+ 108   3                      }
+ 109   2                      else
+ 110   2                      {
+ 111   3                              gs_File_FCB[1].dw_File_TotalSize=0;
+ 112   3                              gs_File_FCB[1].dw_File_DataPoint=0;
+ 113   3                              gs_File_FCB[1].dw_File_StartCluster=tdw_ClusterCnt;
+C51 COMPILER V9.00   DOSFILE1                                                              07/09/2012 21:16:46 PAGE 3   
+
+ 114   3                              gs_File_FCB[1].dw_File_CurrentCluster=tdw_ClusterCnt;
+ 115   3                      }
+ 116   2              }
+ 117   1              else 
+ 118   1              {//(JC)Get a free FDB, info stored in p_mp
+ 119   2                      tdw_ClusterCnt=0;
+ 120   2                      gs_File_FCB[1].dw_FDB_Cluster=p_mp->dw_FDB_Cluster;//(JC)File FDB start cluster
+ 121   2                      tdw_ClusterCnt=DOS_GetAFreeCluster();                           //(JC)Get a free cluster for file content
+ 122   2                      if(!tdw_ClusterCnt)
+ 123   2                      {
+ 124   3                              return 1;
+ 125   3                      }
+ 126   2                      else
+ 127   2                      {
+ 128   3                              gs_File_FCB[1].dw_File_TotalSize=0;
+ 129   3                              gs_File_FCB[1].dw_File_DataPoint=0;
+ 130   3                              gs_File_FCB[1].dw_File_StartCluster=tdw_ClusterCnt;
+ 131   3                              gs_File_FCB[1].dw_File_CurrentCluster=tdw_ClusterCnt;
+ 132   3                              gs_File_FCB[1].dw_FDB_LogAdd=p_mp->dw_FDB_LogAdd;
+ 133   3                              gs_File_FCB[1].w_FDB_Offset=p_mp->w_FDB_Offset;
+ 134   3                      }
+ 135   2              }
+ 136   1              return 0;       
+ 137   1      }
+ 138          
+ 139          bit DOS_Close_File_w(U8 *tpc_FileName)
+ 140          {
+ 141   1              data    U8      i;
+ 142   1              data    U16     tw_Addr;
+ 143   1              xdata   U8      tac_FileFdb[32];
+ 144   1              xdata   U32     tdw_TempCluster;
+ 145   1              xdata   U32     tdw_PreviousCluster;
+ 146   1              xdata   U32     tdw_TempLogicAddr;
+ 147   1      
+ 148   1              if(gs_File_FCB[1].dw_File_StartCluster==0xFFFFFFFF)
+ 149   1              {               
+ 150   2                      return 1;       
+ 151   2              }
+ 152   1      
+ 153   1              if(gc_CurrentCard==2)   // SD card must issue CMD12(stop command)
+ 154   1              {
+ 155   2                  if(gc_DOS_SectorPerCluster!=1) 
+ 156   2                      SD_Write_LBA_Dos(++gdw_LogicSectorAddr,4);      // SD stop command only
+ 157   2              }
+ 158   1      
+ 159   1              if(gs_File_FCB[1].dw_File_TotalSize!=0)
+ 160   1              {
+ 161   2                      // Fill FDB
+ 162   2                      DOS_FillFdb(tac_FileFdb,tpc_FileName,gs_File_FCB[1].dw_File_StartCluster,gs_File_FCB[1].dw_File_TotalSiz
+             -e);
+ 163   2                      tac_FileFdb[0x0B]=0x20;//attribute is archive           
+ 164   2                      tdw_TempLogicAddr=DOS_ClusterLogicAddr(gs_File_FCB[1].dw_FDB_Cluster);
+ 165   2                      if((tdw_TempLogicAddr==gs_File_FCB[1].dw_FDB_LogAdd)&&(gs_File_FCB[1].w_FDB_Offset==0)&&(gs_File_FCB[1].
+             -dw_FDB_Cluster!=gdw_DOS_RootDirClus))
+ 166   2                      {//directory area is full,must add fdb in a new free cluster                                    
+ 167   3                              memcpy(gc_PlayRecordDataBuf,tac_FileFdb,32);
+ 168   3                              memset(&gc_PlayRecordDataBuf[32],0,480);
+ 169   3                              gb_ReadWriteDataArea=0;
+ 170   3                              DOS_Write_LogicSector(tdw_TempLogicAddr,0);
+ 171   3                              //clear other area of the cluster to 0
+ 172   3                              memset(gc_PlayRecordDataBuf,0,32);              
+ 173   3                              for(i=1;i<gc_DOS_SectorPerCluster-1;i++)
+C51 COMPILER V9.00   DOSFILE1                                                              07/09/2012 21:16:46 PAGE 4   
+
+ 174   3                              {
+ 175   4                                      DOS_Write_LogicSector((tdw_TempLogicAddr+i),1);
+ 176   4                              }
+ 177   3                              DOS_Write_LogicSector((tdw_TempLogicAddr+i),2);
+ 178   3      
+ 179   3                              //find the last cluster of the directory
+ 180   3                              tdw_TempCluster=gs_File_FCB[1].dw_FDB_StartCluster;
+ 181   3                              while(tdw_TempCluster<gdw_DOS_FatMaxCluster)
+ 182   3                              {
+ 183   4                                      tdw_PreviousCluster=tdw_TempCluster;
+ 184   4                                      tdw_TempCluster=DOS_GetNextCluster(tdw_TempCluster,1);
+ 185   4                              }
+ 186   3                              //connect the free cluster after the last cluster of the directory
+ 187   3                              DOS_ConnectFATChain(tdw_PreviousCluster,gs_File_FCB[1].dw_FDB_Cluster); 
+ 188   3                      }
+ 189   2                      else
+ 190   2                      {//add fdb in directory area
+ 191   3                              gb_ReadWriteDataArea=0;
+ 192   3                              DOS_Read_LogicSector(gs_File_FCB[1].dw_FDB_LogAdd);
+ 193   3                              memcpy(&gc_PlayRecordDataBuf[gs_File_FCB[1].w_FDB_Offset],tac_FileFdb,32);
+ 194   3                              DOS_Write_LogicSector(gs_File_FCB[1].dw_FDB_LogAdd,3);
+ 195   3                      }
+ 196   2      
+ 197   2                      gb_ReadWriteDataArea=1;
+ 198   2                      tdw_TempLogicAddr=gs_File_FCB[1].dw_File_CurrentCluster>>(9-gc_DOS_FileSystemType);
+ 199   2                      // gc_FATTempBuffer[] DMA to gc_UserDataBuf[]
+ 200   2                      XBYTE[0xB301]=0x00;
+ 201   2                      XBYTE[0xB112]=0x00;
+ 202   2                      XBYTE[0xB113]=gc_FATTempBufferHB;
+ 203   2                      XBYTE[0xB114]=0x00;
+ 204   2                      XBYTE[0xB115]=gc_UserDataBufHB;
+ 205   2                      XBYTE[0xB3B0]=0x01;
+ 206   2                      while(!(XBYTE[0xB3C0]&0x01));
+ 207   2                      XBYTE[0xB3C0]=0;
+ 208   2      
+ 209   2                      if(gc_DOS_FileSystemType==1) //FAT16
+ 210   2                  {
+ 211   3                              tw_Addr=(gs_File_FCB[1].dw_File_CurrentCluster&0xFF)<<1; 
+ 212   3                      }
+ 213   2                      else        //FAT32 
+ 214   2                      {
+ 215   3                              tw_Addr=(gs_File_FCB[1].dw_File_CurrentCluster&0x7F)<<2;
+ 216   3                      }
+ 217   2                      gc_UserDataBuf[tw_Addr+0]=0xFF;
+ 218   2                      gc_UserDataBuf[tw_Addr+1]=0xFF;
+ 219   2                      if(gc_DOS_FileSystemType==2)
+ 220   2                      {
+ 221   3                              gc_UserDataBuf[tw_Addr+2]=0xFF;
+ 222   3                              gc_UserDataBuf[tw_Addr+3]=0xFF;
+ 223   3                      }
+ 224   2                      DOS_Write_LogicSector(gdw_DOS_Fat1Addr+tdw_TempLogicAddr,3);
+ 225   2                      DOS_Write_LogicSector(gdw_DOS_Fat2Addr+tdw_TempLogicAddr,3);
+ 226   2              }
+ 227   1      
+ 228   1              return 0;
+ 229   1      }
+ 230          
+ 231          U8 DOS_Write_File(U8 tc_AppendWr)
+ 232          {
+ 233   1              data    U8      tc_Status;
+ 234   1              data    U16     tw_Addr;
+ 235   1              data    U32     tw_temp;
+C51 COMPILER V9.00   DOSFILE1                                                              07/09/2012 21:16:46 PAGE 5   
+
+ 236   1              data    U32     tdw_FreeCluster;
+ 237   1              data    U32     tdw_CurrentFATSector;
+ 238   1              
+ 239   1              if(gs_File_FCB[1].dw_File_StartCluster==0xFFFFFFFF)
+ 240   1              {
+ 241   2                      return 1;       
+ 242   2              }
+ 243   1      
+ 244   1              if((gs_File_FCB[1].dw_File_DataPoint>>9)==gc_DOS_SectorPerCluster)
+ 245   1              {       
+ 246   2                      // Get Next free cluster
+ 247   2                      tdw_FreeCluster=DOS_GetAFreeCluster();
+ 248   2                      if(tdw_FreeCluster==0)
+ 249   2                      {
+ 250   3                              // disk is full
+ 251   3                              return 1;
+ 252   3                      }
+ 253   2                      else
+ 254   2                      {
+ 255   3                              // If Sectot Fill Full, Write into FAT1 & FAT2
+ 256   3                              tdw_CurrentFATSector=gs_File_FCB[1].dw_File_CurrentCluster>>(9-gc_DOS_FileSystemType);
+ 257   3                              if(gdw_FATBufferSectorNum!=tdw_CurrentFATSector)
+ 258   3                              {
+ 259   4                                      gdw_FATBufferSectorNum=tdw_CurrentFATSector;
+ 260   4                                      DOS_Read_LogicSector(gdw_DOS_Fat1Addr+tdw_CurrentFATSector);
+ 261   4                                      // gc_UserDataBuf[] DMA to gc_FATTempBuffer[]
+ 262   4                                      XBYTE[0xB301]=0x00;
+ 263   4                                      XBYTE[0xB112]=0x00;
+ 264   4                                      XBYTE[0xB113]=gc_UserDataBufHB;
+ 265   4                                      XBYTE[0xB114]=0x00;
+ 266   4                                      XBYTE[0xB115]=gc_FATTempBufferHB;
+ 267   4                                      XBYTE[0xB3B0]=0x01;
+ 268   4                                      while(!(XBYTE[0xB3C0]&0x01));
+ 269   4                                      XBYTE[0xB3C0]=0x00;
+ 270   4                              }
+ 271   3      
+ 272   3                              if(gc_DOS_FileSystemType==2)
+ 273   3                              {
+ 274   4                                      tw_temp=(gs_File_FCB[1].dw_File_CurrentCluster&~0x7F)+0x80;
+ 275   4                                      tw_Addr=(gs_File_FCB[1].dw_File_CurrentCluster&0x7F)<<gc_DOS_FileSystemType;
+ 276   4                                      gc_FATTempBuffer[tw_Addr+0]=((U8 *)(&tdw_FreeCluster))[3];
+ 277   4                                      gc_FATTempBuffer[tw_Addr+1]=((U8 *)(&tdw_FreeCluster))[2];
+ 278   4                                      gc_FATTempBuffer[tw_Addr+2]=((U8 *)(&tdw_FreeCluster))[1];
+ 279   4                                      gc_FATTempBuffer[tw_Addr+3]=((U8 *)(&tdw_FreeCluster))[0];
+ 280   4                              }
+ 281   3                              else
+ 282   3                              {
+ 283   4                                      tw_temp=(gs_File_FCB[1].dw_File_CurrentCluster&~0xFF)+0x100;
+ 284   4                                      tw_Addr=(gs_File_FCB[1].dw_File_CurrentCluster&0xFF)<<gc_DOS_FileSystemType;
+ 285   4                                      gc_FATTempBuffer[tw_Addr+0]=((U8 *)(&tdw_FreeCluster))[3];
+ 286   4                                      gc_FATTempBuffer[tw_Addr+1]=((U8 *)(&tdw_FreeCluster))[2];
+ 287   4                              }
+ 288   3      
+ 289   3                              if(tdw_FreeCluster>=tw_temp)
+ 290   3                              {
+ 291   4                                      // gc_FATTempBuffer[] DMA to gc_UserDataBuf[]
+ 292   4                                      XBYTE[0xB301]=0x00;
+ 293   4                                      XBYTE[0xB112]=0x00;
+ 294   4                                      XBYTE[0xB113]=gc_FATTempBufferHB;
+ 295   4                                      XBYTE[0xB114]=0x00;
+ 296   4                                      XBYTE[0xB115]=gc_UserDataBufHB;
+ 297   4                                      XBYTE[0xB3B0]=0x01;
+C51 COMPILER V9.00   DOSFILE1                                                              07/09/2012 21:16:46 PAGE 6   
+
+ 298   4                                      while(!(XBYTE[0xB3C0]&0x01));
+ 299   4                                      XBYTE[0xB3C0]=0x00;
+ 300   4                                      DOS_Write_LogicSector(gdw_DOS_Fat1Addr+tdw_CurrentFATSector,3);
+ 301   4                                      DOS_Write_LogicSector(gdw_DOS_Fat2Addr+tdw_CurrentFATSector,3);
+ 302   4                              }
+ 303   3      
+ 304   3                              // update file current cluster and file pointer
+ 305   3                              gs_File_FCB[1].dw_File_CurrentCluster=tdw_FreeCluster;
+ 306   3                              gs_File_FCB[1].dw_File_DataPoint=0;
+ 307   3                      }
+ 308   2              }       
+ 309   1              //calculate logic address of current file pointer
+ 310   1              gdw_LogicSectorAddr=DOS_ClusterLogicAddr(gs_File_FCB[1].dw_File_CurrentCluster);
+ 311   1              gdw_LogicSectorAddr=gdw_LogicSectorAddr+(gs_File_FCB[1].dw_File_DataPoint>>9);
+ 312   1      
+ 313   1              //write a sector to disk
+ 314   1              gb_ReadWriteDataArea=0;
+ 315   1              tc_Status=DOS_Write_LogicSector(gdw_LogicSectorAddr,tc_AppendWr);
+ 316   1              gs_File_FCB[1].dw_File_DataPoint+=512;  //file pointer add 
+ 317   1              gs_File_FCB[1].dw_File_TotalSize+=512;  //file size add
+ 318   1              return tc_Status;
+ 319   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1945    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----      95
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      28
+   IDATA SIZE       =   ----      48
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

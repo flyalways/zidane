@@ -1,0 +1,713 @@
+C51 COMPILER V9.00   SD_CMD                                                                07/09/2012 21:16:53 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE SD_CMD
+OBJECT MODULE PLACED IN .\obj\SD_CMD.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE SD\SD_CMD.C LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDIR(..\libsource\heade
+                    -r) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\SD_CMD.lst) OBJECT(.\obj\SD_CMD.obj)
+
+line level    source
+
+   1          #include "..\header\SPDA2K.h"
+   2          #include "..\header\variables.h"
+   3          
+   4          void SD_Cmd12_Stop(void)
+   5          {
+   6   1              XBYTE[0xB45B]=0x4C;
+   7   1              XBYTE[0xB45C]=0x00;
+   8   1              XBYTE[0xB45D]=0x00;
+   9   1              XBYTE[0xB45E]=0x00;
+  10   1              XBYTE[0xB45F]=0x00;
+  11   1          SD_TrigCMD_Receive_Respond(); 
+  12   1      }
+  13          
+  14          
+  15          void SD_Read_LBA_Dos(U32 Read_LBA ,U8 Buf_Index)
+  16          {
+  17   1              xdata   U16     tw_SD_CountDown;
+  18   1      
+  19   1              LBA.LW = Read_LBA;      
+  20   1              XBYTE[0xB400] = 0x06;
+  21   1      
+  22   1              //SD/MMC 的準備階段開始
+  23   1          XBYTE[0xB45B]=0x40+17;
+  24   1          if(gb_SDHC_Type)
+  25   1              {                                                                                 
+  26   2                      XBYTE[0xB45C]=LBA.BY[0];
+  27   2                      XBYTE[0xB45D]=LBA.BY[1];
+  28   2                      XBYTE[0xB45E]=LBA.BY[2];
+  29   2                      XBYTE[0xB45F]=LBA.BY[3];
+  30   2              }                                                                                                   
+  31   1          else
+  32   1              {                                                                                               
+  33   2                      XBYTE[0xB45C]=(LBA.BY[1]<<1)+(LBA.BY[2]>>7);
+  34   2                      XBYTE[0xB45D]=(U8)(LBA.WD[1]>>7);
+  35   2                      XBYTE[0xB45E]=(LBA.BY[3]<<1);
+  36   2                      XBYTE[0xB45F]=0x00;
+  37   2              }                                                                                                   
+  38   1              tw_SD_CountDown=SDMMCTimeOutLoop_10000;
+  39   1              SD_Send_DummyCLK(1);
+  40   1          while(!(XBYTE[0xB453]&0x20))
+  41   1              {                                 // Wait Ready                             
+  42   2              SD_Send_DummyCLK(1);
+  43   2              if(--tw_SD_CountDown==0)  
+  44   2                      {
+  45   3                              goto RET;
+  46   3                      }
+  47   2      
+  48   2                      if(gb_SD_pin)
+  49   2                      {                                                               
+  50   3                              goto RET;
+  51   3                      } 
+  52   2          } 
+  53   1                          
+  54   1          SD_TrigCMD_Receive_Respond();  
+C51 COMPILER V9.00   SD_CMD                                                                07/09/2012 21:16:53 PAGE 2   
+
+  55   1              XBYTE[0xB455] = 0x00;
+  56   1              XBYTE[0xB456] |=0x02;
+  57   1              Device_Xfer_DataLength.WD = 0x01FF;                                                                 
+  58   1              Device_Read_SRAM_Index.BY[0] = Buf_Index;                                    
+  59   1              Device_Read_SRAM_Index.BY[1] = 0x00; 
+  60   1              SET_DEVICE_READ();                                                    
+  61   1              Trigger_Data_Transfer();                                                        
+  62   1              tw_SD_CountDown=SDMMCTimeOutLoop_10000; 
+  63   1      
+  64   1              while((!(XBYTE[0xB3C0]&0x01))||(XBYTE[0xB454]&0x0F))
+  65   1              {
+  66   2                      if(--tw_SD_CountDown==0)  
+  67   2                      {
+  68   3                              goto RET;
+  69   3                      }
+  70   2      
+  71   2                      if(gb_SD_pin)
+  72   2                      {                                                               
+  73   3                              goto RET;
+  74   3                      }               
+  75   2              }                                                                                                           
+  76   1                                     
+  77   1              XBYTE[0xB3C0] = 0x00;                                                                        
+  78   1              SD_Send_DummyCLK(1);
+  79   1              tw_SD_CountDown=SDMMCTimeOutLoop_10000;                                                              
+  80   1              while(!(XBYTE[0xB453]&0x20))
+  81   1              {                                                             
+  82   2                      SD_Send_DummyCLK(1);
+  83   2              if(--tw_SD_CountDown==0)
+  84   2                      {
+  85   3                      goto RET;                                                                                      
+  86   3              }
+  87   2                      if(gb_SD_pin)
+  88   2                      {                                                               
+  89   3                              goto RET;
+  90   3                      }                                                                                                   
+  91   2              }
+  92   1              return;
+  93   1      RET:
+  94   1              USER_Delay(200);
+  95   1      }
+  96          
+  97          void SD_TrigCMD_Receive_Respond(void)
+  98          {
+  99   1              XBYTE[0xB452]=0x20;
+ 100   1              SD_Check_Idle();
+ 101   1              XBYTE[0xB450]=0x03;
+ 102   1              XBYTE[0xB456]=0xE0;
+ 103   1              XBYTE[0xB451]&=0xF7;
+ 104   1              XBYTE[0xB452]=0x01;
+ 105   1              SD_Check_Idle(); 
+ 106   1      }  
+ 107          
+ 108          
+ 109          void SD_Check_Idle(void)
+ 110          {
+ 111   1          xdata       U16     tw_SD_CountDown; 
+ 112   1      
+ 113   1              tw_SD_CountDown=SDMMCTimeOutLoop_1000;
+ 114   1      
+ 115   1              while(XBYTE[0xB454] & 0x0F)
+ 116   1              {
+C51 COMPILER V9.00   SD_CMD                                                                07/09/2012 21:16:53 PAGE 3   
+
+ 117   2                      if(--tw_SD_CountDown==0)
+ 118   2                      {
+ 119   3                              XBYTE[0xB452]=0x00;
+ 120   3                              XBYTE[0xB450]=0x03;     // time out reset SD interface  
+ 121   3                              return;
+ 122   3                      }
+ 123   2      
+ 124   2                      if(gb_SD_pin)
+ 125   2                      {
+ 126   3                              return;
+ 127   3                      }   
+ 128   2              }
+ 129   1      }
+ 130          
+ 131          
+ 132          void SD_Send_DummyCLK(U8 CLK_Num)
+ 133          {
+ 134   1              data    U8      i;
+ 135   1      
+ 136   1              for(i=0;i<CLK_Num;i++)
+ 137   1              {
+ 138   2                      XBYTE[0xB452]=0x20;                            // 8 clks before send cmd 
+ 139   2              SD_Check_Idle();
+ 140   2          }         
+ 141   1      }
+ 142          
+ 143          
+ 144          void SD_ReadSectors_USB(void)
+ 145          {                                                                          
+ 146   1              data    bit     tb_No_SD_Stop_CMD;
+ 147   1              xdata   U16     tw_SD_CountDown;
+ 148   1                                                                               
+ 149   1              gb_OddTemp=0;
+ 150   1              XBYTE[0xB400]=0x06;
+ 151   1              XBYTE[0xB450]=0x03; 
+ 152   1              
+ 153   1              if(TotalXferPageNum.WD==1)
+ 154   1              {
+ 155   2                      XBYTE[0xB45B]=0x40+17;
+ 156   2                      tb_No_SD_Stop_CMD=1;
+ 157   2              }
+ 158   1          else
+ 159   1              {
+ 160   2              XBYTE[0xB45B]=0x40+18;
+ 161   2              tb_No_SD_Stop_CMD=0;
+ 162   2          }   
+ 163   1      
+ 164   1          if(gb_SDHC_Type)
+ 165   1              {                                                                                 
+ 166   2                      XBYTE[0xB45C]=LBA.BY[0];
+ 167   2                      XBYTE[0xB45D]=LBA.BY[1];
+ 168   2                      XBYTE[0xB45E]=LBA.BY[2];
+ 169   2                      XBYTE[0xB45F]=LBA.BY[3];
+ 170   2              }                                                                                                   
+ 171   1              else
+ 172   1              {
+ 173   2                      XBYTE[0xB45C]=(LBA.BY[1]<<1)+(LBA.BY[2]>>7);
+ 174   2                      XBYTE[0xB45D]=(U8)(LBA.WD[1]>> 7);
+ 175   2                      XBYTE[0xB45E]=(LBA.BY[3]<<1);
+ 176   2                      XBYTE[0xB45F]= 0x00;
+ 177   2              }
+ 178   1                                                                                              
+C51 COMPILER V9.00   SD_CMD                                                                07/09/2012 21:16:53 PAGE 4   
+
+ 179   1          tw_SD_CountDown=SDMMCTimeOutLoop_10000;
+ 180   1          SD_Send_DummyCLK(1);
+ 181   1          while(!(XBYTE[0xB453]&0x20))
+ 182   1              {
+ 183   2              SD_Send_DummyCLK(1);                                                                            
+ 184   2              if((--tw_SD_CountDown==0)||(gb_SD_pin))
+ 185   2                      {                                                               
+ 186   3                              break;
+ 187   3                      } 
+ 188   2          }
+ 189   1                             
+ 190   1          SD_TrigCMD_Receive_Respond();
+ 191   1              XBYTE[0xB455]=0x00;
+ 192   1              XBYTE[0xB456]|=0x02;
+ 193   1              Device_Xfer_DataLength.WD = 0x01FF;                                                                 
+ 194   1              Device_Read_SRAM_Index.BY[0]=USB_BUF_Bank0_HIGH;
+ 195   1              Device_Read_SRAM_Index.BY[1] = 0x00;                                                                
+ 196   1              XBYTE[0xB304]=0x09;             //Reset DMA
+ 197   1              XBYTE[0xB304]=0x08;             //Normal DMA
+ 198   1              SET_DEVICE_READ();                                                                                  
+ 199   1              TotalXferPageNum.WD--;
+ 200   1              Trigger_Data_Transfer();                                                                            
+ 201   1              while(TotalXferPageNum.WD)
+ 202   1              {
+ 203   2                      tw_SD_CountDown=SDMMCTimeOutLoop_10000;                                                          
+ 204   2                      while((!(XBYTE[0xB3C0]&0x01))||(XBYTE[0xB454]&0x0F))
+ 205   2                      {
+ 206   3                              if((--tw_SD_CountDown==0)||(gb_SD_pin))
+ 207   3                              {                                                               
+ 208   4                                      break;
+ 209   4                              }                                                            
+ 210   3                      }                                                                                         
+ 211   2                      
+ 212   2                      XBYTE[0xB3C0]=0x00;
+ 213   2                      if(gb_OddTemp==0)
+ 214   2                      {       // transfer data to usb                                                     
+ 215   3                              tw_SD_CountDown=1000;
+ 216   3                              while(XBYTE[0xB5A2]&0x01)
+ 217   3                              {
+ 218   4                                      if(--tw_SD_CountDown==0)
+ 219   4                                      {
+ 220   5                                              goto USB_remove;
+ 221   5                                      }
+ 222   4                              }
+ 223   3                              XBYTE[0xB5C2]&=0xEF;    //Bulk-In Tx done
+ 224   3                              XBYTE[0xB5E9]=0x01;     //Clear Bulk-In(EP1) Buffer
+ 225   3                              XBYTE[0xB515]=0x00;
+ 226   3                              XBYTE[0xB516]=0x02;
+ 227   3                              XBYTE[0xB5A1]=0x01;
+ 228   3                              XBYTE[0xB115]=USB_BUF_Bank1_HIGH;
+ 229   3                              if(gb_USBHostIsHighSpeed) 
+ 230   3                              { //USB 2.0
+ 231   4                              }                                                                                           
+ 232   3                              else 
+ 233   3                              { //USB 1.1
+ 234   4                                      XBYTE[0xB510]=0x01;
+ 235   4                                      while(XBYTE[0xB5A1]);
+ 236   4                                      XBYTE[0xB510]=0x00;
+ 237   4                              }                                                                                           
+ 238   3                      }                                                                                               
+ 239   2                      else
+ 240   2                      {                                                                                          
+C51 COMPILER V9.00   SD_CMD                                                                07/09/2012 21:16:53 PAGE 5   
+
+ 241   3                              tw_SD_CountDown=1000;
+ 242   3                              while(XBYTE[0xB5A1]&0x01)
+ 243   3                              {
+ 244   4                                      if(--tw_SD_CountDown==0)
+ 245   4                                      {
+ 246   5                                              goto USB_remove;
+ 247   5                                      }
+ 248   4                              }
+ 249   3                              XBYTE[0xB5C2]&=0xFE;
+ 250   3                              XBYTE[0xB5E9]=0x10;     //Clear Bulk-In(EP1) Buffer
+ 251   3                              XBYTE[0xB517]=0x00;
+ 252   3                              XBYTE[0xB518]=0x02;
+ 253   3                              XBYTE[0xB5A2]=0x01;
+ 254   3                              XBYTE[0xB115]=USB_BUF_Bank0_HIGH;
+ 255   3                              if(gb_USBHostIsHighSpeed)
+ 256   3                              { //USB 2.0
+ 257   4                              }                                                                                           
+ 258   3                              else 
+ 259   3                              { //USB 1.1                                                                            
+ 260   4                                      XBYTE[0xB510]=0x01;
+ 261   4                                      while(XBYTE[0xB5A2]);                  
+ 262   4                                      XBYTE[0xB510]=0x00;
+ 263   4                              }                                                                                           
+ 264   3                      }                                                                                               
+ 265   2                      gb_OddTemp=!gb_OddTemp;
+ 266   2                      TotalXferPageNum.WD--;
+ 267   2                      Trigger_Data_Transfer();                                                                        
+ 268   2              }                                                                                                   
+ 269   1      
+ 270   1              tw_SD_CountDown=SDMMCTimeOutLoop_10000;                                                              
+ 271   1              while((!(XBYTE[0xB3C0]&0x01))||(XBYTE[0xB454]&0x0F))
+ 272   1              {                                                               //Wait Data xfer done                   
+ 273   2                      if((--tw_SD_CountDown==0)||(gb_SD_pin))
+ 274   2                      {                                                               
+ 275   3                              break;
+ 276   3                      }                                                                
+ 277   2              }                                                                                                           
+ 278   1              XBYTE[0xB3C0]=0x00;     
+ 279   1       
+ 280   1              tw_SD_CountDown=1000;
+ 281   1              if(!gb_OddTemp)
+ 282   1              {
+ 283   2                      while(XBYTE[0xB5A2]&0x01)
+ 284   2                      {
+ 285   3                              tw_SD_CountDown--;
+ 286   3                              if(tw_SD_CountDown==0)
+ 287   3                              {
+ 288   4                                      goto USB_remove;
+ 289   4                              }
+ 290   3                      }
+ 291   2                      XBYTE[0xB510]=0x01;     //BulkInEn auto turn-on(dma over)       
+ 292   2                      XBYTE[0xB5E9]=0x01;     //Clear Bulk-In(EP1) Buffer.            
+ 293   2                      XBYTE[0xB515]=0x00;     // 512-byte                                                                    
+ 294   2                      XBYTE[0xB516]=0x02;
+ 295   2                      tw_SD_CountDown=1000;
+ 296   2                      XBYTE[0xB5A1]=0x01;
+ 297   2                      while(XBYTE[0xB5A1])
+ 298   2                      {
+ 299   3                              tw_SD_CountDown--;
+ 300   3                              if(tw_SD_CountDown==0)
+ 301   3                              {
+ 302   4                                      goto USB_remove;
+C51 COMPILER V9.00   SD_CMD                                                                07/09/2012 21:16:53 PAGE 6   
+
+ 303   4                              }
+ 304   3                      }
+ 305   2                      XBYTE[0xB510]=0x00;
+ 306   2              }                                                                                                   
+ 307   1              else
+ 308   1              {
+ 309   2                      while(XBYTE[0xB5A1]&0x01)
+ 310   2                      {
+ 311   3                              tw_SD_CountDown--;
+ 312   3                              if(tw_SD_CountDown==0)
+ 313   3                              {
+ 314   4                                      goto USB_remove;
+ 315   4                              }
+ 316   3                      }
+ 317   2                      XBYTE[0xB510]=0x01;     // BulkInEn auto turn-on(dma over)
+ 318   2                      XBYTE[0xB5E9]=0x10;     // Clear Bulk-In(EP1) Buffer
+ 319   2                      XBYTE[0xB517]=0x00;     // 512-byte
+ 320   2                      XBYTE[0xB518]=0x02;
+ 321   2                      tw_SD_CountDown=1000;
+ 322   2                      XBYTE[0xB5A2]=0x01;
+ 323   2                      while(XBYTE[0xB5A2])
+ 324   2                      {
+ 325   3                              tw_SD_CountDown--;
+ 326   3                              if(tw_SD_CountDown==0)
+ 327   3                              {
+ 328   4                                      goto USB_remove;
+ 329   4                              }
+ 330   3                      }
+ 331   2                      XBYTE[0xB510]=0x00;
+ 332   2              }                                                                                                       
+ 333   1      
+ 334   1              if(tb_No_SD_Stop_CMD==0)
+ 335   1              {
+ 336   2                      SD_Cmd12_Stop();                                                                                
+ 337   2              }
+ 338   1                                                                                                   
+ 339   1              tw_SD_CountDown=SDMMCTimeOutLoop_10000;                                                              
+ 340   1              while(!(XBYTE[0xB453]&0x20))
+ 341   1              {
+ 342   2                      SD_Send_DummyCLK(1);
+ 343   2              if((--tw_SD_CountDown==0)||(gb_SD_pin))
+ 344   2                      {
+ 345   3                      goto USB_remove;                                                                                  
+             -    
+ 346   3              }                                                                                                   
+ 347   2              }                                                                                                       
+ 348   1              return;
+ 349   1      USB_remove:
+ 350   1              if(tb_No_SD_Stop_CMD==0)
+ 351   1              {
+ 352   2                      SD_Cmd12_Stop();
+ 353   2              }
+ 354   1              SD_Send_DummyCLK(100);
+ 355   1              gb_USB_Plugin=0;
+ 356   1              return;
+ 357   1      } 
+ 358                                                                                                                
+ 359          
+ 360          void SD_WriteSectors_USB(void)
+ 361          {                                                                         
+ 362   1              data    bit     tb_No_SD_Stop_CMD;
+ 363   1              xdata   U16     tw_SD_CountDown;
+C51 COMPILER V9.00   SD_CMD                                                                07/09/2012 21:16:53 PAGE 7   
+
+ 364   1                                                                                 
+ 365   1              gb_OddTemp=0;
+ 366   1              XBYTE[0xB400]=0x06;                                                               
+ 367   1              XBYTE[0xB450]=0x03;                                                               
+ 368   1      
+ 369   1              // USB-->SRAM Bank 0    // 需要先收一筆data否則會一直被Timeout                                      
+ 370   1              XBYTE[0xB512]=(U8)gb_USBHostIsHighSpeed;
+ 371   1              XBYTE[0xB5D2]&=0xFD;// Disable Bulk-Out中斷                  
+ 372   1              XBYTE[0xB5E9]=0x02;     // USB-->SRAM                           
+ 373   1              XBYTE[0xB515]=0x00;     // 512-byte                                                                          
+             -     
+ 374   1              XBYTE[0xB516]=0x02;
+ 375   1              XBYTE[0xB5A1]=0x02;     // Allow Bulk-Out Tx
+ 376   1      
+ 377   1              //SD/MMC 的準備階段開始                                                                             
+ 378   1          if(TotalXferPageNum.WD==1)
+ 379   1              {
+ 380   2                      // single sector only
+ 381   2              XBYTE[0xB45B]=0x40|24;
+ 382   2              tb_No_SD_Stop_CMD=1;                                                                         
+ 383   2          }
+ 384   1          else
+ 385   1              {
+ 386   2              XBYTE[0xB45B]=0x40|25;
+ 387   2              tb_No_SD_Stop_CMD=0;                                                                         
+ 388   2          }
+ 389   1      
+ 390   1          if(gb_SDHC_Type)
+ 391   1              {                                                                                 
+ 392   2                      XBYTE[0xB45C]=LBA.BY[0];
+ 393   2                      XBYTE[0xB45D]=LBA.BY[1];
+ 394   2                      XBYTE[0xB45E]=LBA.BY[2];
+ 395   2                      XBYTE[0xB45F]=LBA.BY[3];
+ 396   2          }                                                                                                   
+ 397   1              else
+ 398   1              {
+ 399   2                      XBYTE[0xB45C]=(LBA.BY[1]<<1)+(LBA.BY[2]>>7);
+ 400   2                      XBYTE[0xB45D]=(U8)(LBA.WD[1]>>7);
+ 401   2                      XBYTE[0xB45E]=(LBA.BY[3]<<1);
+ 402   2                      XBYTE[0xB45F]=0x00;
+ 403   2          }                                                                                                   
+ 404   1              tw_SD_CountDown=SDMMCTimeOutLoop_10000;
+ 405   1              SD_Send_DummyCLK(1);
+ 406   1              while(!(XBYTE[0xB453]&0x20))
+ 407   1              {       // Wait Ready
+ 408   2                      SD_Send_DummyCLK(1);
+ 409   2              if(--tw_SD_CountDown==0)
+ 410   2                  {
+ 411   3                              break;
+ 412   3              }
+ 413   2      
+ 414   2                      if(gb_SD_pin)
+ 415   2                      {                                                               
+ 416   3                              break;
+ 417   3                      }     
+ 418   2              }
+ 419   1                   
+ 420   1          SD_TrigCMD_Receive_Respond();        
+ 421   1              XBYTE[0xB455]=0x00;
+ 422   1              XBYTE[0xB456]|=0x02;
+ 423   1              Device_Xfer_DataLength.WD=0x01FF;
+ 424   1              Device_Write_SRAM_Index.BY[0]=USB_BUF_Bank0_HIGH;
+C51 COMPILER V9.00   SD_CMD                                                                07/09/2012 21:16:53 PAGE 8   
+
+ 425   1              Device_Write_SRAM_Index.BY[1] = 0x00;                                                               
+ 426   1              SET_DEVICE_WRITE();                                                                                 
+ 427   1              TotalXferPageNum.WD--;
+ 428   1              while(TotalXferPageNum.WD)
+ 429   1              {
+ 430   2                      XBYTE[0xB452]=0x40;
+ 431   2                      while(XBYTE[0xB454]&0x0F);
+ 432   2                      if(gb_OddTemp)
+ 433   2                      { //Bank1-> Flash, USB -> Bank0
+ 434   3                              while(XBYTE[0xB5A2]&0x02);
+ 435   3                              XBYTE[0xB5C2]&=0xDF;
+ 436   3                              XBYTE[0xB112]=0x00;
+ 437   3                              XBYTE[0xB113]=USB_BUF_Bank1_HIGH;
+ 438   3                              XBYTE[0xB3B0]=0x01;     // Trigger Data Xfer
+ 439   3                              XBYTE[0xB5E9]=0x02;     // Clear Bulk-Out(EP2) Buffer
+ 440   3                              XBYTE[0xB515]=0x00;     // 512-byte
+ 441   3                              XBYTE[0xB516]=0x02;
+ 442   3                              XBYTE[0xB5A1]=0x02;
+ 443   3                      }                                                                                               
+ 444   2                      else
+ 445   2                      { //Bank0 -> Flash, USB -> Bank1
+ 446   3                              while(XBYTE[0xB5A1]&0x02);                                                               
+ 447   3                              XBYTE[0xB5C2]&=0xFD;                                                                            
+ 448   3                              XBYTE[0xB112]=0x00;                                                                    
+ 449   3                              XBYTE[0xB113]=USB_BUF_Bank0_HIGH;
+ 450   3                              XBYTE[0xB3B0]=0x01;     // Trigger Data Xfer                     
+ 451   3                              XBYTE[0xB5E9]=0x20;     //Clear Bulk-Out(EP2) Buffer            
+ 452   3                              XBYTE[0xB517]=0x00;
+ 453   3                              XBYTE[0xB518]=0x02;
+ 454   3                              XBYTE[0xB5A2]=0x02;
+ 455   3                      }                                                                                                       
+ 456   2                      gb_OddTemp=!gb_OddTemp;                                                                 
+ 457   2                      TotalXferPageNum.WD--;                               
+ 458   2                      tw_SD_CountDown=SDMMCTimeOutLoop_10000; 
+ 459   2                      while((!(XBYTE[0xB3C0]&0x01))||(XBYTE[0xB454]&0x0F))
+ 460   2                      {
+ 461   3                      if(--tw_SD_CountDown==0)
+ 462   3                          {
+ 463   4                                      break;
+ 464   4                      }
+ 465   3                              if(gb_SD_pin)
+ 466   3                              {                                                               
+ 467   4                                      break;
+ 468   4                              }     
+ 469   3                      } 
+ 470   2                      XBYTE[0xB3C0]=0x00;                                                                                 
+ 471   2              }// end while                                                                                       
+ 472   1              XBYTE[0xB452]=0x40;           
+ 473   1              while(XBYTE[0xB454]&0x0F);   
+ 474   1                                                                                                                  
+ 475   1              if(gb_OddTemp)
+ 476   1              {       //Bank1-> Flash, USB -> Bank0
+ 477   2                      while(XBYTE[0xB5A2]&0x02);
+ 478   2                      XBYTE[0xB5C2]&=0xDF;
+ 479   2                      XBYTE[0xB112]=0x00;
+ 480   2                      XBYTE[0xB113]=USB_BUF_Bank1_HIGH;
+ 481   2                      XBYTE[0xB3B0]=0x01;     //Trigger Data Xfer                         
+ 482   2              }                                                                                                   
+ 483   1              else
+ 484   1              {       //Bank0 -> Flash, USB -> Bank1
+ 485   2                      while(XBYTE[0xB5A1]&0x02);                                                                   
+ 486   2                      XBYTE[0xB5C2]&=0xFD;                                                                                
+C51 COMPILER V9.00   SD_CMD                                                                07/09/2012 21:16:53 PAGE 9   
+
+ 487   2                      XBYTE[0xB112]=0x00;
+ 488   2                      XBYTE[0xB113]=USB_BUF_Bank0_HIGH;
+ 489   2                      XBYTE[0xB3B0]=0x01;     //Trigger Data Xfer                                             
+ 490   2              }                                                                                                               
+ 491   1      
+ 492   1              tw_SD_CountDown=SDMMCTimeOutLoop_10000;                                                              
+ 493   1              while((!(XBYTE[0xB3C0]&0x01))||(XBYTE[0xB454]&0x0F))
+ 494   1              {
+ 495   2              if(--tw_SD_CountDown==0)
+ 496   2                  {
+ 497   3                              break;
+ 498   3              }
+ 499   2                      if(gb_SD_pin)
+ 500   2                      {                                                               
+ 501   3                              break;
+ 502   3                      }     
+ 503   2              }                                                                                               
+ 504   1              XBYTE[0xB3C0]=0x00;                                                                                         
+ 505   1              XBYTE[0xB452]=0x40;     
+ 506   1              while(XBYTE[0xB454]&0x0F)
+ 507   1              {
+ 508   2                      if(gb_SD_pin)
+ 509   2                      {                                                               
+ 510   3                              break;
+ 511   3                      }     
+ 512   2              }
+ 513   1              
+ 514   1              if(!tb_No_SD_Stop_CMD)
+ 515   1              {
+ 516   2              SD_Cmd12_Stop();                                                                                
+ 517   2          }                                                                                                   
+ 518   1              XBYTE[0xB452]=0x40;
+ 519   1              while(XBYTE[0xB454]&0x0F);
+ 520   1              SD_Send_DummyCLK(1);
+ 521   1      }    
+ 522          
+ 523          void SD_Write_LBA_Dos(U32 Write_LBA,U8 Write_Stage)
+ 524          {
+ 525   1              data    bit     tb_No_SD_Stop_CMD=0;
+ 526   1              data    bit     tb_SD_Start_Stage=0;
+ 527   1              data    bit     tb_SD_Data_Stage=0;
+ 528   1              data    bit     tb_SD_Stop_Stage=0;
+ 529   1              data    U16     tw_SD_CountDown;
+ 530   1      
+ 531   1              LBA.LW=Write_LBA;
+ 532   1              switch(Write_Stage)
+ 533   1              {
+ 534   2                      case 0: // CMD+Data
+ 535   2                              tb_SD_Start_Stage=1;
+ 536   2                              tb_SD_Data_Stage=1;
+ 537   2                              break;
+ 538   2                      case 1: // only data
+ 539   2                              tb_SD_Data_Stage=1;
+ 540   2                              break;
+ 541   2                      case 2: //data + Stop CMD
+ 542   2                              tb_SD_Data_Stage=1;
+ 543   2                              tb_SD_Stop_Stage=1;     
+ 544   2                              break;
+ 545   2                      case 3:// only 1 sector
+ 546   2                              tb_SD_Start_Stage=1;
+ 547   2                              tb_SD_Data_Stage=1;
+ 548   2                              tb_No_SD_Stop_CMD=1;
+C51 COMPILER V9.00   SD_CMD                                                                07/09/2012 21:16:53 PAGE 10  
+
+ 549   2                              break;
+ 550   2                      default:  //only  Stop cmd
+ 551   2                              tb_SD_Stop_Stage=1;
+ 552   2                              break;
+ 553   2              }       
+ 554   1              /////////////////////////////////////////////////////////////////                          
+ 555   1              //SD/MMC 的準備階段開始                                                                             
+ 556   1          XBYTE[0xB400]=0x06;
+ 557   1          if(tb_SD_Start_Stage)
+ 558   1              {
+ 559   2              if(tb_No_SD_Stop_CMD)
+ 560   2                      {                                       // single sector only                     
+ 561   3                      XBYTE[0xB45B]=0x58;                                     // 0x04| 0x11(Cmd_17) read single block
+ 562   3              }
+ 563   2              else
+ 564   2                      {
+ 565   3                      XBYTE[0xB45B]=0x59;                                     // 0x04| 0x12(Cmd_18) read multi block 
+ 566   3              }
+ 567   2              if(gb_SDHC_Type)
+ 568   2                      {
+ 569   3                      XBYTE[0xB45C]=LBA.BY[0];
+ 570   3                      XBYTE[0xB45D]=LBA.BY[1];                                        // relative address 1                             
+ 571   3                      XBYTE[0xB45E]=LBA.BY[2];                                // 512Bytes/Block                          
+ 572   3                      XBYTE[0xB45F]=LBA.BY[3];                           // Sectors Address                
+ 573   3              }                                                                                                   
+ 574   2              else
+ 575   2                      {                                                                                               
+ 576   3                      XBYTE[0xB45C]=(LBA.BY[1]<<1)+(LBA.BY[2]>>7);
+ 577   3                      XBYTE[0xB45D]=(U8)(LBA.WD[1]>> 7);              // relative address 1                
+ 578   3                      XBYTE[0xB45E]=(LBA.BY[3]<<1);                      // 512Bytes/Block                     
+ 579   3                      XBYTE[0xB45F]=0x00;                               // Sectors Address                    
+ 580   3              }                                                                                                   
+ 581   2              tw_SD_CountDown=SDMMCTimeOutLoop_10000;
+ 582   2              SD_Send_DummyCLK(1);                                                                                
+ 583   2              while(!(XBYTE[0xB453]&0x20))
+ 584   2                      {
+ 585   3                              // Wait Ready                             
+ 586   3                      SD_Send_DummyCLK(2);                                                                            
+ 587   3                      if(--tw_SD_CountDown==0)
+ 588   3                              {
+ 589   4                                      goto RET;
+ 590   4                              }
+ 591   3                              if(!SD_Card_Detect())
+ 592   3                              {
+ 593   4                                      goto RET;
+ 594   4                              }
+ 595   3              }
+ 596   2              SD_TrigCMD_Receive_Respond();        
+ 597   2              }
+ 598   1      
+ 599   1              if(tb_SD_Data_Stage)
+ 600   1              {  // SD/MMC  write data
+ 601   2                      XBYTE[0xB455]=0x00;
+ 602   2                      XBYTE[0xB456]|=0x02;
+ 603   2                      Device_Xfer_DataLength.WD=0x01FF;
+ 604   2                      if(gb_ReadWriteDataArea==0)
+ 605   2                      {
+ 606   3                              Device_Write_SRAM_Index.BY[0]=gc_PlayRecordDataBufHB;
+ 607   3                      }
+ 608   2                      else
+ 609   2                      {
+ 610   3                              Device_Write_SRAM_Index.BY[0]=gc_UserDataBufHB;
+C51 COMPILER V9.00   SD_CMD                                                                07/09/2012 21:16:53 PAGE 11  
+
+ 611   3                      }
+ 612   2                      Device_Write_SRAM_Index.BY[1]=0x00;                                                               
+ 613   2                      SET_DEVICE_WRITE();                                                                                 
+ 614   2                      Trigger_Data_Transfer();
+ 615   2                      tw_SD_CountDown=SDMMCTimeOutLoop_10000;                                                              
+ 616   2                      while((!(DMA_REG[0xC0]&0x01))||(XBYTE[0xB454]&0x0F))
+ 617   2                      {
+ 618   3                              if(--tw_SD_CountDown==0)
+ 619   3                              {
+ 620   4                                      goto RET;
+ 621   4                              }
+ 622   3                              if(!SD_Card_Detect())
+ 623   3                              {
+ 624   4                                      goto RET;
+ 625   4                              }
+ 626   3                      }                                                                                               
+ 627   2                      DMA_REG[0xC0]=0x00;                                                                                         
+ 628   2                      XBYTE[0xB452]=0x40;
+ 629   2                      tw_SD_CountDown=SDMMCTimeOutLoop_10000;
+ 630   2                      while(XBYTE[0xB454]&0x0F)
+ 631   2                      {
+ 632   3                              if(--tw_SD_CountDown==0)
+ 633   3                              {
+ 634   4                                      goto RET;
+ 635   4                              }
+ 636   3                              if(!SD_Card_Detect())
+ 637   3                              {
+ 638   4                                      goto RET;
+ 639   4                              }
+ 640   3                      }
+ 641   2              }
+ 642   1              if(tb_SD_Stop_Stage)
+ 643   1              { // SD/MMC Stop CMD
+ 644   2              SD_Cmd12_Stop();                                                                            
+ 645   2                      XBYTE[0xB452]=0x40;     
+ 646   2                      tw_SD_CountDown=SDMMCTimeOutLoop_10000;
+ 647   2                      while(XBYTE[0xB454]&0x0F)
+ 648   2                      {
+ 649   3                              if(--tw_SD_CountDown==0)
+ 650   3                              {
+ 651   4                                      goto RET;
+ 652   4                              }
+ 653   3                              if(!SD_Card_Detect()) 
+ 654   3                              {
+ 655   4                                      goto RET;
+ 656   4                              }
+ 657   3                      }                            
+ 658   2                      SD_Send_DummyCLK(1);
+ 659   2              } 
+ 660   1              return;
+ 661   1      RET:
+ 662   1              USER_Delay(200);                                                                                         
+             -     
+ 663   1      }
+ 664          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1685    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----      16
+   PDATA SIZE       =   ----    ----
+C51 COMPILER V9.00   SD_CMD                                                                07/09/2012 21:16:53 PAGE 12  
+
+   DATA SIZE        =   ----       3
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       6
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

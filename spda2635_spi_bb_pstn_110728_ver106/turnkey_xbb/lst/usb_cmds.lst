@@ -1,0 +1,83 @@
+C51 COMPILER V9.00   USB_CMDS                                                              07/09/2012 21:16:55 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE USB_CMDS
+OBJECT MODULE PLACED IN .\obj\usb_cmds.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE USB\usb_cmds.c LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDIR(..\libsource\he
+                    -ader) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\usb_cmds.lst) OBJECT(.\obj\usb_cmds.obj)
+
+line level    source
+
+   1          #include "..\header\SPDA2K.h"
+   2          #include "..\header\variables.h"
+   3          
+   4          void ReadSectors(void) 
+   5          {
+   6   1              Check_LBA_ID();
+   7   1              XBYTE[0xB5E9]=0x01;                             //Clear EP1
+   8   1              gb_OddTemp=0;                               //Device Buffer Pin-pon use~~
+   9   1              SD_ReadSectors_USB();
+  10   1              gc_USBStage=CSWStage;
+  11   1      }
+  12          
+  13           
+  14          void NoCard_ReadSectors(void) 
+  15          {
+  16   1              memset(USB_BUF_Bank0,0x00,512);
+  17   1              XBYTE[0xB510]=0x01;     
+  18   1              
+  19   1              do {
+  20   2                      XBYTE[0xB515]=0x00;
+  21   2                      XBYTE[0xB516]=0x02;
+  22   2                      XBYTE[0xB5A1]|=0x01;
+  23   2                      while(XBYTE[0xB5A1]&0x01);
+  24   2                      TotalXferPageNum.WD--;
+  25   2                      XBYTE[0xB5E9]=0x01;
+  26   2              } while(TotalXferPageNum.WD);
+  27   1              XBYTE[0xB510]=0x00;
+  28   1      }
+  29          
+  30          
+  31          void WriteSectors(void) 
+  32          {
+  33   1              gb_OddTemp=0;
+  34   1              Check_LBA_ID();
+  35   1              SD_WriteSectors_USB();
+  36   1              gc_USBStage=CSWStage;
+  37   1      }
+  38          
+  39          
+  40          void NoCard_WriteSectors(void) 
+  41          {
+  42   1              while(TotalXferPageNum.WD) 
+  43   1              {
+  44   2                      XBYTE[0xB511]=0x01;     //Turn on BulkOutEn, Turn off by data xfer done.
+  45   2                      XBYTE[0xB515]=0x00;
+  46   2                      XBYTE[0xB516]=0x02;
+  47   2                      XBYTE[0xB519]=0x00;
+  48   2                      XBYTE[0xB5A1]|=0x02;
+  49   2                      while(XBYTE[0xB5A1]&0x02);
+  50   2                      XBYTE[0xB5C2]&=0xFD;
+  51   2                      XBYTE[0xB511]=0x00;     //Turn-off BulkOutEn
+  52   2                      XBYTE[0xB5E9]=0x02;
+  53   2                      TotalXferPageNum.WD--;
+  54   2              }
+C51 COMPILER V9.00   USB_CMDS                                                              07/09/2012 21:16:55 PAGE 2   
+
+  55   1      }
+  56          
+  57          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    174    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

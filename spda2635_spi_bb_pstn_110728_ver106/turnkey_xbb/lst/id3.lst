@@ -1,0 +1,710 @@
+C51 COMPILER V9.00   ID3                                                                   07/09/2012 21:16:52 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE ID3
+OBJECT MODULE PLACED IN .\obj\id3.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE Play\id3.C LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDIR(..\libsource\header
+                    -) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\id3.lst) OBJECT(.\obj\id3.obj)
+
+line level    source
+
+   1          #include <string.h>
+   2          #include "..\header\SPDA2K.h"
+   3          #include "..\header\id3.h"
+   4          #include "..\header\variables.h"
+   5          
+   6          
+   7          code U16 MP3bitRatetable_ID3[2][3][16]=
+   8          {//=-=xyq,1-8,U8-->U16
+   9                  //MPEG-1      //=-=xyq,1-8,this TAB have been modified
+  10                  0, 32, 64, 96,128,160,192,224,256,288,320,352,384,416,448,0,//layer1
+  11                  0, 32, 48, 56, 64, 80, 96,112,128,160,192,224,256,320,384,0,//layer2
+  12                  0, 32, 40, 48, 56, 64, 80, 96,112,128,160,192,224,256,320,0,//layer3
+  13                  //MPEG-2
+  14                  0, 32, 48, 56, 64, 80, 96,112,128,144,160,176,192,224,256,0,//layer1
+  15                  0, 8,  16, 24, 32, 40, 48, 56, 64, 80, 96,112,128,144,160,0,//layer2
+  16                  0, 8,  16, 24, 32, 40, 48, 56, 64, 80, 96,112,128,144,160,0,//layer3
+  17          };
+  18          
+  19          
+  20          U8 ID3_V2_Get_Idf(U32 *tpdw_DATA_LogAddr)
+  21          {       
+  22   1              ID3_Read_File(ID3_V2_START_PTR, &gs_File_FCB[gs_System_State.c_FileHandle].dw_File_CurrentCluster, tpdw_D
+             -ATA_LogAddr);
+  23   1      
+  24   1              if(gc_PlayRecordDataBuf[0]=='I' && gc_PlayRecordDataBuf[1]=='D' && gc_PlayRecordDataBuf[2]=='3')
+  25   1              {
+  26   2                      if((gc_PlayRecordDataBuf[3]==0x03) || (gc_PlayRecordDataBuf[3]==0x04) || (gc_PlayRecordDataBuf[4]==0x00)
+             -)  //Jimi 091126
+  27   2                      {
+  28   3                              return ID3_V2_TAG_FOUND;
+  29   3                      }
+  30   2              }
+  31   1              return  ID3_V2_TAG_NOT_FOUND;
+  32   1      }
+  33          
+  34          
+  35          void ID3_Read_File(U32 tdw_FilePoint, U32 *tpdw_FileCluster, U32 *tpdw_DATA_LogAddr)
+  36          {
+  37   1              data    U32 tdw_cluster_cnt;
+  38   1              
+  39   1              tdw_cluster_cnt = (tdw_FilePoint>>9)/gc_DOS_SectorPerCluster;
+  40   1      
+  41   1              if(tdw_cluster_cnt)
+  42   1              {
+  43   2                      *tpdw_FileCluster=DOS_GetNextCluster(gs_File_FCB[gs_System_State.c_FileHandle].dw_File_StartCluster, tdw
+             -_cluster_cnt);
+  44   2              }
+  45   1              else
+  46   1              {
+  47   2                      *tpdw_FileCluster = gs_File_FCB[gs_System_State.c_FileHandle].dw_File_StartCluster;
+  48   2              }
+  49   1      
+  50   1              *tpdw_DATA_LogAddr = DOS_ClusterLogicAddr(*tpdw_FileCluster) + (tdw_FilePoint >> 9)%gc_DOS_SectorPerClust
+             -er;
+C51 COMPILER V9.00   ID3                                                                   07/09/2012 21:16:52 PAGE 2   
+
+  51   1              gb_ReadWriteDataArea = 0;
+  52   1              DOS_Read_LogicSector(*tpdw_DATA_LogAddr);
+  53   1      }
+  54          
+  55          U16 MP3_Total_Time_Parser()
+  56          {
+  57   1              U16 tw_total_time;
+  58   1      
+  59   1              if(gs_File_FCB[gs_System_State.c_FileHandle].dw_File_TotalSize==0)//(JC)I0112
+  60   1              {
+  61   2                      return 0;
+  62   2              }
+  63   1      
+  64   1              tw_total_time = (gs_File_FCB[gs_System_State.c_FileHandle].dw_File_TotalSize- gdw_ID3_v2_sz)/ gs_System_S
+             -tate.w_SampleRate / 125;
+  65   1              return tw_total_time;
+  66   1      }
+  67          
+  68          U16 MP3_Bitrate_Parser(void)
+  69          {
+  70   1              U32 tdw_DATA_LogAddr;
+  71   1              U16 tw_Buf_idx;
+  72   1              U32 tdw_File_Ptr;
+  73   1      
+  74   1              U8      tc_sync_buf;
+  75   1              U8      tc_temp;
+  76   1              U8      tc_Version;
+  77   1              U8      tc_Layer;
+  78   1              U8      tc_bitrate_idx;
+  79   1              U16     tw_kBitRate;
+  80   1              U8      tc_sample_rate_idx;
+  81   1              U16     tw_SampleRate;
+  82   1              U8      tc_Padding;
+  83   1              U16     tw_Frame_Size;
+  84   1              U16     tw_Frame_Size_avg;
+  85   1              U8  tc_Check_VBR_Done;
+  86   1      
+  87   1          code U16 SamplingRatetable[4][3]=
+  88   1              {
+  89   1              44100,22050,11025,
+  90   1              48000,24000,12000,
+  91   1              32000,16000,8000,
+  92   1              0,    0,    0
+  93   1              };
+  94   1      
+  95   1              gdw_ID3_v2_sz = 0;              //Jimi 090612, reset ID3 V2 size
+  96   1              tc_Check_VBR_Done = 0;
+  97   1      //=== Open file ===
+  98   1              if(DOS_Open_File_r(C_MusicFHandle, C_Open_FoundFile, C_NullFileName)||(gs_File_FCB[0].dw_File_TotalSize==
+             -0)) //Ching 090116
+  99   1              {
+ 100   2                      return 0;
+ 101   2              }
+ 102   1      //=== Check ID3 v2 ===
+ 103   1              if(ID3_V2_Get_Idf(&tdw_DATA_LogAddr) == ID3_V2_TAG_FOUND)
+ 104   1              {
+ 105   2                      gdw_ID3_v2_sz = ((((U32)gc_PlayRecordDataBuf[6]&0x7F) <<21)     //Jimi 090612, store ID3 V2 size
+ 106   2                                  +(((U32)gc_PlayRecordDataBuf[7]&0x7F) <<14)
+ 107   2                                      +(((U32)gc_PlayRecordDataBuf[8]&0x7F) <<7 )
+ 108   2                                  +(((U32)gc_PlayRecordDataBuf[9]&0x7F)     )
+ 109   2                                                      +10);   //'cuz bit 7 are all '0' in these 4 bytes
+ 110   2      
+C51 COMPILER V9.00   ID3                                                                   07/09/2012 21:16:52 PAGE 3   
+
+ 111   2                      MP3_Parser_Seek_Dataptr(C_MusicFHandle ,gdw_ID3_v2_sz);         //Jimi 090612, store ID3 V2 size
+ 112   2              }
+ 113   1      
+ 114   1              tdw_File_Ptr = gdw_ID3_v2_sz;   //Jimi 090612
+ 115   1              tw_Buf_idx = tdw_File_Ptr & 0x1FF;
+ 116   1      
+ 117   1      
+ 118   1              //---blk (1)---
+ 119   1              while( tdw_File_Ptr  < gdw_ID3_v2_sz + 4096 )           //Jimi 090612
+ 120   1              {
+ 121   2                      U8 tc_nextSector = 0;
+ 122   2                      U32 tdw_Peek_File_Ptr = tdw_File_Ptr;
+ 123   2      
+ 124   2                      tw_Buf_idx = tdw_Peek_File_Ptr & 0x1FF;
+ 125   2                      if( (!tw_Buf_idx) && (tdw_Peek_File_Ptr >0))
+ 126   2                      {       // i has beyond current sector to the next.
+ 127   3                              MP3_Parser_Seek_Dataptr( C_MusicFHandle , tdw_Peek_File_Ptr);   //to make sure if it beyond to the next c
+             -luster or not and then read file
+ 128   3                      }
+ 129   2                      
+ 130   2                      if((gc_CurrentCard==2) && (SD_Detect==1))  //20090803 chiayen add
+ 131   2                      {
+ 132   3                              break;
+ 133   3                      }
+ 134   2      
+ 135   2                      if((gc_CurrentCard==5) && (gb_HostConnect==0))  //20090803 chiayen add
+ 136   2                      {                       
+ 137   3                              break;          
+ 138   3                      }
+ 139   2                                      
+ 140   2                      //---blk(2)---
+ 141   2                      if(gc_PlayRecordDataBuf[tw_Buf_idx] == 0xFF)
+ 142   2                      {       //check sync word
+ 143   3                              tdw_Peek_File_Ptr++;
+ 144   3                              tc_nextSector = Next_One(C_MusicFHandle, &tw_Buf_idx, tdw_Peek_File_Ptr);
+ 145   3                              //---blk (3)---
+ 146   3                              if( (gc_PlayRecordDataBuf[tw_Buf_idx] & 0xE0) == 0xE0)
+ 147   3                              {       //sync word was be found
+ 148   4                                      tc_sync_buf = gc_PlayRecordDataBuf[tw_Buf_idx];
+ 149   4                                      tc_temp = tc_sync_buf & 0x18;
+ 150   4                                      if( tc_temp == 0x18)
+ 151   4                                              tc_Version = 0;         // MPEG 1
+ 152   4                                      
+ 153   4                                      else if(tc_temp == 0x10)
+ 154   4                                              tc_Version = 1;         // MPEG 2
+ 155   4      
+ 156   4                                      else
+ 157   4                                              tc_Version = 2;         // MPEG 2.5
+ 158   4      
+ 159   4                                      tc_temp = (tc_sync_buf & 0x6)>>1;
+ 160   4                                      tc_Layer = (4- tc_temp) - 1;    //layer-1
+ 161   4                                      tdw_Peek_File_Ptr++;
+ 162   4                                      tc_nextSector = Next_One(C_MusicFHandle, &tw_Buf_idx, tdw_Peek_File_Ptr);
+ 163   4                                      
+ 164   4                                      tc_sync_buf = gc_PlayRecordDataBuf[tw_Buf_idx];
+ 165   4      
+ 166   4                                      tc_bitrate_idx = ( tc_sync_buf & 0xF0 ) >> 4;
+ 167   4                                      
+ 168   4                                      tc_temp = (tc_Version)? 1:0;
+ 169   4                      
+ 170   4                                      tw_kBitRate = MP3bitRatetable_ID3[tc_temp][tc_Layer][tc_bitrate_idx];
+ 171   4                                      tc_sample_rate_idx = (tc_sync_buf & 0x0C) >> 2;
+C51 COMPILER V9.00   ID3                                                                   07/09/2012 21:16:52 PAGE 4   
+
+ 172   4                                      tw_SampleRate = SamplingRatetable[tc_sample_rate_idx][tc_Version];
+ 173   4      
+ 174   4                                      if(tc_sample_rate_idx==1)                       //20100512
+ 175   4                                      {
+ 176   5                                              GLOBAL_REG[0x46] &=0xFB; 
+ 177   5                                      }
+ 178   4                                      else
+ 179   4                                      {
+ 180   5                                              GLOBAL_REG[0x46] |=0x04; 
+ 181   5                                      }
+ 182   4      
+ 183   4                                      tc_Padding = (tc_sync_buf & 0x02) >> 1;
+ 184   4      
+ 185   4                                      // ---blk (4)---
+ 186   4                                      if( (tw_kBitRate != 0) && (tw_SampleRate != 0) )                //Reliable Frame
+ 187   4                                      {
+ 188   5                                              //Calculate frame size
+ 189   5                                              tw_Frame_Size = (U16)(144 * (U32)tw_kBitRate * 1000 / (U32)tw_SampleRate);      //MPEG 1
+ 190   5      
+ 191   5                                              if(tc_Version)                          
+ 192   5                                                      tw_Frame_Size = tw_Frame_Size / 2;                                                                              //MPEG2 & 2.5
+ 193   5                                              
+ 194   5                                              tw_Frame_Size += tc_Padding;
+ 195   5      
+ 196   5                                              //=== check VBR ===
+ 197   5                                              if(!tc_Check_VBR_Done)
+ 198   5                                              {
+ 199   6                                                      tc_Check_VBR_Done = 1;
+ 200   6                                                      tw_Frame_Size_avg = MP3_VBR_Hdr_Parser(tw_Frame_Size, tdw_Peek_File_Ptr);
+ 201   6      
+ 202   6                                                      if(tw_Frame_Size_avg)
+ 203   6                                                      {
+ 204   7                                                              tw_kBitRate = (U16)(((U32)tw_Frame_Size_avg * (U32)tw_SampleRate) / 144000);                                            
+ 205   7                                                              if(tc_Version)  
+ 206   7                                                              {
+ 207   8                                                                      tw_kBitRate *= 2;       
+ 208   8                                                              }
+ 209   7      
+ 210   7                                                              break;  
+ 211   7                                                      }                       
+ 212   6                                              }
+ 213   5                                              //== Seek to Next Frame
+ 214   5                                              tdw_Peek_File_Ptr = (U32)(tdw_File_Ptr + tw_Frame_Size);
+ 215   5                                              MP3_Parser_Seek_Dataptr(C_MusicFHandle ,tdw_Peek_File_Ptr);
+ 216   5                                              tw_Buf_idx = (U16)(tdw_Peek_File_Ptr & 0x1FF);
+ 217   5                                              // ---blk (5)---
+ 218   5                                              if( gc_PlayRecordDataBuf[tw_Buf_idx] == 0xFF )
+ 219   5                                              {
+ 220   6                                                      tdw_Peek_File_Ptr++;
+ 221   6                                                      tc_nextSector = Next_One(C_MusicFHandle, &tw_Buf_idx, tdw_Peek_File_Ptr);
+ 222   6      
+ 223   6                                                      // ---blk (6)---
+ 224   6                                                      if( (gc_PlayRecordDataBuf[tw_Buf_idx] & 0xE0) == 0xE0)
+ 225   6                                                      {
+ 226   7                                                              U8 tw_temp;
+ 227   7                                                              tdw_Peek_File_Ptr++;
+ 228   7                                                              tc_nextSector = Next_One(C_MusicFHandle, &tw_Buf_idx, tdw_Peek_File_Ptr);
+ 229   7                                                              tw_temp = (gc_PlayRecordDataBuf[tw_Buf_idx] & 0xF0) >> 4;
+ 230   7                                                              // ---blk (7)---
+ 231   7                                                              if( (tw_temp >= 8)|| (tw_temp<=384) )
+ 232   7                                                              {
+ 233   8                                                                      break;  
+C51 COMPILER V9.00   ID3                                                                   07/09/2012 21:16:52 PAGE 5   
+
+ 234   8                                                              }//---end of (7)---
+ 235   7                                                      }//---end of (6)---
+ 236   6                                              }//---end of (5)---
+ 237   5                                      }//---end of (4)---
+ 238   4                              }//---end of (3)---
+ 239   3                      }//---end of (2)---
+ 240   2                      if( !((++tdw_File_Ptr)&0x1FF) || tc_nextSector)                 //Jimi Yu 081224
+ 241   2                      {
+ 242   3                              MP3_Parser_Seek_Dataptr(C_MusicFHandle ,tdw_File_Ptr);
+ 243   3                      }
+ 244   2              }//---end of (1)---
+ 245   1      
+ 246   1              if((tw_kBitRate<8)||(tw_kBitRate>448))                  //Jimi 090623
+ 247   1              {     
+ 248   2                      tw_kBitRate = 128;
+ 249   2              }
+ 250   1              
+ 251   1              return(tw_kBitRate);
+ 252   1      }
+ 253          
+ 254          U16     MP3_VBR_Hdr_Parser(U16 tw_Frame_Size, U32 tdw_DataPoint)
+ 255          {
+ 256   1              
+ 257   1          code U8 VBRHeader[3][4]={   'V','B','R','I',
+ 258   1                                                                      'X','i','n','g',
+ 259   1                                                                      'I','n','f','0',  };                                                                                                    
+ 260   1      
+ 261   1              bit tc_VBR_flag;
+ 262   1      
+ 263   1              U8      tc_i;
+ 264   1              U8      tc_VBR_type;
+ 265   1              U16 tw_Frm_Sz_Avg;
+ 266   1              U16 tw_VBR_Check_End;
+ 267   1      
+ 268   1              union
+ 269   1              {
+ 270   1                      U8 Frm_Info[8];
+ 271   1      
+ 272   1                      struct
+ 273   1                      {
+ 274   1                              U32 Byte_Num;
+ 275   1                              U32 Frm_Num;
+ 276   1                      }VBRI_Format;
+ 277   1      
+ 278   1                      struct
+ 279   1                      {
+ 280   1                              U32 Frm_Num;
+ 281   1                              U32 Byte_Num;
+ 282   1                      }XING_Format;
+ 283   1      
+ 284   1              }VBR_Info;
+ 285   1              
+ 286   1              tw_Frm_Sz_Avg = 0;
+ 287   1              tw_VBR_Check_End = (U16)tdw_DataPoint + tw_Frame_Size - 3;
+ 288   1      
+ 289   1              while(tdw_DataPoint < tw_VBR_Check_End)
+ 290   1              {
+ 291   2                      U16 tw_buf_idx;
+ 292   2      
+ 293   2                      tw_buf_idx = (U16)tdw_DataPoint & 0x1FF;
+ 294   2                      tdw_DataPoint ++;                               //Jimi 081202
+ 295   2                      Next_One(C_MusicFHandle, &tw_buf_idx, tdw_DataPoint);
+C51 COMPILER V9.00   ID3                                                                   07/09/2012 21:16:52 PAGE 6   
+
+ 296   2      
+ 297   2                      if((gc_CurrentCard==2) && (SD_Detect==1))  //20090803 chiayen add
+ 298   2                      {
+ 299   3                              break;
+ 300   3                      }
+ 301   2      
+ 302   2                      if((gc_CurrentCard==5) && (gb_HostConnect==0))  //20090803 chiayen add
+ 303   2                      {                       
+ 304   3                              break;          
+ 305   3                      }
+ 306   2      
+ 307   2                      if(gc_PlayRecordDataBuf[tw_buf_idx] == VBRHeader[0][0] || gc_PlayRecordDataBuf[tw_buf_idx] == VBRHeader[
+             -1][0] || gc_PlayRecordDataBuf[tw_buf_idx] == VBRHeader[2][0]) 
+ 308   2                      {
+ 309   3                              //byte[0] now
+ 310   3                              tc_VBR_flag = 1;        // VBR tag has been found
+ 311   3                              
+ 312   3                              if(gc_PlayRecordDataBuf[tw_buf_idx] == VBRHeader[0][0])
+ 313   3                                      tc_VBR_type = 0;        // VBRI
+ 314   3      
+ 315   3                              else if(gc_PlayRecordDataBuf[tw_buf_idx] == VBRHeader[1][0])
+ 316   3                                      tc_VBR_type = 1;        // XING
+ 317   3      
+ 318   3                              else 
+ 319   3                                      tc_VBR_type = 2;
+ 320   3              
+ 321   3                              tdw_DataPoint++;
+ 322   3                              Next_One(C_MusicFHandle, &tw_buf_idx, tdw_DataPoint);
+ 323   3                              //tdw_DataPoint++;                      //Jimi 081202 remove    
+ 324   3      
+ 325   3                              //--- byte[1] now
+ 326   3                              for( tc_i = 1; tc_i < 4; tc_i++ )
+ 327   3                              {
+ 328   4      
+ 329   4                                      if(gc_PlayRecordDataBuf[tw_buf_idx] != VBRHeader[tc_VBR_type][tc_i])
+ 330   4                                      {
+ 331   5                                              tc_VBR_flag = 0;
+ 332   5                                              tc_i = 4;
+ 333   5      
+ 334   5                                              break;
+ 335   5                                      }
+ 336   4                                      tdw_DataPoint++;                        //Jimi 081202
+ 337   4                                      Next_One(C_MusicFHandle, &tw_buf_idx, tdw_DataPoint);
+ 338   4                              }
+ 339   3      
+ 340   3                              //--- byte[4] now
+ 341   3                              if(tc_VBR_flag)
+ 342   3                              {
+ 343   4                                      //--- skip 4 bytes following vbr tag
+ 344   4                                      for( tc_i = 0; tc_i < 4; tc_i++)
+ 345   4                                      {
+ 346   5                                              tdw_DataPoint++;                //Jimi 081202
+ 347   5                                              Next_One(C_MusicFHandle, &tw_buf_idx, tdw_DataPoint);
+ 348   5                                      }
+ 349   4                                      
+ 350   4                                      //--- byte[8] now                               
+ 351   4                                      if( !tc_VBR_type )
+ 352   4                                      {       //VBRI must skip 2 more byte
+ 353   5                                              tdw_DataPoint++;                //Jimi 081202
+ 354   5                                              Next_One(C_MusicFHandle, &tw_buf_idx, tdw_DataPoint);
+ 355   5                                              tdw_DataPoint++;                //Jimi 081202
+ 356   5                                              Next_One(C_MusicFHandle, &tw_buf_idx, tdw_DataPoint);
+C51 COMPILER V9.00   ID3                                                                   07/09/2012 21:16:52 PAGE 7   
+
+ 357   5                                              //tdw_DataPoint += 2;   //Jimi 081202 remove
+ 358   5                                      }
+ 359   4      
+ 360   4                                      //--- byte[8](XING format) (or byte[10] for VBRI format) now: 
+ 361   4                                      //    to fetch the frame and byte number
+ 362   4                                      for( tc_i = 0; tc_i <8; tc_i++)
+ 363   4                                      {
+ 364   5                                              VBR_Info.Frm_Info[tc_i]= gc_PlayRecordDataBuf[tw_buf_idx];
+ 365   5                                              tdw_DataPoint++;                //Jimi 081202
+ 366   5                                              Next_One(C_MusicFHandle, &tw_buf_idx, tdw_DataPoint);
+ 367   5                                      }                               
+ 368   4                                      tw_Frm_Sz_Avg = 
+ 369   4                                              (tc_VBR_type)? (U16)(VBR_Info.XING_Format.Byte_Num / VBR_Info.XING_Format.Frm_Num) :
+ 370   4                                                             (U16)(VBR_Info.VBRI_Format.Byte_Num / VBR_Info.VBRI_Format.Frm_Num);                             
+ 371   4                                      
+ 372   4                                      break;
+ 373   4                              }
+ 374   3                      }
+ 375   2              }
+ 376   1      
+ 377   1              return(tw_Frm_Sz_Avg);
+ 378   1              
+ 379   1      }
+ 380          
+ 381          void MP3_Parser_Seek_Dataptr(tc_Handle, U32 tdw_DataPoint)
+ 382          {
+ 383   1              gs_File_FCB[gs_System_State.c_FileHandle].dw_File_CurrentCluster = gs_File_FCB[gs_System_State.c_FileHand
+             -le].dw_File_StartCluster;
+ 384   1              gs_File_FCB[gs_System_State.c_FileHandle].dw_File_CurrentCluster = DOS_Seek_File(gs_System_State.c_FileHa
+             -ndle, tdw_DataPoint >> 9);    
+ 385   1              gs_File_FCB[gs_System_State.c_FileHandle].dw_File_DataPoint = tdw_DataPoint & 0xFFFFFE00;
+ 386   1              DOS_Read_File(tc_Handle);                       
+ 387   1      }
+ 388          
+ 389          
+ 390          U8 Next_One(U8 tc_Handle, U16 *tpw_Buf_idx, U32 tdw_fileptr)
+ 391          {
+ 392   1              (*tpw_Buf_idx)++;
+ 393   1              if( !((*tpw_Buf_idx) & 0x1FF ))
+ 394   1              {
+ 395   2                      *tpw_Buf_idx = 0;
+ 396   2                      MP3_Parser_Seek_Dataptr(tc_Handle, tdw_fileptr);
+ 397   2                      
+ 398   2                      return 1;
+ 399   2              }
+ 400   1              return 0;
+ 401   1      }
+ 402          
+ 403          
+ 404          U8 WMA_ASF_Parser()
+ 405          {
+ 406   1              code U8 ASF_GUID[4][16] =
+ 407   1              {
+ 408   1                      0x30, 0x26, 0xB2, 0x75, 0x8E, 0x66, 0xCF, 0x11, 0xA6, 0xD9, 0x00, 0xAA, 0x00, 0x62, 0xCE, 0x6C, //Header
+             - Obj 
+ 409   1                      0xA1, 0xDC, 0xAB, 0x8C, 0x47, 0xA9, 0xCF, 0x11, 0x8E, 0xE4, 0x00, 0xC0, 0x0C, 0x20, 0x53, 0x65, //File P
+             -roperties Obj
+ 410   1                      0x91, 0x07, 0xDC, 0xB7, 0xB7, 0xA9, 0xCF, 0x11, 0x8E, 0xE6, 0x00, 0xC0, 0x0C, 0x20, 0x53, 0x65, //Stream
+             - Properties Obj       
+ 411   1                      0x40, 0x9E, 0x69, 0xF8, 0x4D, 0x5B, 0xCF, 0x11, 0xA8, 0xFD, 0x00, 0x80, 0x5F, 0x5C, 0x44, 0x2B  //Audio M
+             -edia Obj
+ 412   1              };
+C51 COMPILER V9.00   ID3                                                                   07/09/2012 21:16:52 PAGE 8   
+
+ 413   1      
+ 414   1              U32     tdw_File_Ptr;
+ 415   1              U16 tw_Buf_idx;
+ 416   1              U8      tc_GUID[16];
+ 417   1              U32     tdw_Obj_Sz;
+ 418   1              U32     tdw_Hdr_Obj_Sz;
+ 419   1              U16 tw_read_byte;
+ 420   1              U8      tc_ASF_State_Flag;      
+ 421   1              U16 tw_ASF_Sample_Rate;
+ 422   1              U32 tdw_ASF_PlayDuration_H;
+ 423   1              U32 tdw_ASF_PlayDuration_L;
+ 424   1              U32 tdw_ASF_PlayDuration;  //081015 yc add  for wma
+ 425   1              U32 tdw_ASF_Preroll_L;
+ 426   1              U32 tdw_ASF_Preroll_H;
+ 427   1      
+ 428   1              gdw_ID3_v2_sz = 0;
+ 429   1      //=== Open file ===
+ 430   1              if(DOS_Open_File_r(C_MusicFHandle, C_Open_FoundFile, C_NullFileName) || (gs_File_FCB[0].dw_File_TotalSize
+             -==0)) //Ching 090116
+ 431   1              {
+ 432   2                      gs_System_State.w_SampleRate=0;
+ 433   2                      gw_TotalSec=0;
+ 434   2                      return APE_PARSE_FAIL;          
+ 435   2              }
+ 436   1              gb_ReadWriteDataArea = 0;
+ 437   1              DOS_Read_File(C_MusicFHandle);
+ 438   1      
+ 439   1              tw_Buf_idx = 0;
+ 440   1              tdw_File_Ptr = 0;
+ 441   1              tw_read_byte = 0;
+ 442   1              tc_ASF_State_Flag = 0;
+ 443   1      
+ 444   1      //=== find Header Obj GUID
+ 445   1              ASF_Get_GUID(&tw_Buf_idx, &tdw_File_Ptr, tc_GUID);
+ 446   1              tw_read_byte += 16;     
+ 447   1      
+ 448   1              if( memcmp(tc_GUID, &ASF_GUID[HDR_OBJ_GUID][0], 16))
+ 449   1                      return ASF_FORMAT_ERROR;
+ 450   1              
+ 451   1              tdw_Hdr_Obj_Sz = ASF_Get_Obj_Size(&tw_Buf_idx, &tdw_File_Ptr);
+ 452   1              tw_read_byte += 8;
+ 453   1      
+ 454   1              ASF_Flush_Byte(&tw_Buf_idx, &tdw_File_Ptr, 6);
+ 455   1              tw_read_byte = 0;
+ 456   1      
+ 457   1              while( tdw_File_Ptr < tdw_Hdr_Obj_Sz )
+ 458   1              {
+ 459   2                      ASF_Get_GUID(&tw_Buf_idx, &tdw_File_Ptr, tc_GUID);
+ 460   2                      tw_read_byte += 16;
+ 461   2      
+ 462   2                      tdw_Obj_Sz = ASF_Get_Obj_Size(&tw_Buf_idx, &tdw_File_Ptr);
+ 463   2                      tw_read_byte += 8;
+ 464   2      
+ 465   2                      if( !memcmp(tc_GUID, &ASF_GUID[FILE_PROPS_OBJ_GUID][0], 16) )
+ 466   2                      {
+ 467   3                              ASF_Flush_Byte(&tw_Buf_idx, &tdw_File_Ptr, 40);
+ 468   3                              tw_read_byte += 40;
+ 469   3      
+ 470   3                              tdw_ASF_PlayDuration_L = ASF_Get_DWord(&tw_Buf_idx, &tdw_File_Ptr);
+ 471   3                              tdw_ASF_PlayDuration_H = ASF_Get_DWord(&tw_Buf_idx, &tdw_File_Ptr);
+ 472   3                              tw_read_byte += 8;                      
+ 473   3      
+C51 COMPILER V9.00   ID3                                                                   07/09/2012 21:16:52 PAGE 9   
+
+ 474   3                              ASF_Flush_Byte(&tw_Buf_idx, &tdw_File_Ptr, 8);
+ 475   3                              tw_read_byte += 8;
+ 476   3                              
+ 477   3                              tdw_ASF_Preroll_L = ASF_Get_DWord(&tw_Buf_idx, &tdw_File_Ptr);
+ 478   3                              tdw_ASF_Preroll_H = ASF_Get_DWord(&tw_Buf_idx, &tdw_File_Ptr);
+ 479   3                              tw_read_byte += 8;   // 081015 YC add
+ 480   3                              tdw_ASF_PlayDuration = (tdw_ASF_PlayDuration_H << 24) | (tdw_ASF_PlayDuration_L >> 8); // ycc 081015
+ 481   3                              gw_TotalSec = (U16)((tdw_ASF_PlayDuration / 78125)*2) - (U16)(tdw_ASF_Preroll_L / 1000);// ycc 081015
+ 482   3                              
+ 483   3                              tc_ASF_State_Flag++;
+ 484   3                      }
+ 485   2      
+ 486   2                      else if( !memcmp(tc_GUID, &ASF_GUID[STRM_PROPS_OBJ_GUID][0], 16) )
+ 487   2                      {                       
+ 488   3                              
+ 489   3                              ASF_Get_GUID(&tw_Buf_idx, &tdw_File_Ptr, tc_GUID);
+ 490   3                              tw_read_byte += 8;
+ 491   3      
+ 492   3                              if( !memcmp(tc_GUID, &ASF_GUID[AUDIO_MEDIA_OBJ_GUID][0], 16) )
+ 493   3                              {
+ 494   4                                      ASF_Flush_Byte(&tw_Buf_idx, &tdw_File_Ptr, 42);
+ 495   4                                      tw_read_byte += 42;
+ 496   4      
+ 497   4                                      tw_ASF_Sample_Rate = ASF_Get_DWord(&tw_Buf_idx, &tdw_File_Ptr);
+ 498   4                                      tw_read_byte += 4;
+ 499   4                                      
+ 500   4                                      gs_System_State.w_SampleRate = ASF_Get_DWord(&tw_Buf_idx, &tdw_File_Ptr) / 125;
+ 501   4                                      tw_read_byte += 4;
+ 502   4      
+ 503   4                                      tc_ASF_State_Flag++;
+ 504   4                              }
+ 505   3                      }
+ 506   2      
+ 507   2                      if(tw_ASF_Sample_Rate==44100||tw_ASF_Sample_Rate==22050||tw_ASF_Sample_Rate==11025)//(Jimi 091027)select
+             - Audio PLL freq
+ 508   2                              GLOBAL_REG[0x46] |=0x04; 
+ 509   2                      else
+ 510   2                              GLOBAL_REG[0x46] &=0xFB; 
+ 511   2      
+ 512   2                      if(tc_ASF_State_Flag >= 2)
+ 513   2                              break;
+ 514   2      
+ 515   2                      ASF_Flush_Byte(&tw_Buf_idx, &tdw_File_Ptr, tdw_Obj_Sz-(U32)tw_read_byte);
+ 516   2                      tw_read_byte = 0;
+ 517   2      
+ 518   2                      if((gc_CurrentCard==2) && (SD_Detect==1))  //20090803 chiayen add
+ 519   2                      {
+ 520   3                              break;
+ 521   3                      }
+ 522   2      
+ 523   2                      if((gc_CurrentCard==5) && (gb_HostConnect==0))  //20090803 chiayen add
+ 524   2                      {                       
+ 525   3                              break;          
+ 526   3                      }
+ 527   2      
+ 528   2              }       
+ 529   1      
+ 530   1              return ASF_PARSE_DONE;          //Jimi 081112
+ 531   1      }
+ 532          
+ 533          
+ 534          
+C51 COMPILER V9.00   ID3                                                                   07/09/2012 21:16:52 PAGE 10  
+
+ 535          
+ 536          void ASF_Get_GUID(U16 *tpw_Buf_idx, U32 *tpdw_File_Ptr, U8 tc_GUID[])
+ 537          {
+ 538   1              U16 tw_Buf_Remain_Data;
+ 539   1      
+ 540   1              tw_Buf_Remain_Data = 512 - *tpw_Buf_idx;
+ 541   1      
+ 542   1              if( tw_Buf_Remain_Data > 16 )
+ 543   1              {
+ 544   2                      memcpy(&tc_GUID[0], &gc_PlayRecordDataBuf[*tpw_Buf_idx], 16);
+ 545   2                      *tpw_Buf_idx += 16;
+ 546   2              }
+ 547   1      
+ 548   1              else
+ 549   1              {
+ 550   2                      memcpy(&tc_GUID[0], &gc_PlayRecordDataBuf[*tpw_Buf_idx], tw_Buf_Remain_Data);
+ 551   2                      DOS_Read_File(C_MusicFHandle);
+ 552   2                      *tpw_Buf_idx = 0;
+ 553   2                      (*tpdw_File_Ptr) += 512;
+ 554   2                      memcpy(&tc_GUID[tw_Buf_Remain_Data], &gc_PlayRecordDataBuf[*tpw_Buf_idx], 16 - tw_Buf_Remain_Data);//(JC
+             -)H1020 the line above overwrite object GUID   
+ 555   2                      (*tpw_Buf_idx) += 16 - tw_Buf_Remain_Data;      
+ 556   2              }
+ 557   1      
+ 558   1      }
+ 559          
+ 560          
+ 561          
+ 562          
+ 563          U32 ASF_Get_Obj_Size(U16 *tpw_Buf_idx, U32 *tpdw_File_Ptr)
+ 564          {
+ 565   1              U16 tw_Buf_Remain_Data;
+ 566   1              U32 tdw_Obj_Sz;
+ 567   1              U8 tc_i;
+ 568   1              
+ 569   1      
+ 570   1              tw_Buf_Remain_Data = 512 - *tpw_Buf_idx;
+ 571   1              tdw_Obj_Sz = 0;
+ 572   1      
+ 573   1              for( tc_i = 0; tc_i < 8; tc_i++ )
+ 574   1              {
+ 575   2                      if(tc_i < 4)
+ 576   2                              tdw_Obj_Sz = (tdw_Obj_Sz >> 8) + ((U32)gc_PlayRecordDataBuf[*tpw_Buf_idx]<<24);
+ 577   2              
+ 578   2                      (*tpw_Buf_idx)++;
+ 579   2                      if(*tpw_Buf_idx>=512)
+ 580   2                      {
+ 581   3                              DOS_Read_File(C_MusicFHandle);
+ 582   3                              *tpw_Buf_idx = 0;
+ 583   3                              *tpdw_File_Ptr += 512;
+ 584   3                      }
+ 585   2              }
+ 586   1              
+ 587   1              return tdw_Obj_Sz;
+ 588   1      }
+ 589          
+ 590          
+ 591          
+ 592          
+ 593          
+ 594          U32 ASF_Get_DWord(U16 *tpw_Buf_idx, U32 *tpdw_File_Ptr)
+ 595          {
+C51 COMPILER V9.00   ID3                                                                   07/09/2012 21:16:52 PAGE 11  
+
+ 596   1              U32 tdw_Get_DWord;      
+ 597   1              U16 tw_Buf_Remain_Data;
+ 598   1              U8 tc_i;
+ 599   1      
+ 600   1              tw_Buf_Remain_Data = 512 - *tpw_Buf_idx;
+ 601   1              tdw_Get_DWord = 0;
+ 602   1      
+ 603   1              for( tc_i = 0; tc_i < 4; tc_i++ )
+ 604   1              {
+ 605   2                      tdw_Get_DWord = (tdw_Get_DWord >> 8) + ((U32)gc_PlayRecordDataBuf[*tpw_Buf_idx]<<24);
+ 606   2                              
+ 607   2                      (*tpw_Buf_idx)++;
+ 608   2                      if(*tpw_Buf_idx>=512)
+ 609   2                      {
+ 610   3                              DOS_Read_File(C_MusicFHandle);
+ 611   3                              *tpw_Buf_idx = 0;
+ 612   3                              *tpdw_File_Ptr += 512;
+ 613   3                      }
+ 614   2              }
+ 615   1              
+ 616   1              return tdw_Get_DWord;
+ 617   1      }
+ 618          
+ 619          
+ 620          void ASF_Flush_Byte(U16 *tpw_Buf_idx, U32 *tpdw_File_Ptr, U32 tdw_flush_byte)
+ 621          {
+ 622   1              
+ 623   1              U16 tw_Buf_Remain_Data;
+ 624   1      
+ 625   1              tw_Buf_Remain_Data = 512 - *tpw_Buf_idx;
+ 626   1      
+ 627   1              while( tdw_flush_byte >=512)
+ 628   1              {
+ 629   2                      DOS_Read_File(C_MusicFHandle);
+ 630   2                      tdw_flush_byte -= 512;
+ 631   2                      *tpdw_File_Ptr += 512;
+ 632   2              }
+ 633   1      
+ 634   1              if(tdw_flush_byte + *tpw_Buf_idx >= 512)
+ 635   1              {
+ 636   2                      tdw_flush_byte -= (U32)tw_Buf_Remain_Data;
+ 637   2                      DOS_Read_File(C_MusicFHandle);
+ 638   2                      *tpdw_File_Ptr += 512;
+ 639   2                      *tpw_Buf_idx = 0;
+ 640   2              }
+ 641   1      
+ 642   1              (*tpw_Buf_idx) += (U16)tdw_flush_byte;
+ 643   1              
+ 644   1      }
+ 645          
+ 646          
+ 647          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   3718    ----
+   CONSTANT SIZE    =    292    ----
+   XDATA SIZE       =   ----     176
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       4
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       1
+C51 COMPILER V9.00   ID3                                                                   07/09/2012 21:16:52 PAGE 12  
+
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

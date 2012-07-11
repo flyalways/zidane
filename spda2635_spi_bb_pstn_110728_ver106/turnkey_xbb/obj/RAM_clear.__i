@@ -1,0 +1,1 @@
+"MAIN\RAM_clear.c" LARGE OPTIMIZE (9,SIZE) BROWSE NOAREGS INCDIR(..\libsource\header) DEFINE (K_ICTYPE="0x03") DEBUG OBJECTEXTEND PRINT(.\lst\RAM_clear.lst) SRC (.\obj\RAM_clear.SRC)

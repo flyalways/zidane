@@ -1,0 +1,249 @@
+C51 COMPILER V9.00   RTC_LUNAR                                                             07/09/2012 21:16:44 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE RTC_LUNAR
+OBJECT MODULE PLACED IN .\obj\RTC_lunar.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE Calendar\RTC_lunar.c LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDIR(..\libsou
+                    -rce\header) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\RTC_lunar.lst) OBJECT(.\obj\RTC_lunar.obj)
+
+line level    source
+
+   1          //=========================V1.0==========================
+   2          // ¸U¦~¾ä¹A¾äºâªk¡G
+   3          //1¡B§PÂ_·í«e¶§¾ä¸g¹Lªº¤Ñ¼Æ¡A¦pªG¨ä¤j©ólunarcal_table[·í«e¦~][0]¡A«hª½±µ±N¨ä´î¥h¬Û®tªº¤Ñ¼Æ
+   4          //¡A³Ñ¾l¤Ñ¼Æ«ö¨C¤ë³±¾äªº¤Ñ¼Æ²Ö­p­pºâ§Y¥iºâ¥X·í«e¤é´Á¹ïÀ³ªº¹A¾ä
+   5          //2¡B¦pªG·í«e¶§¾ä¸g¹Lªº¤Ñ¼Æ¤p©ó°ò·Ç¤Ñ¼Æ¡A«h¹A¾ä¦~=·í«e¼Ë¾÷¦~-1¡AµM«á±N²Î­p·í«e¤é´Á¨ì¥h¦~¶§¾ä1¤ë1¤éªºÁ`¤Ñ¼Æ
+             -¡A
+   6          //±NÁ`¤Ñ¼Æ-°ò¼Æ¤Ñ¼Æ¡A§Y¬°·í«e¹A¾ä¦~1¤ë1¤é¨ì²{¦b¸g¹Lªº¤Ñ¼Æ¡A±N¸Ó¤Ñ¼Æ«ö¤ë´î¤Ö¡A§Y¥i­pºâ¥X·í«e¤é´Á¹ïÀ³ªº¹A¾ä¤
+             -é´Á
+   7          //3¡Bªí®æ¤¤ªº²Ä¤G¶µªí¥Ü¸Ó¦~¶|¤ë¬°´X¤ë¥÷¡A¬°0ªí¥Ü¸Ó¦~µL¶|¤ë¡A­È±o»¡©úªº¬O¡A¶|¤ëªºÁ`¤Ñ¼Æ»P³Q¶|¤ëªºÁ`¤Ñ¼Æ¤£¤@
+             -©w¬Ûµ¥
+   8          //
+   9          //4¡B¸`®ð­pºâ¡Gtable¬°¶§¾ä¤é´Á¹ïÀ³ªº¸`®ð¸¹½X¡A¥i°Ñ¦ÒGet_Solar()¨ç¼Æ¡Aª`·N¡G¸Ó¨ç¼Æ¶Ç¤Jªº°Ñ¼Æ¬°¶§¾äªº¦~¤ë¤é
+  10          //
+  11          //
+  12          //author¡Gsunzhk    2010-10-25
+  13          //==================================================================================
+  14          
+  15          
+  16          #include "..\Header\SPDA2K.h"
+  17          #include "..\header\dos\fs_struct.h"
+  18          #include "..\header\variables.h"
+  19          #include "RTC_lunar.h"
+  20          
+  21          //---------------------
+  22          //¿é¤J¦~¤ë¤é¡AÀò¨ú¹ïÀ³ªº¹A¾ä¦~¤ë¤é
+  23          //Àò¨úªº¹A¾ä¦~¤ë¤é¦s¦bgw_Year_Lunar;gc_Month_Lunar;gc_Day_Lunar;¤¤
+  24          // //·í«e¹A¾ä¦~=·í«e¶§¾ä¦~-1¡F
+  25          //·í«e¹A¾ä¤Ñ¼Æ=(«e¤@¦~¶§¾äÁ`¤Ñ¼Æ+·í«e¤é´ÁÁ`¤Ñ¼Æ-35)¤Ñ¡A³o¼Ë§Y¹ïÀ³¥h¦~¹A¾ä1¤ë1¤é¸g¹Lªº¤Ñ¼Æ¡A
+  26          //¦A«ö¹A¾äºâ³o¨Ç¤Ñ¹ïÀ³¹A¾ä¤é´Á§Y¥i
+  27          //----------------------
+  28          U8 code days_of_months2[12] =
+  29          {
+  30                  31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+  31          };
+  32           
+  33          void Get_Lunar(U16 Y,U8 M,U8 D)
+  34          {
+  35   1          data        U16     days_Lunar=0;
+  36   1          xdata       U8      i;
+  37   1          xdata       U8      LeapMonth=0;//¶|¤ë¬°0xffªí¥Ü¸Ó¦~µL¶|¤ë,§PÂ_¨Ì¾Ú¬°ªí®æ
+  38   1              xdata   U8      tc_Year;
+  39   1      
+  40   1          gc_Month_Lunar=1;
+  41   1          for(i=0;i<(M-1);i++)
+  42   1          {
+  43   2              days_Lunar=days_Lunar+days_of_months2[i];//­pºâ·í«e¤ë¤§«eªºÁ`¤Ñ¼Æ
+  44   2          }
+  45   1          days_Lunar+=D; //¥[¤W·í«e¤ë¸g¹Lªº¤Ñ¼Æ
+  46   1          if(Y%4==0 && Y%100!=0 || Y%400 == 0)
+  47   1          {
+  48   2              if(M>2)
+  49   2              {
+  50   3                  days_Lunar++;//¶|¦~¨Ã¥B¶W¹L2¤ë¥÷«h¤Ñ¼Æ+1
+  51   3              }
+C51 COMPILER V9.00   RTC_LUNAR                                                             07/09/2012 21:16:44 PAGE 2   
+
+  52   2          }
+  53   1         // dbprintf("days_Lunar=%x\n",days_Lunar);
+  54   1          //·í«e¦~¸g¾úªºÁ`¤Ñ¼Æ
+  55   1          
+  56   1          if(days_Lunar>lunarcal_table[Y+1-1900][0])  //·í«e¶§¾ä¸g¹Lªº¤Ñ¼Æ¤j©ó°ò¼Æ
+  57   1          {
+  58   2               days_Lunar -= lunarcal_table[Y+1-1900][0];      //ª`ªí®æ¤¤¬O±q1999¦~¶}©lªº¡A¬G1900¦~ªº¸Ü»Ý­n+1¾Þ§
+             -@
+  59   2          }
+  60   1          else
+  61   1          {  
+  62   2              days_Lunar+=1;//·s¦~±q1¤é¶}©l¡A¬G¸Ó³B=1;
+  63   2              Y--;
+  64   2              days_Lunar += 364;//¥[¤W¥h¦~ªºÁ`¤Ñ¼Æ
+  65   2              if(Y%4==0 && Y%100!=0 || Y%400 == 0) 
+  66   2              {
+  67   3               //    dbprintf("Leap year+1day\n");
+  68   3                   days_Lunar++;
+  69   3              }  
+  70   2              days_Lunar -= lunarcal_table[Y+1-1900][0];//´î¥h°ò·Ç¤Ñ¼Æ¡Aª`·N¤§«e¦³­ÓY--
+  71   2              
+  72   2              //---¦Ü¦¹¡Adays_Lunar¬°¥h¦~¹A¾ä1¤ë1¤é¦Ü¤µ¸g¹LªºÁ`¤Ñ¼Æ                                             
+             -       
+  73   2          }
+  74   1        //   dbprintf("days_Lunar2=%x\n",days_Lunar);
+  75   1          //--¸g¹L¤W­±ªº­pºâ¡A½T«Odays_Lunar¬O¶W¹L·í«e¹A¾ä¦~»P¶§¾ä¦~ªº°ò¼Æªº
+  76   1          //¥H¤U¬°­pºâ¥h¦~¹A¾ä1¤ë1¤é¸g¹L³o»ò¨Ç¤Ñ«áÅÜ¬°´X¤ë´X¤é¡A»Ý¬dªí¬Ý¨C­Ó¤ëªº¤Ñ¼Æ
+  77   1          gw_Year_Lunar= Y;
+  78   1         
+  79   1          if(lunarcal_table[Y+1-1900][1]!=0)
+  80   1          {//¦s¦b¶|¤ë
+  81   2              LeapMonth=lunarcal_table[Y+1-1900][1];
+  82   2          }else
+  83   1          {
+  84   2              LeapMonth=0xff;  
+  85   2          }
+  86   1          for(i=1;i<14;i++)
+  87   1          {  
+  88   2              if(days_Lunar>30)
+  89   2              {    
+  90   3                  days_Lunar -= 29;//
+  91   3                  days_Lunar -= lunarcal_table[Y+1-1900][i+1];   
+  92   3                  gc_Month_Lunar=i+1;
+  93   3                              gb_LeapMonth=0;
+  94   3                              if(LeapMonth==gc_Month_Lunar-1)
+  95   3                              {
+  96   4                                      gb_LeapMonth=1;
+  97   4                              }
+  98   3                  if(gc_Month_Lunar>LeapMonth)//¶W¹L¶|¤ëªº¤ë¥÷´î¤@
+  99   3                  {
+ 100   4                      gc_Month_Lunar--;
+ 101   4                  } 
+ 102   3              }
+ 103   2                      else
+ 104   2              {
+ 105   3                  if(days_Lunar == 30 && lunarcal_table[Y+1-1900][i+1]==0)
+ 106   3                  {   //¸Ó¤ëµL30¤é
+ 107   4                      gc_Day_Lunar = 1;
+ 108   4                      gc_Month_Lunar++; 
+ 109   4                                      gb_LeapMonth=0;
+ 110   4                  }
+ 111   3                              else
+C51 COMPILER V9.00   RTC_LUNAR                                                             07/09/2012 21:16:44 PAGE 3   
+
+ 112   3                  {
+ 113   4                      gc_Day_Lunar = days_Lunar;
+ 114   4                  }    
+ 115   3                  break;
+ 116   3              }                
+ 117   2          }            
+ 118   1      
+ 119   1          if(gc_Month_Lunar==0x0d)
+ 120   1          {
+ 121   2              gc_Month_Lunar -= 12;
+ 122   2              gw_Year_Lunar +=  1;
+ 123   2          } 
+ 124   1      
+ 125   1              tc_Year=(gw_Year_Lunar-1864)%60;
+ 126   1              gc_Tiangan=tc_Year%12;
+ 127   1              gc_Dizhi=tc_Year%10;
+ 128   1      }
+ 129          
+ 130          #if 0
+              //--------------------------------------------
+              //Func¡GÀò¨ú¤Ñ¤z¦a¤ä¦s¦bÅÜ¶qgc_Tiangan©Mgc_Dizhi
+              //input¡G¹A¾äªº¦~
+              //60¦~¤@­Ó¤Ñ¤z¦a¤ä´`Àô¤@¦¸
+              //--------------------------------------------
+              void Get_Tiangan_Dizhi(U16 Y)
+              {
+                  Y=Y-1900+17;
+                  Y=Y%60;
+                  gc_Tiangan=Y%12; //¤Ñ°®¸¹½X
+                  gc_Dizhi = Y%10; //¦a¤ä¸¹½X
+              }
+              
+              //--------------------------------------------
+              //Func:Àò¨ú¸`®ð,¸`®ð¸¹¦s¦bgc_Solar¤¤
+              //input ¶§¾äªº¦~¤ë¤é
+              //--------------------------------------------
+              void Get_Solar(U16 Y,U8 M,U8 D)
+              {
+                  gc_Solar=0xff;//ªí¥Ü¸Ó¤ÑµL¸`®ð«H®§
+              
+              //0 ¤p´H Ã¾¤ë 6 ²M©ú ¤T¤ë  12 ¤p´» ¤»¤ë 18 ´HÅS ¤E¤ë 
+              //1 ¤j´H Ã¾¤ë 7 ¨¦«B ¤T¤ë  13 ¤j´» ¤»¤ë 19 Á÷­° ¤E¤ë ¡@¡@
+              //2 ¥ß¬K ¥¿¤ë 8 ¥ß®L ¥|¤ë  14 ¥ß¬î ¤C¤ë 20 ¥ß¥V ¤Q¤ë ¡@¡@
+              //3 «B¤ô ¥¿¤ë 9 ¤pº¡ ¥|¤ë  15 ³B´» ¤C¤ë 21 ¤p³· ¤Q¤ë ¡@¡@
+              //4 Ååîh ¤G¤ë 10 ¨~ºØ ¤­¤ë 16 ¥ÕÅS ¤K¤ë 22 ¤j³· ¥V¤ë ¡@¡@
+              //5 ¬K¤À ¤G¤ë 11 ®L¦Ü ¤­¤ë 17 ¬î¤À ¤K¤ë 23 ¥V¦Ü ¥V¤ë
+                  switch(M)
+                  {
+                      case 1:   
+                          if(Solar_Data[Y-1900][0]==D){ gc_Solar=0;}
+                          if(Solar_Data[Y-1900][1]==D){ gc_Solar=1;}
+                          break;
+                      case 2:   
+                          if(Solar_Data[Y-1900][2]==D){ gc_Solar=2;}
+                          if(Solar_Data[Y-1900][3]==D){ gc_Solar=3;}
+                          break;
+                      case 3:   
+                          if(Solar_Data[Y-1900][4]==D){ gc_Solar=4;}
+                          if(Solar_Data[Y-1900][5]==D){ gc_Solar=5;}
+                          break;
+                      case 4:   
+                          if(Solar_Data[Y-1900][6]==D){ gc_Solar=6;}
+C51 COMPILER V9.00   RTC_LUNAR                                                             07/09/2012 21:16:44 PAGE 4   
+
+                          if(Solar_Data[Y-1900][7]==D){ gc_Solar=7;}
+                          break;
+                      case 5:   
+                          if(Solar_Data[Y-1900][8]==D){ gc_Solar=8;}
+                          if(Solar_Data[Y-1900][9]==D){ gc_Solar=9;}
+                          break;
+                      case 6:   
+                          if(Solar_Data[Y-1900][10]==D){ gc_Solar=10;}
+                          if(Solar_Data[Y-1900][11]==D){ gc_Solar=11;}
+                          break;
+                      case 7:   
+                          if(Solar_Data[Y-1900][12]==D){ gc_Solar=12;}
+                          if(Solar_Data[Y-1900][13]==D){ gc_Solar=13;}
+                          break;
+                      case 8:   
+                          if(Solar_Data[Y-1900][14]==D){ gc_Solar=14;}
+                          if(Solar_Data[Y-1900][15]==D){ gc_Solar=15;}
+                          break;
+                      case 9:   
+                          if(Solar_Data[Y-1900][16]==D){ gc_Solar=16;}
+                          if(Solar_Data[Y-1900][17]==D){ gc_Solar=17;}
+                          break;
+                      case 10:   
+                          if(Solar_Data[Y-1900][18]==D){ gc_Solar=18;}
+                          if(Solar_Data[Y-1900][19]==D){ gc_Solar=19;}
+                          break;
+                      case 11:   
+                          if(Solar_Data[Y-1900][20]==D){ gc_Solar=20;}
+                          if(Solar_Data[Y-1900][21]==D){ gc_Solar=21;}
+                          break;
+                      case 12:   
+                          if(Solar_Data[Y-1900][22]==D){ gc_Solar=22;}
+                          if(Solar_Data[Y-1900][23]==D){ gc_Solar=23;}
+                          break;
+                      default:
+                          break;
+                  }      
+              }
+              #endif
+ 213          
+ 214          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    492    ----
+   CONSTANT SIZE    =   3027    ----
+   XDATA SIZE       =   ----       3
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       2
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

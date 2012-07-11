@@ -1,0 +1,34 @@
+A51 MACRO ASSEMBLER  FREE_CLUSTER                                                         07/10/2012 15:51:52 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.01
+OBJECT MODULE PLACED IN .\obj\free_cluster.OBJ
+ASSEMBLER INVOKED BY: C:\Keil\C51\BIN\A51.EXE .\obj\free_cluster.src PR(.\lst\free_cluster.ls1) EP DEBUG
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     ; .\obj\free_cluster.SRC generated from: ..\LIBSOURCE\DOS\free_cluster.c
+                       2     ; COMPILER INVOKED BY:
+                       3     ;        C:\Keil\C51\BIN\C51.EXE ..\LIBSOURCE\DOS\free_cluster.c LARGE OPTIMIZE(9,SIZE) BRO
+                             WSE NOAREGS INCDIR(..\libsource\header) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\ls
+                             t\free_cluster.lst) SRC(.\obj\free_cluster.SRC)
+                       4     
+                       5     
+                       6     NAME    FREE_CLUSTER
+                       7     
+                       8             END
+A51 MACRO ASSEMBLER  FREE_CLUSTER                                                         07/10/2012 15:51:52 PAGE     2
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+FREE_CLUSTER . . .  N NUMB   -----       
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

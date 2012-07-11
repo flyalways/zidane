@@ -1,0 +1,80 @@
+C51 COMPILER V9.00   LCM_BMP_DRIVER                                                        07/09/2012 21:16:49 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE LCM_BMP_DRIVER
+OBJECT MODULE PLACED IN .\obj\LCM_BMP_driver.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE LCM\LCM_BMP_driver.c LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDIR(..\libsou
+                    -rce\header) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\LCM_BMP_driver.lst) OBJECT(.\obj\LCM_BMP_driver.obj)
+
+line level    source
+
+   1          #include "..\Header\SPDA2K.h"
+   2          #include "..\header\PROTOTYP.h"
+   3          #include "..\header\variables.h"
+   4          #include "LCM_BMP.h"
+   5          
+   6          
+   7          void LCM_set_address(U8 page,U8 col)
+   8          {
+   9   1              LCM_write_command(page|0xb0);
+  10   1              LCM_write_command((col>>4)|0x10);
+  11   1              LCM_write_command(col&0x0f);
+  12   1      }
+  13          
+  14          
+  15          void LCM_ReadSPIBMPdata(U16 tw_Addr,U16 tw_Length)
+  16          {
+  17   1              data    U16     i;
+  18   1              data    U16     PageNum;
+  19   1              unionU16        tdw_SPIAddr;
+  20   1      
+  21   1              tw_Addr=tw_Addr-0x6000;
+  22   1              PageNum=16+(tw_Addr/512)*2;     // 1-page=256-byte
+  23   1              tw_Addr=tw_Addr&0x1FF;
+  24   1              Device_Read_SRAM_Index.BY[0]=gc_PlayRecordDataBufHB;
+  25   1              Device_Read_SRAM_Index.BY[1]=0x00;
+  26   1              tdw_SPIAddr.BY[0]=PageNum;
+  27   1              tdw_SPIAddr.BY[1]=2;
+  28   1      
+  29   1              i=0;
+  30   1              while(1)
+  31   1              {
+  32   2                      SPI_Read_Data(tdw_SPIAddr);
+  33   2                      while(1)
+  34   2                      {
+  35   3                              gc_DirLCMtempBuf[i]=gc_PlayRecordDataBuf[tw_Addr];
+  36   3                              tw_Length--;
+  37   3                              if(tw_Length==0)
+  38   3                              {
+  39   4                                      return;
+  40   4                              }
+  41   3                              i++;
+  42   3                              tw_Addr++;
+  43   3                              if(tw_Addr==512)
+  44   3                              {
+  45   4                                      break;
+  46   4                              }
+  47   3                      }
+  48   2                      tdw_SPIAddr.BY[0]+=2;
+  49   2                      tw_Addr=0;
+  50   2              }
+  51   1      }
+  52          
+  53          
+  54          
+C51 COMPILER V9.00   LCM_BMP_DRIVER                                                        07/09/2012 21:16:49 PAGE 2   
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    296    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       6
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       4
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

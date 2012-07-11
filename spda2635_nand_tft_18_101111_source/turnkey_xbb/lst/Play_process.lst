@@ -1,0 +1,2916 @@
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE PLAY_PROCESS
+OBJECT MODULE PLACED IN .\obj\Play_process.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE Play\Play_process.C LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDIR(..\libsour
+                    -ce\header) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\Play_process.lst) OBJECT(.\obj\Play_process.obj)
+
+line level    source
+
+   1          #include "SPDA2K.h"
+   2          #include "dos\fs_struct.h"
+   3          #include "Memalloc.h"
+   4          #include "..\DSP\DSPPHYSIC.H"
+   5          #include "..\DSP\dspuser.h"
+   6          #include "..\header\music_play.h"
+   7          #include "..\IR\remote.h"
+   8          #include "..\header\host_init.h"
+   9          #include "..\UI_Display\unicode_hzk.c"
+  10          #include "..\header\variables.h"
+  11          #include "..\LCM\TFT_display.h"         // TFT
+  12          #include "..\LCM\TFT_config.h"          // TFT
+  13          #include "..\LCM\LCM.h"
+  14          #include "..\LCM\LCM_func.h"
+  15          #include "..\LCM\UI_icon.h"
+  16          
+  17          #define D_LrcNum                3
+  18          
+  19          extern xdata U8 gc_NUMBER[4];
+  20          extern  xdata   U8      gc_ShowPingpuTimer;
+  21          extern  xdata   U8  gb_ShowPingpu;
+  22          extern  data    bit     gb_HostError;  //20090107 chiayen add
+  23          extern  U8              gc_clock_mode;  //20090526 chiayen add
+  24          extern  U8              Get_LogData_PageIndex(void);
+  25          extern  U8              WMA_ASF_Parser();
+  26          extern  U8              DOS_DIRtable(void);  //20090216 chiayen add
+  27          extern  U8              USER_LogFile_ReadWrite(U8 tbt_ReadOrWrite);//use reserveblock for log
+  28          extern  U16             MP3_Total_Time_Parser();
+  29          extern  U16             MP3_Bitrate_Parser();
+  30          extern  void    MediaChange(void);  //20090107 chiayen add
+  31          extern  void    PickSong_Process(void);
+  32          extern  void    FM_FREQ_CHG(U8 tc_UP_DOWN,U8 offset);
+  33          extern  void    Lyric_NextGetLyrics(void);
+  34          extern  U8              DOS_SearchFreeCluster(U8 tc_SearchMode);
+  35          extern  void RandomGetFileIndex(void);
+  36          
+  37          void InitDispVariable(void);
+  38          void Play_SDFlash_DosInit();
+  39          void Play_SourceDetect_Process();
+  40          void IR_Service_Process();
+  41          void Music_SetVolumeCmd(void); 
+  42          void LCM_Display_Func1(void);
+  43          void LCM_Display_Func2(void);
+  44          extern  void IR_Service_Process_Menu();
+  45          extern  void UI_fastFFFR_Play(U8 XFFFR);
+  46          
+  47          U8 LRC_DisplayString(U8 *tpc_DataBuf, U8 tw_nByte,U8 tc_RowAddr);
+  48          
+  49          xdata   System_Struct gs_System_State;
+  50          struct  str_scroll_t    gs_str_scroll_state;
+  51          //////////////sunzhk add 090612
+  52          void ir_service_menu(void);
+  53          void ir_commandservice_menu(void);
+  54          void IR_Service_Process_Menu();
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 2   
+
+  55          
+  56          xdata U8 gc_loopcount=0;
+  57          extern xdata    U32     gdw_HOSTStartSectorRead;
+  58          extern void play_fffr_end();
+  59          
+  60          
+  61          ////////////sunzhk add over
+  62          ////////////////////////////////////////////////////////////////////////////////////////////////
+  63          
+  64          void TFT_disp_SongName(U8 tc_Width,U8 xdata *BMPdataBuf)  //yflin080820
+  65          {
+  66   1              xdata   U8      m;
+  67   1              data    U8      tc_i;
+  68   1              data    U8      j;
+  69   1              data    U8      tc_char;
+  70   1      
+  71   1              if (tc_Width == 0)
+  72   1              {
+  73   2                      return;
+  74   2              }
+  75   1              //for 023Only
+  76   1              LCD_Nand2DataMode();
+  77   1      
+  78   1              do
+  79   1              {
+  80   2                      if(tc_Width>16)
+  81   2                      {
+  82   3                              tc_Width -= 16;
+  83   3                              tc_i = 32;
+  84   3                      }
+  85   2                      else
+  86   2                      { 
+  87   3                              tc_i = tc_Width*2;
+  88   3                              if (tc_i == 0)
+  89   3                              {
+  90   4                                      break;
+  91   4                              }
+  92   3                              tc_Width = 0;
+  93   3                      }
+  94   2      
+  95   2                      j = tc_i;
+  96   2                      do { // loop 'tc_i' times
+  97   3                              tc_char = *BMPdataBuf++;
+  98   3                              m = 8;
+  99   3                              do { // loop 8 times
+ 100   4                                      tc_char = tc_char>>1;   //¤@­Óbit¤@­Óbit shift
+ 101   4                                      if(CY)          //µÍÎ»Îª1 ½«ÊäÈëÒ»¸öµãµÄÑÕÉ«
+ 102   4                                      {       
+ 103   5                                              if(gb_LrcFileName_Exist==1)
+ 104   5                                              {
+ 105   6                                                      if(gb_LRCDispLevel==0)
+ 106   6                                                      {
+ 107   7                                                              // LRC²Ä¤@²Õ¦r¦â
+ 108   7                                                              XBYTE[0xB420] = FullLRC_Word1Color/256; 
+ 109   7                                                              XBYTE[0xB420] = FullLRC_Word1Color;     
+ 110   7                                                      }
+ 111   6                                                      else
+ 112   6                                                      {
+ 113   7                                                              // LRC²Ä¤G²Õ¦r¦â
+ 114   7                                                              XBYTE[0xB420] = FullLRC_Word2Color/256; 
+ 115   7                                                              XBYTE[0xB420] = FullLRC_Word2Color;     
+ 116   7                                                      }
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 3   
+
+ 117   6                                              }
+ 118   5                                              else
+ 119   5                                              {
+ 120   6      
+ 121   6                                                      if(gc_folder_disp==1)
+ 122   6                                                      {
+ 123   7                                                              XBYTE[0xB420] = WordColor_FolderName/256; 
+ 124   7                                                              XBYTE[0xB420] = WordColor_FolderName;
+ 125   7                                                      }else
+ 126   6                                                      {       // ºq¦W¦r¦â
+ 127   7                                                      XBYTE[0xB420] = WordColor_FileName/256; 
+ 128   7                                                      XBYTE[0xB420] = WordColor_FileName;
+ 129   7                                              }
+ 130   6                                      }
+ 131   5                                      }
+ 132   4                                      else
+ 133   4                                      {
+ 134   5                                              if(gb_LrcFileName_Exist==1)
+ 135   5                                              {
+ 136   6                                                      if(gb_LRCDispLevel==0)
+ 137   6                                                      {
+ 138   7                                                              // LRC²Ä¤@²Õ­I´º¦â
+ 139   7                                                              XBYTE[0xB420] = FullLRC_Word1Color_BG/256; 
+ 140   7                                                              XBYTE[0xB420] = FullLRC_Word1Color_BG;
+ 141   7                                                      }
+ 142   6                                                      else
+ 143   6                                                      {
+ 144   7                                                              // LRC²Ä¤G²Õ­I´º¦â
+ 145   7                                                              XBYTE[0xB420] = FullLRC_Word2Color_BG/256; 
+ 146   7                                                              XBYTE[0xB420] = FullLRC_Word2Color_BG;                                          
+ 147   7                                                      }
+ 148   6                                              }
+ 149   5                                              else
+ 150   5                                              {
+ 151   6                                                      if(gc_folder_disp==1)
+ 152   6                                                      {
+ 153   7                                                              XBYTE[0xB420] = WordColorBG_FolderName/256; 
+ 154   7                                                              XBYTE[0xB420] = WordColorBG_FolderName;
+ 155   7                                                      }else
+ 156   6                                                      {
+ 157   7                                                      // ºq¦W­I´º¦â
+ 158   7                                                      XBYTE[0xB420] = WordColorBG_FileName/256; 
+ 159   7                                                      XBYTE[0xB420] = WordColorBG_FileName;
+ 160   7                                              }
+ 161   6                                      }
+ 162   5                                      }
+ 163   4                              } while (--m);
+ 164   3                      } while (--tc_i);
+ 165   2              } while(tc_Width);
+ 166   1      
+ 167   1              LCD_Data2NandMode();
+ 168   1      }
+ 169          
+ 170          U8 TFT_GetStringHZK(struct string_view_t * p_disp_param,
+ 171                                                  struct string_disp_t xdata * p_string_disp_param,
+ 172                                                  U8 * tpc_DataBuf,
+ 173                                                  U8 tc_nByte,
+ 174                                                  U8 tc_ANSI,
+ 175                                                  U8 line_num,
+ 176                                                  U8 font_truncate_flag,
+ 177                                                  U8 tc_scroll_flag,
+ 178                                                  U8 xdata * p_bitmap)
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 4   
+
+ 179          {
+ 180   1              //mode: display mode  offset: reserved for file brwser  tc_nByte:string num tc_ANSI:string type(ANSI or u
+             -nicode)
+ 181   1              struct string_view_t disp_param;
+ 182   1              data    U8      tc_Status = 0; 
+ 183   1              data    U8      i = 0;
+ 184   1              data    U8      tc_1st_char = 0;
+ 185   1              data    U8      tc_shift_start = 0;
+ 186   1              data    U8      tc_next_1st_char = 0;
+ 187   1              data    U8      tc_next_shift_start = 0;
+ 188   1              data    U8      tc_ColumnNum;
+ 189   1              data    U16     tw_Width = 0;
+ 190   1      
+ 191   1              disp_param = *p_disp_param;
+ 192   1              gw_BmpInx       = 0;
+ 193   1              gb_TFT_scroll=0;
+ 194   1      
+ 195   1              if (tc_scroll_flag)
+ 196   1              {
+ 197   2                      i = tc_1st_char
+ 198   2                        = tc_next_1st_char
+ 199   2                        = gs_str_scroll_state.c_str_1st_char;
+ 200   2                      tc_shift_start = tc_next_shift_start    = gs_str_scroll_state.c_shift_in_1st_char;
+ 201   2              }
+ 202   1      
+ 203   1              while (i<tc_nByte)
+ 204   1              {               
+ 205   2                      if(tc_ANSI)
+ 206   2                      {
+ 207   3                              tc_ColumnNum = UNICODE_HZK_GET_BMP(*(tpc_DataBuf+i),*(tpc_DataBuf+i+1),&(p_bitmap[gw_BmpInx]),1);
+ 208   3                      }
+ 209   2                      else //Unicode
+ 210   2                      { 
+ 211   3                              tc_ColumnNum = UNICODE_HZK_GET_BMP(*(tpc_DataBuf+i+1),*(tpc_DataBuf+i),&(p_bitmap[gw_BmpInx]),0);
+ 212   3                      }
+ 213   2                              
+ 214   2                      if (i == tc_1st_char)
+ 215   2                      {
+ 216   3                              tc_next_shift_start ++;
+ 217   3                              if (tc_next_shift_start >= (tc_ColumnNum&0x7f))
+ 218   3                              {
+ 219   4                                      tc_next_shift_start = 0;
+ 220   4                                      tc_next_1st_char++;
+ 221   4                                      if(tc_ColumnNum&0x80)tc_next_1st_char++;
+ 222   4                              }
+ 223   3                      }
+ 224   2                              
+ 225   2                      tw_Width += (tc_ColumnNum&0x7f);
+ 226   2                      if(tw_Width > tc_shift_start+disp_param.c_view_width)
+ 227   2                      {
+ 228   3                              tc_Status=1;
+ 229   3                              break;
+ 230   3                      }
+ 231   2      
+ 232   2                      if (tc_ColumnNum&0x80)
+ 233   2                      {
+ 234   3                              i+=2;
+ 235   3                      }
+ 236   2                      else
+ 237   2                      {
+ 238   3                              i+=1;
+ 239   3                      }
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 5   
+
+ 240   2              }
+ 241   1      
+ 242   1              if(tw_Width>FileName_Width)
+ 243   1              {
+ 244   2                      gb_TFT_scroll=1;
+ 245   2              }
+ 246   1      
+ 247   1              tw_Width -= tc_shift_start;
+ 248   1              if (tw_Width > disp_param.c_view_width)
+ 249   1              {
+ 250   2                      if (font_truncate_flag)
+ 251   2                      {
+ 252   3                              tw_Width = disp_param.c_view_width;
+ 253   3                      }
+ 254   2                      else
+ 255   2                      {
+ 256   3                              tw_Width -= (tc_ColumnNum&0x7f);
+ 257   3                      }
+ 258   2              }
+ 259   1              else
+ 260   1              {
+ 261   2                      tc_next_shift_start     = 0;
+ 262   2                      tc_next_1st_char        = 0;
+ 263   2              }
+ 264   1      
+ 265   1              p_string_disp_param->c_x                        = disp_param.c_view_x;
+ 266   1              p_string_disp_param->c_y                        = disp_param.c_view_y + disp_param.c_row_spacing*line_num;
+ 267   1              p_string_disp_param->c_width            = tw_Width;
+ 268   1              p_string_disp_param->c_reverse_flag     = 0;
+ 269   1              p_string_disp_param->pc_font_bitmap     = p_bitmap +2*tc_shift_start; 
+ 270   1      
+ 271   1              if (tc_scroll_flag)
+ 272   1              {
+ 273   2                      gs_str_scroll_state.c_str_1st_char              = tc_next_1st_char;
+ 274   2                      gs_str_scroll_state.c_shift_in_1st_char = tc_next_shift_start;
+ 275   2              }
+ 276   1              else
+ 277   1              {
+ 278   2                      gs_str_scroll_state.c_str_1st_char              = 0;
+ 279   2                      gs_str_scroll_state.c_shift_in_1st_char = 0;
+ 280   2              }
+ 281   1      
+ 282   1              return tc_Status;
+ 283   1      }
+ 284          
+ 285          
+ 286          static void UI_StringTrigger(struct string_disp_t xdata *p_str)
+ 287          {
+ 288   1              LCM_set_view(TFT_HZKDispDir, p_str->c_x, p_str->c_y, p_str->c_width, 16); 
+ 289   1              TFT_disp_SongName(p_str->c_width, p_str->pc_font_bitmap);//total width,reverse,string start index
+ 290   1      }
+ 291          
+ 292          void TFT_ShowSongName(struct string_view_t *p_disp_param,struct string_disp_t xdata *p_string_disp_param)
+ 293          {
+ 294   1              data    U8      tc_ColumnNum;
+ 295   1              data    U16     i;
+ 296   1              data    U16 tw_Start;
+ 297   1              data    U16 tw_Width;
+ 298   1              struct string_view_t disp_param;
+ 299   1      
+ 300   1              disp_param = *p_disp_param;
+ 301   1              UI_StringTrigger(&(p_string_disp_param[0]));
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 6   
+
+ 302   1              tw_Width        = p_string_disp_param[0].c_width;
+ 303   1              //clear resudue space
+ 304   1              if (tw_Width < disp_param.c_view_width)
+ 305   1              {
+ 306   2                      tw_Start         = p_string_disp_param[0].c_x+tw_Width;
+ 307   2                      tc_ColumnNum = p_string_disp_param[0].c_y;
+ 308   2                      tw_Width         = disp_param.c_view_width-tw_Width;
+ 309   2       
+ 310   2                      LCD_set_view(TFT_HZKDispDir, tw_Start, tc_ColumnNum,tw_Width,16); // horizontal view    
+ 311   2                      LCD_Nand2DataMode();
+ 312   2                      for(i=0;i<tw_Width*32;i++)
+ 313   2                      {
+ 314   3                              if(gc_folder_disp==1)
+ 315   3                              {
+ 316   4                                      XBYTE[0xB420]=WordColorBG_FolderName>>8;
+ 317   4                                      XBYTE[0xB420]=WordColorBG_FolderName;
+ 318   4      
+ 319   4                              }else
+ 320   3                              {
+ 321   4                              XBYTE[0xB420]=WordColorBG_FileName>>8;
+ 322   4                              XBYTE[0xB420]=WordColorBG_FileName;
+ 323   4                      }
+ 324   3                      }
+ 325   2                      LCD_Data2NandMode();
+ 326   2              }
+ 327   1      }
+ 328          
+ 329          
+ 330          static U8 LCD_Disp_FileName(U8 *tpc_DataBuf, U8 tc_ANSI, U8 tc_nByte, U8 tc_scroll_flag)
+ 331          {       //mode: display mode  offset: reserved for file brwser  tc_nByte:string num tc_ANSI:string type(ANSI or 
+             -unicode)
+ 332   1              U8 tc_Status;
+ 333   1              struct string_view_t disp_param;// = { Start_X_FileName,        Start_Y_FileName,       FileName_Width, 22};
+ 334   1              struct string_disp_t filename_attrib;
+ 335   1              
+ 336   1              if(gc_folder_disp==1)    
+ 337   1              {//ÏÔÊ¾ÎÄ¼þ¼ÐÃû³Æ
+ 338   2                      disp_param.c_view_x=Start_X_FolderName;
+ 339   2                      disp_param.c_view_y=Start_Y_FolderName;
+ 340   2                      disp_param.c_view_width=FolderName_Width;
+ 341   2                      disp_param.c_row_spacing=20;  
+ 342   2                      
+ 343   2                      gs_str_scroll_state.c_str_1st_char=0;  //20090331
+ 344   2                      gs_str_scroll_state.c_shift_in_1st_char=0;
+ 345   2      
+ 346   2              }else
+ 347   1              {//ÏÔÊ¾ÎÄ¼þµÄÃû³Æ
+ 348   2                      disp_param.c_view_x=Start_X_FileName;
+ 349   2                      disp_param.c_view_y=Start_Y_FileName;
+ 350   2                      disp_param.c_view_width=FileName_Width;
+ 351   2                      disp_param.c_row_spacing=22;
+ 352   2              }
+ 353   1              tc_Status=TFT_GetStringHZK(&disp_param, //*
+ 354   1                                                                       &(filename_attrib),
+ 355   1                                                                       &(tpc_DataBuf[0]), //* string to display
+ 356   1                                                                       tc_nByte, //* string size in bytes
+ 357   1                                                                       tc_ANSI, //* unicode or ansi flag
+ 358   1                                                                       0, //* line number
+ 359   1                                                                       1,/*truncate on char or not*/ //* 1
+ 360   1                                                                       tc_scroll_flag, //rolling factor
+ 361   1                                                                       &(gc_BmpString[0]));
+ 362   1              TFT_ShowSongName(&disp_param, &filename_attrib);
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 7   
+
+ 363   1              return tc_Status;
+ 364   1      }
+ 365          
+ 366          
+ 367          void Music_EQ_Cmd(U8 tc_Type)
+ 368          {
+ 369   1          DSP_EQ_Cmd(tc_Type);
+ 370   1          gs_DSP_GLOBAL_RAM.sc_EQ_Type = tc_Type;
+ 371   1          DSP_SpectrumOn();
+ 372   1      }
+ 373          
+ 374          
+ 375          void Music_WakeUp(U8 tc_Type)
+ 376          {   
+ 377   1          DSP_WakeUp(tc_Type);
+ 378   1      }
+ 379          
+ 380          
+ 381          U8 MP3_DataIn(void)
+ 382          {   
+ 383   1              data    U8 tc_status;
+ 384   1              xdata   U16     tw_SmpRateIdx;
+ 385   1          
+ 386   1          while (L2_DSP_Read_DMem16(DSP_EmptyBuffer) >= 512)           //Jimi 091126
+ 387   1          {
+ 388   2              tc_status=DOS_Read_File(C_MusicFHandle);
+ 389   2              if(tc_status == DOS_END_OF_FILE)
+ 390   2              {
+ 391   3                              L2_DSP_Write_DMem16(DSP_MP3_file_end_flag, 1);  //Jimi 091126
+ 392   3                  return DSP_DATAIN_COMMAND_ERROR;
+ 393   3              }
+ 394   2              else if(tc_status)
+ 395   2              {
+ 396   3                  return tc_status;   
+ 397   3              }
+ 398   2      
+ 399   2              L2_DSP_MCU_DM_DMA(gs_DSP_GLOBAL_RAM.sc_DM_Index++, 0x20, (U16)gc_PlayRecordDataBuf, DMA_24BIT_MODE
+             -);
+ 400   2              L2_DSP_SendCommandSet(DCMD_DatIn);
+ 401   2      
+ 402   2              if (gs_DSP_GLOBAL_RAM.sc_DM_Index >= 24)
+ 403   2                      {
+ 404   3                  gs_DSP_GLOBAL_RAM.sc_DM_Index = 0;  // DM Range: 0x2000 ~  0x2FFF
+ 405   3                      }
+ 406   2          }
+ 407   1      
+ 408   1          tw_SmpRateIdx = L2_DSP_Read_DMem16(0x3F8E); //0x3F8E is an index of mp3 sampling rate within DSP
+ 409   1                                                                                                                
+             -      //0x0:44.1k;  0x1:48k;  0x2:32k;  0x3:22.1k;  0x4:24k;  0x5:16k;  0x6:11.025k;  0x7:12k;  0x8:8k
+ 410   1          if(tw_SmpRateIdx == 0 || tw_SmpRateIdx == 3 || tw_SmpRateIdx == 6)
+ 411   1              {
+ 412   2              GLOBAL_REG[0x46] |=0x04;
+ 413   2              }
+ 414   1          else
+ 415   1              {
+ 416   2              GLOBAL_REG[0x46] &=0xFB; 
+ 417   2              }
+ 418   1      
+ 419   1          return  DSP_SUCCESS;
+ 420   1      }
+ 421          
+ 422          
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 8   
+
+ 423          U16 MP3_Bitrate(void)
+ 424          {
+ 425   1          return(L2_DSP_Read_DMem16(DSP_MP3Bitrate));
+ 426   1      }
+ 427          
+ 428          
+ 429          U16 MP3_ReadTime(void)
+ 430          {
+ 431   1              code    U16     SampleRate[4][3]={{11025,12000,8000},{0,0,0},{22050,24000,16000},{44100,48000,32000} };
+ 432   1              data    U8      tc_SampleRate, tc_MPEG_Type, tc_Layer;
+ 433   1          data        U16 tw_DurTime;
+ 434   1              data    U16 tw_SamplePerFrame;
+ 435   1          xdata       U32 tdw_Mpeg_Status = L2_DSP_Read_DMem24(DSP_MPEGSt);
+ 436   1          xdata       U32 tdw_FrameCnt = L2_DSP_Read_DMem24(DSP_DecodeFrameCounter);
+ 437   1      
+ 438   1              tc_SampleRate = ((U8)(tdw_Mpeg_Status>>5)&0x03);
+ 439   1              tc_MPEG_Type = ((U8)(tdw_Mpeg_Status>>(14+8))&0x03);
+ 440   1              tc_Layer = ((U8)(tdw_Mpeg_Status>>(12+8))&0x03);
+ 441   1      
+ 442   1          if(tdw_FrameCnt>0x20)
+ 443   1          {
+ 444   2                      if(tc_Layer == 0x03) //layer-I, reference ISO/IEC 11172-3 header description
+ 445   2              {
+ 446   3                              tw_SamplePerFrame = 384;
+ 447   3              }
+ 448   2                      else if((tc_MPEG_Type != 0x03) && (tc_Layer == 0x01))
+ 449   2                      {       
+ 450   3                              tw_SamplePerFrame = 576;
+ 451   3                      } 
+ 452   2                      else
+ 453   2                      {
+ 454   3                              tw_SamplePerFrame = 1152;
+ 455   3              }
+ 456   2                      
+ 457   2                      if(tc_MPEG_Type != 0x01)
+ 458   2                      {
+ 459   3                              tw_DurTime = gw_CurrentSec +  tdw_FrameCnt * tw_SamplePerFrame/SampleRate[tc_MPEG_Type][tc_SampleRate];
+ 460   3              }
+ 461   2                  else
+ 462   2              {
+ 463   3                      tw_DurTime = 0;
+ 464   3                  }
+ 465   2          }
+ 466   1              else//(JC)min ~32 frames -> 1sec
+ 467   1          {
+ 468   2              tw_DurTime = gw_CurrentSec;
+ 469   2          }
+ 470   1      
+ 471   1          return tw_DurTime;
+ 472   1      }
+ 473          
+ 474          
+ 475          U8 MP3_EOF_Proc(void)
+ 476          {                       
+ 477   1              data    U16 tw_BufRem;
+ 478   1              data    U16 tw_RampDownBufSz;
+ 479   1              data    U16 tw_dec_bsbuf_rem;    //Jimi 091126
+ 480   1      
+ 481   1              L2_DSP_Write_DMem16(0x3F44, 8000);      //Jimi 100517, enlarge DSP MP3 decoder ramp down step
+ 482   1              L2_DSP_Write_DMem16(0x3F45, 8000);
+ 483   1      
+ 484   1          tw_BufRem = L2_DSP_Read_DMem16(DSP_RemainBuffer);
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 9   
+
+ 485   1          tw_RampDownBufSz =(U16)(((U32)gs_System_State.w_BitRate * 1000 )/8/20);  // 0.05 sec for ramp down
+ 486   1          tw_dec_bsbuf_rem = L2_DSP_Read_DMem16(DSP_MP3_dec_bsbuf_rem);   //Jimi 091126
+ 487   1          
+ 488   1          if(tw_RampDownBufSz < 512 )     //for 8k bitrate condition(M2L3 & M2.5L3)
+ 489   1              {
+ 490   2              tw_RampDownBufSz = 512;
+ 491   2              }
+ 492   1          
+ 493   1          if(tw_BufRem < tw_RampDownBufSz )
+ 494   1              {
+ 495   2                      if(L2_DSP_Read_DMem16(DSP_RampDownComplete) == 0)       //(Jimi 091126)RampDownOK == 0
+ 496   2                      {
+ 497   3                              if( tw_dec_bsbuf_rem < tw_RampDownBufSz)
+ 498   3                              {
+ 499   4                              return 1;
+ 500   4                              }
+ 501   3                      }
+ 502   2                      else
+ 503   2                      {       
+ 504   3                              return 1;
+ 505   3                      }
+ 506   2              }
+ 507   1      
+ 508   1          return 0;
+ 509   1      }
+ 510          
+ 511          
+ 512          //=================WMA=================
+ 513          U8 WMA_err_bs_proc(void)
+ 514          {
+ 515   1              data    U8      tc_iloop;
+ 516   1              data    U16     tw_tmp;
+ 517   1              data    U16 tw_DRMStatus;
+ 518   1              data    U16 tw_DecodeStatus;
+ 519   1              xdata   U32 tdw_testcluster;
+ 520   1              
+ 521   1              tw_DRMStatus = L2_DSP_Read_DMem16(DSP_WMAhasJanusDRM);
+ 522   1              tw_tmp = L2_DSP_Read_DMem16(DSP_DecodeStatus);
+ 523   1              tw_DecodeStatus = tw_tmp & 0x0020;
+ 524   1      
+ 525   1              if( (tw_DecodeStatus == 0x0020) || tw_DRMStatus  )      //wma format error or drm
+ 526   1              {
+ 527   2              DSP_ResetCmd();
+ 528   2                      return DSP_USER_FILE_TYPE_ERROR;
+ 529   2              }
+ 530   1              
+ 531   1              tw_DecodeStatus = tw_tmp & 0x00C0;
+ 532   1          if(tw_DecodeStatus!=0x0000)
+ 533   1              {
+ 534   2                      tdw_testcluster = (gs_File_FCB[gs_System_State.c_FileHandle].dw_File_DataPoint >> 9)+5;
+ 535   2      
+ 536   2                      if( tdw_testcluster >= (gs_File_FCB[gs_System_State.c_FileHandle].dw_File_TotalSize >> 9) )
+ 537   2                      {
+ 538   3                              return DSP_RUNNING_STATUS1_ERROR;
+ 539   3                      }
+ 540   2      
+ 541   2                      gs_File_FCB[gs_System_State.c_FileHandle].dw_File_CurrentCluster =gs_File_FCB[gs_System_State.c_FileHand
+             -le].dw_File_StartCluster;
+ 542   2                      gs_File_FCB[gs_System_State.c_FileHandle].dw_File_DataPoint = tdw_testcluster << 9;
+ 543   2                      gs_File_FCB[gs_System_State.c_FileHandle].dw_File_CurrentCluster = DOS_Seek_File(gs_System_State.c_FileH
+             -andle,gs_File_FCB[gs_System_State.c_FileHandle].dw_File_DataPoint>>9);
+ 544   2      
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 10  
+
+ 545   2                      L2_DSP_Write_DMem16(DSP_EmptyBuffer,0x3C00);    //reset BS buffer information   //Jimi081112 mdf size to 0x3C
+             -00
+ 546   2              L2_DSP_Write_DMem16(DSP_RemainBuffer,0x0000);   
+ 547   2      
+ 548   2              gs_DSP_GLOBAL_RAM.sc_DM_Index = 0;      
+ 549   2              L2_DSP_Write_DMem24(DSP_WMASectorOffset,(gs_File_FCB[gs_System_State.c_FileHandle].dw_File_DataPoi
+             -nt>>9));      
+ 550   2              L2_DSP_Write_DMem16(DSP_DecodeStatus,0x0000);
+ 551   2              L2_DSP_Write_DMem16(DSP_WMARandomFlag,0x0001);   //set random flag
+ 552   2              tc_iloop = 0;
+ 553   2      
+ 554   2              do
+ 555   2              {
+ 556   3                  if (DOS_Read_File(C_MusicFHandle) == DOS_END_OF_FILE)
+ 557   3                  {
+ 558   4                      return DSP_DATAIN_COMMAND_ERROR;
+ 559   4                  }
+ 560   3      
+ 561   3                  L2_DSP_MCU_DM_DMA(gs_DSP_GLOBAL_RAM.sc_DM_Index++, 0x20, (U16)gc_PlayRecordDataBuf, DMA_24BIT_
+             -MODE);
+ 562   3                  L2_DSP_SendCommandSet(DCMD_DatIn); 
+ 563   3      
+ 564   3                  tc_iloop ++;
+ 565   3              }while(tc_iloop!=5);
+ 566   2      
+ 567   2          }
+ 568   1          return DSP_SUCCESS; 
+ 569   1      }
+ 570          
+ 571          
+ 572          U8 WMA_DataIn(void)  //20090803 chiayen modify
+ 573          {
+ 574   1              xdata   U8  tc_errbs;
+ 575   1      
+ 576   1      /* Error Bitstream Process */
+ 577   1          tc_errbs = WMA_err_bs_proc();
+ 578   1      
+ 579   1          if(tc_errbs == DSP_USER_FILE_TYPE_ERROR || tc_errbs == DSP_RUNNING_STATUS1_ERROR)
+ 580   1          {
+ 581   2              return DSP_DATAIN_COMMAND_ERROR;
+ 582   2          }   
+ 583   1      
+ 584   1          while (L2_DSP_Read_DMem16(DSP_EmptyBuffer) > 512) //wei.tang modify 081024  //for test play WMA file 0
+             -81024
+ 585   1          {
+ 586   2              if (DOS_Read_File(C_MusicFHandle) == DOS_END_OF_FILE)
+ 587   2              {
+ 588   3                  return DSP_DATAIN_COMMAND_ERROR;
+ 589   3              }
+ 590   2      
+ 591   2              L2_DSP_MCU_DM_DMA(gs_DSP_GLOBAL_RAM.sc_DM_Index++, 0x20, (U16)gc_PlayRecordDataBuf, DMA_24BIT_MODE
+             -);
+ 592   2              L2_DSP_SendCommandSet(DCMD_DatIn);
+ 593   2      
+ 594   2              if (gs_DSP_GLOBAL_RAM.sc_DM_Index >= 30)  //20090420 chiayen modify 36->30
+ 595   2                      {
+ 596   3                  gs_DSP_GLOBAL_RAM.sc_DM_Index = 0;  // DM Range: 0x2000 ~  0x37FF
+ 597   3              }
+ 598   2          }
+ 599   1          return  DSP_SUCCESS;
+ 600   1      }
+ 601          
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 11  
+
+ 602          
+ 603          U16 WMA_ReadTime(void)
+ 604          {
+ 605   1          U32 tw_cur_time_h;
+ 606   1              U32     tw_cur_time;
+ 607   1      
+ 608   1          tw_cur_time_h = L2_DSP_Read_DMem24(DSP_WMACurrenTimeHigh);
+ 609   1          tw_cur_time = L2_DSP_Read_DMem24(DSP_WMACurrenTimeLow) + (tw_cur_time_h<<24);
+ 610   1      
+ 611   1          return(tw_cur_time / 1000);    
+ 612   1      }
+ 613          
+ 614          
+ 615          U16 WMA_Bitrate(void)
+ 616          {
+ 617   1          return(L2_DSP_Read_DMem16(DSP_WMABitrate));
+ 618   1      }
+ 619          
+ 620          
+ 621          U8 WMA_EOF_Proc(void)
+ 622          {    
+ 623   1          data        U8  tc_wma_eof_cnt = 0;
+ 624   1              data    U16 tw_DSP_RemainBufPrev = 0;
+ 625   1          xdata       U16 tw_bs_buf_remain;
+ 626   1          xdata       U16 tw_DSP_dec_status;
+ 627   1          
+ 628   1          tw_bs_buf_remain = L2_DSP_Read_DMem16(DSP_RemainBuffer);
+ 629   1      
+ 630   1          if(tw_bs_buf_remain == tw_DSP_RemainBufPrev)
+ 631   1              {
+ 632   2              tc_wma_eof_cnt ++;
+ 633   2              }   
+ 634   1          else
+ 635   1          {
+ 636   2              tw_DSP_RemainBufPrev = tw_bs_buf_remain;
+ 637   2              tc_wma_eof_cnt = 0;
+ 638   2          }    
+ 639   1          tw_DSP_dec_status = L2_DSP_Read_DMem16(DSP_DecodeStatus) & 0xC0;
+ 640   1      
+ 641   1          if( tw_DSP_dec_status || (tc_wma_eof_cnt >=10) )
+ 642   1          {
+ 643   2              L2_DSP_Write_DMem16(DSP_DecodeStatus, tw_DSP_dec_status|0xC0 );//¬°¤FÁ×§K¤§«áªºplay_stop hang¦í
+ 644   2              
+ 645   2              return 1;
+ 646   2          }
+ 647   1          
+ 648   1          return 0;   
+ 649   1      }
+ 650          
+ 651          
+ 652          U8 Music_PlayCmd(void)
+ 653          {
+ 654   1          // sent "PLAY" command to DSP
+ 655   1          if(L2_DSP_SendCommandSet(DCMD_Play) != DCMD_Play)
+ 656   1          {
+ 657   2              return DSP_PLAY_COMMAND_ERROR;
+ 658   2          }
+ 659   1      
+ 660   1          if(gc_Play_FileType!=1)                  //(Jimi 091028)wma do not need to reset bitstream address cuz
+             - the asf parser is contiguous to wma decoder 
+ 661   1          {
+ 662   2              gs_DSP_GLOBAL_RAM.sc_DM_Index = 0;  // reset bitstream address of DM//(Jimi 091104 mdf)
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 12  
+
+ 663   2              // MP3 file open        
+ 664   2              if(DOS_Open_File_r(C_MusicFHandle, C_Open_FoundFile, C_NullFileName))
+ 665   2                  {
+ 666   3                  return DSP_PLAY_COMMAND_ERROR;
+ 667   3                  }
+ 668   2          }
+ 669   1      
+ 670   1          return DSP_SUCCESS;
+ 671   1      }
+ 672          
+ 673          
+ 674          void Music_VolumeUpCmd(void)
+ 675          {
+ 676   1          if (gs_DSP_GLOBAL_RAM.sw_Volume<62)
+ 677   1          {
+ 678   2              gs_DSP_GLOBAL_RAM.sw_Volume+=2;
+ 679   2          }
+ 680   1          L2_DSP_Write_DMem16(DSP_VolumeControl,gs_DSP_GLOBAL_RAM.sw_Volume);     // Vloume Range:0~63
+ 681   1      }
+ 682          
+ 683          
+ 684          void Music_SetVolumeCmd(void)
+ 685          {
+ 686   1          L2_DSP_Write_DMem16(DSP_VolumeControl,gs_DSP_GLOBAL_RAM.sw_Volume);
+ 687   1      }
+ 688          
+ 689          
+ 690          void Music_VolumeDownCmd(void)
+ 691          {
+ 692   1          if (gs_DSP_GLOBAL_RAM.sw_Volume>1)
+ 693   1          {
+ 694   2              gs_DSP_GLOBAL_RAM.sw_Volume-=2;
+ 695   2          }
+ 696   1          L2_DSP_Write_DMem16(DSP_VolumeControl,gs_DSP_GLOBAL_RAM.sw_Volume);     // Vloume Range:0~63
+ 697   1      }
+ 698          
+ 699          
+ 700          U8 Music_PauseCmd(void)  //20090803 chiayen modify
+ 701          {   
+ 702   1          data        U8  tc_Ret;
+ 703   1              data    U16     TimeOUT;
+ 704   1      
+ 705   1          Music_WakeUp(DSP_CLK_CTRL | SRAM2T_CTRL);
+ 706   1              tc_Ret=DSP_PauseCmd();
+ 707   1              TimeOUT=0xFFFF;
+ 708   1      
+ 709   1              if(gc_Play_FileType==0)
+ 710   1              {
+ 711   2                      do
+ 712   2                      {
+ 713   3                              TimeOUT--;
+ 714   3                              if (TimeOUT == 0)
+ 715   3                              {
+ 716   4                                      return DSP_RUNNING_STATUS1_ERROR;
+ 717   4                              }
+ 718   3                      } while (!(L2_DSP_Read_DMem16(DSP_RunningStatus)&0x0002));
+ 719   2              }
+ 720   1              else
+ 721   1              {
+ 722   2                      do
+ 723   2                      {
+ 724   3                              TimeOUT--;
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 13  
+
+ 725   3                              if (TimeOUT == 0)
+ 726   3                              {
+ 727   4                                      return DSP_RUNNING_STATUS1_ERROR;
+ 728   4                              }
+ 729   3                      } while (!L2_DSP_Read_DMem16(DSP_RampDownComplete)); //H1226 DSP_RampDownComplete = 0x3FB8, indicates Ra
+             -mpDown OK or NOT
+ 730   2              }
+ 731   1      
+ 732   1              return tc_Ret;
+ 733   1      }
+ 734          
+ 735          
+ 736          U8 Music_ResumeCmd(void)
+ 737          {
+ 738   1          Music_WakeUp(DSP_CLK_CTRL | SRAM2T_CTRL);
+ 739   1      
+ 740   1          if(L2_DSP_SendCommandSet(DCMD_Play) != DCMD_Play)
+ 741   1          {
+ 742   2              return DSP_PLAY_COMMAND_ERROR;
+ 743   2          }
+ 744   1          return DSP_SUCCESS;
+ 745   1      }
+ 746          
+ 747          
+ 748          U8 Music_StopCmd(U8 tc_FileHandle)
+ 749          {
+ 750   1              data    U8  tc_Ret;
+ 751   1              data    U8      tc_value;
+ 752   1              data    U16 tw_temp;
+ 753   1              data    U16 dbgTmp;
+ 754   1      
+ 755   1          Music_WakeUp(DSP_CLK_CTRL | SRAM2T_CTRL);
+ 756   1          tc_Ret = DSP_StopCmd();
+ 757   1      
+ 758   1          // Reset decode status
+ 759   1              tw_temp=0xffff;
+ 760   1              do
+ 761   1              {
+ 762   2                      tw_temp --;
+ 763   2                      if(tw_temp==0)
+ 764   2                      {
+ 765   3                              tc_Ret = DSP_DECODE_STATUS_TIMEOUT_ERROR;
+ 766   3                              break;
+ 767   3                      }
+ 768   2              }while(!((L2_DSP_Read_DMem16(DSP_DecodeStatus)&0x00C0)==0x00C0));  //wait file end
+ 769   1      
+ 770   1              tw_temp=L2_DSP_Read_DMem16(DSP_DecodeStatus);
+ 771   1              L2_DSP_Write_DMem16(DSP_DecodeStatus,tw_temp&0xFF3F);
+ 772   1      
+ 773   1          // Close current file
+ 774   1              DOS_Close_File_r(tc_FileHandle);
+ 775   1      
+ 776   1              // wait for ramp down ok and Turn off DSP clock, ycc 081113
+ 777   1              tw_temp=0xFFFF;
+ 778   1              while(1)
+ 779   1              {
+ 780   2                      dbgTmp=L2_DSP_Read_DMem16(DSP_RestartFlag);  //read DSP 0x3F0B.0 ready status
+ 781   2                      tw_temp--;     
+ 782   2                      if((tw_temp==0)||(dbgTmp==0))
+ 783   2                      {           
+ 784   3                              break; 
+ 785   3                      } 
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 14  
+
+ 786   2              }
+ 787   1              tc_value=XBYTE[0xB010] & 0xFE;
+ 788   1              XBYTE[0xB010] = tc_value;   
+ 789   1      
+ 790   1              return tc_Ret;
+ 791   1      }
+ 792          
+ 793          //===============  UI flow  =================
+ 794          void Idle_Disp_Icon()
+ 795          {   
+ 796   1          gc_Play_FileType=gs_File_FCB[gs_System_State.c_FileHandle].c_FileType;
+ 797   1      
+ 798   1          if(gc_Play_FileType==0)
+ 799   1          {
+ 800   2              gs_System_State.w_BitRate=MP3_Bitrate_Parser();
+ 801   2              gw_TotalSec = MP3_Total_Time_Parser();//(JC)H0630 LCM test
+ 802   2          }
+ 803   1          else if(gc_Play_FileType==1)
+ 804   1          {
+ 805   2              WMA_ASF_Parser();
+ 806   2          }
+ 807   1      
+ 808   1          DOS_GetLongFileName(0, gc_FileLongName);
+ 809   1      }
+ 810          
+ 811          
+ 812          void play_idle()
+ 813          {
+ 814   1          
+ 815   1      }
+ 816          
+ 817          
+ 818          void UI_LRCTrigger(U8 tc_line,U8 width,U16 index,struct string_view_t code * p_str)
+ 819          {
+ 820   1              U8 tc_y;
+ 821   1      
+ 822   1              tc_y= p_str->c_view_y +  p_str->c_row_spacing*tc_line;
+ 823   1              LCM_set_view(TFT_HZKDispDir, p_str->c_view_x, tc_y, p_str->c_view_width, 16); 
+ 824   1              TFT_disp_SongName(width,&(gc_BmpString[index]));
+ 825   1      }
+ 826          
+ 827          
+ 828          void UI_FulllcdDis_Lrc()//if the filename beyond the lcd ,so rolling ,the same with lrc
+ 829          {
+ 830   1              code U8 Lrc_NoContent[11]={0x20,0x20,0x20,0x20,0x4E,0x6F,0x20,0x4C,0x52,0x43};
+ 831   1      
+ 832   1              TFT_LRCBackGround();
+ 833   1              if(gb_LrcFileName_Exist==1)
+ 834   1              {
+ 835   2                      LRC_DisplayString(&gc_LrcDisplayBuf[0],gc_LrcCurrentLen,0);     //ROW 0 
+ 836   2                      LRC_DisplayString(&gc_LrcDisplayBuf[60],gc_LrcCurrentLenNext,1); //ROW 1                
+ 837   2              }
+ 838   1              else
+ 839   1              {
+ 840   2                      LRC_DisplayString(&Lrc_NoContent,10,0); //ROW 0 
+ 841   2              }
+ 842   1      }
+ 843          
+ 844          
+ 845          U8 LRC_DisplayString(U8 *tpc_DataBuf, U8 tw_nByte,U8 tc_RowAddr) 
+ 846          {
+ 847   1              data    U8      i=0;
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 15  
+
+ 848   1              data    U8      tc_line=0;
+ 849   1              data    U8      line_limit;
+ 850   1              data    U8      tc_ColumnNum;
+ 851   1              data    U16 tw_Width;
+ 852   1              data    U16 tw_WidthPre=0;
+ 853   1              data    U16 tw_BmpInxPre;
+ 854   1              data    U16 tw_BmpInx=0;        
+ 855   1              code struct string_view_t tp_lrc[2]={ 8, 4,144,20,              //for Low1 
+ 856   1                                                                                    8,68,144,20};             //foe Low2
+ 857   1      
+ 858   1              gb_LRCDispLevel=(bit)tc_RowAddr;
+ 859   1      
+ 860   1              gw_BmpInx               =0;
+ 861   1              tw_Width                =0;  
+ 862   1              line_limit= tp_lrc[tc_RowAddr].c_view_width;
+ 863   1      
+ 864   1              while (i<tw_nByte)
+ 865   1              {
+ 866   2                      tc_ColumnNum = UNICODE_HZK_GET_BMP(*(tpc_DataBuf+i),*(tpc_DataBuf+i+1),&(gc_BmpString[gw_BmpInx]),1);//f
+             -or ANSI only
+ 867   2      
+ 868   2                      tw_Width += (tc_ColumnNum&0x7f);
+ 869   2      
+ 870   2      
+ 871   2                      if(tw_Width > line_limit )
+ 872   2                      {
+ 873   3                              UI_LRCTrigger(tc_line,tw_WidthPre,tw_BmpInx,&tp_lrc[tc_RowAddr]);
+ 874   3                              tc_line++;
+ 875   3                              if(tc_line>=D_LrcNum)
+ 876   3                              {
+ 877   4                                      return(tw_nByte-i);                             
+ 878   4                              }
+ 879   3                              tw_BmpInx=tw_BmpInxPre; //record new BMP Index
+ 880   3      
+ 881   3                              tw_Width=tc_ColumnNum&0x7f;
+ 882   3                      }
+ 883   2                      tw_WidthPre=tw_Width;
+ 884   2                      tw_BmpInxPre=gw_BmpInx;
+ 885   2      
+ 886   2                      if (tc_ColumnNum&0x80)
+ 887   2                      {
+ 888   3                              i+=2;
+ 889   3                      }
+ 890   2                      else
+ 891   2                      {
+ 892   3                              i+=1;
+ 893   3                      }
+ 894   2              }
+ 895   1      
+ 896   1              while(tc_line<D_LrcNum)
+ 897   1              {
+ 898   2                      UI_LRCTrigger(tc_line,tw_WidthPre,tw_BmpInx,&tp_lrc[tc_RowAddr]);
+ 899   2                      tw_WidthPre=0;
+ 900   2                      tc_line++;
+ 901   2              }
+ 902   1      }
+ 903          
+ 904          
+ 905          void play_proc()
+ 906          {
+ 907   1          bit tb_settime_status;
+ 908   1      
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 16  
+
+ 909   1          gc_KeyDet_Mask=0;  //20090107 chiayen modify
+ 910   1      
+ 911   1      //    if ( (gs_DSP_GLOBAL_RAM.s_DSP_RAM.sc_RepeatMode!=REPEAT_B) || (gs_File_FCB[gs_System_State.c_FileHan
+             -dle].dw_File_DataPoint<=gs_DSP_GLOBAL_RAM.sdw_File_BDataPoint) )
+ 912   1          {   // normal play
+ 913   2                      gw_Disp_CurrentSec=(*Music_ReadTime[gc_Play_FileType])();
+ 914   2                              
+ 915   2                      if(gw_Disp_CurrentSec!=gw_PrevTimeSec)
+ 916   2                      {
+ 917   3                              gw_PrevTimeSec=gw_Disp_CurrentSec;
+ 918   3                              tb_settime_status=0;
+ 919   3                      }
+ 920   2                      else
+ 921   2                      {
+ 922   3                              tb_settime_status=1;
+ 923   3                      }
+ 924   2           
+ 925   2              if(gb_LrcFileName_Exist==1)
+ 926   2              {
+ 927   3                  if(!tb_settime_status)
+ 928   3                  {
+ 929   4                      Lyric_GetTimeStamp();
+ 930   4                      if(gb_LrcGetTimeOrNot)
+ 931   4                      {
+ 932   5                          gb_LrcGetTimeOrNot=0;
+ 933   5                          Lyric_GetLyrics();
+ 934   5      
+ 935   5                                              if(gb_LrcGetTimeNextOrNot)
+ 936   5                                              {   
+ 937   6                                                      gb_LrcGetTimeNextOrNot=0;
+ 938   6                                                      Lyric_NextGetLyrics();
+ 939   6                                              }
+ 940   5      
+ 941   5                                              if((gw_IR_Timer==0) && (gc_ShowTimer==0))
+ 942   5                                              {
+ 943   6                                                      UI_FulllcdDis_Lrc();
+ 944   6                                              }
+ 945   5                                      }
+ 946   4                  }
+ 947   3              }
+ 948   2             
+ 949   2              if ((*Music_Data_In[gc_Play_FileType])()!=0)// 0727
+ 950   2              {
+ 951   3                  gc_PhaseInx = 2;    //End of File for play
+ 952   3                  return;//(JC)H0620
+ 953   3              }
+ 954   2              
+ 955   2              if(gs_DSP_GLOBAL_RAM.s_DSP_RAM.sc_RepeatMode!=REPEAT_B)
+ 956   2              {
+ 957   3                  if(gc_RepPlayMode==4)
+ 958   3                  {
+ 959   4                      if((*Music_ReadTime[gc_Play_FileType])()>10)
+ 960   4                      {
+ 961   5                          gc_PhaseInx = 2;
+ 962   5                          return;
+ 963   5                      }
+ 964   4                  }
+ 965   3              }
+ 966   2          }
+ 967   1      
+ 968   1              if(gc_EQChangeFlag==1) //20090106 chiayen add
+ 969   1              {
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 17  
+
+ 970   2                      Music_EQ_Cmd(gs_DSP_GLOBAL_RAM.sc_EQ_Type);  
+ 971   2                      gc_EQChangeFlag=0;
+ 972   2              } 
+ 973   1      }
+ 974          
+ 975          
+ 976          void play_playpause()
+ 977          { 
+ 978   1              U32 tdw_File_StartCluster;  //20090106 chiayen add
+ 979   1              U32 tdw_FDB_LogAdd;  //20090106 chiayen add
+ 980   1              U8 i;
+ 981   1              gc_PlayMenu_IR=0;
+ 982   1      
+ 983   1              #if BankingCode_Recover
+ 984   1          if(gbt_Code_NeedRecover)
+ 985   1              {
+ 986   2                      U8      tc_Reg_Status,tc_CE;
+ 987   2      //              dbprintf("code recover \n");
+ 988   2                      tc_Reg_Status =DEVICE_REG[0x00];
+ 989   2                      DEVICE_REG[0x00]= 0x01; 
+ 990   2                      tc_CE= FDBP.cFDev;
+ 991   2                      for(gc_Global_I =0; gc_Global_I<gc_CodeBlock_Num;gc_Global_I++)
+ 992   2                      {
+ 993   3                              gw_SourceBlock = Bank_Block_A[gc_Global_I];
+ 994   3                              gw_TargetBlock = Bank_Block_B[gc_Global_I];
+ 995   3                              FDBP.cFDev=0;
+ 996   3                              FDBP.cFPlane=0;
+ 997   3                              FDBP.wFBlock = gw_TargetBlock;
+ 998   3                              Flash_EraseOneBlock();                  
+ 999   3                              FLASH_Backup_Blcok(0,NAND_INFO.wPAGE_NUM,4,0);// 4-->bank  mark 
+1000   3                      }
+1001   2                      gbt_Code_NeedRecover=0;
+1002   2                      DEVICE_REG[0x00]=tc_Reg_Status ;
+1003   2                      FDBP.cFDev = tc_CE;
+1004   2              }
+1005   1              #endif
+1006   1      
+1007   1          if(gs_DSP_GLOBAL_RAM.s_DSP_RAM.sc_RepeatMode!=REPEAT_AB_NULL)
+1008   1          {
+1009   2              gs_DSP_GLOBAL_RAM.s_DSP_RAM.sc_RepeatMode=REPEAT_AB_NULL;
+1010   2              gc_PhaseInx=1;
+1011   2              return;
+1012   2          }
+1013   1          if(gs_System_State.c_Phase == TASK_PHASE_PLAYACT)
+1014   1          {
+1015   2              Music_PauseCmd();
+1016   2              gs_System_State.c_Phase = TASK_PHASE_PAUSE;
+1017   2          }
+1018   1          else if(gs_System_State.c_Phase == TASK_PHASE_PAUSE)
+1019   1          {
+1020   2              Music_ResumeCmd();
+1021   2              gs_System_State.c_Phase=TASK_PHASE_PLAYACT;
+1022   2          }
+1023   1          else if ((gs_System_State.c_Phase == TASK_PHASE_FASTFWD)||(gs_System_State.c_Phase==TASK_PHASE_FASTREV
+             -))
+1024   1          {
+1025   2              gs_DSP_GLOBAL_RAM.sc_DM_Index = 0;  // reset bitstream address of DM
+1026   2              gs_System_State.c_Phase=TASK_PHASE_PLAYACT;
+1027   2          }
+1028   1          else
+1029   1          {
+1030   2              gs_System_State.c_Phase=TASK_PHASE_PLAYACT;
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 18  
+
+1031   2              DOS_GetLongFileName(0,gc_FileLongName);
+1032   2              gb_LrcFileName_Exist=Lyric_FileSearch();//(JC)Lyric file exist?
+1033   2              for(i=0;i<100;i++) //sunzhk add
+1034   2              { 
+1035   3                 gc_LrcDisplayBuf[i]=0x20;            
+1036   3              } 
+1037   2      
+1038   2      
+1039   2                      if(gb_LrcFileName_Exist==1)
+1040   2                      {
+1041   3                              TFT_LRCBackGround();
+1042   3                      }
+1043   2              gc_Play_FileType=gs_File_FCB[gs_System_State.c_FileHandle].c_FileType;
+1044   2              
+1045   2              if(gc_Play_FileType==0)//(JC)MP3
+1046   2              {
+1047   3                              if(gb_LrcFileName_Exist==1)
+1048   3                              {
+1049   4                                      set_clock_mode(CLOCK_MODE_MP3L);
+1050   4                              }
+1051   3                              else
+1052   3                              {
+1053   4                      set_clock_mode(CLOCK_MODE_MP3);
+1054   4                              }
+1055   3                  gs_System_State.w_BitRate=MP3_Bitrate_Parser();
+1056   3                  gw_TotalSec = MP3_Total_Time_Parser();//(JC)H0630 LCM test
+1057   3                      gs_DSP_GLOBAL_RAM.sc_DM_Index = 0;  // reset bitstream address of DM
+1058   3              }
+1059   2              else if((gc_Play_FileType==1))//(JC)WMA //Jimi: gc_Play_FileType==2 ==>WMV
+1060   2              {
+1061   3                  set_clock_mode(CLOCK_MODE_WMA);
+1062   3                  WMA_ASF_Parser();
+1063   3              }
+1064   2      
+1065   2                      Music_WakeUp(DSP_CLK_CTRL | SRAM2T_CTRL);
+1066   2      
+1067   2                      if((*Music_Download[gc_Play_FileType])())    // ²Ä¤@¦¸°õ¦æ®É­n¸ü¤J IM, PM    //Jimi Yu 080509
+1068   2              {
+1069   3                  gc_PhaseInx=2;                          // when wma 
+1070   3                  return; 
+1071   3              }
+1072   2                      gw_Disp_CurrentSec=0;
+1073   2      
+1074   2                      if(gc_VolumeMute==0)
+1075   2                      {
+1076   3                      Music_SetVolumeCmd();
+1077   3                      }
+1078   2                      else
+1079   2                      {
+1080   3                              L2_DSP_Write_DMem16(DSP_VolumeControl,0);//20090812 chiayen add VOL=0   
+1081   3                      }
+1082   2      
+1083   2                      //Jimi 081208
+1084   2                      L2_DSP_Write_DMem16(DSP_PostProcessSelect, L2_DSP_Read_DMem16(DSP_PostProcessSelect)|0x0020);
+1085   2                      {
+1086   3                              U8 tc_timeout = 0xFF;
+1087   3                              while( (L2_DSP_Read_DMem16(DSP_PostProcessSelect)&0x0020))      //Handshake with DSP to make sure that DSP h
+             -as ramp digital volume up.
+1088   3                              {
+1089   4                                      if (!(tc_timeout--))
+1090   4                                              break;
+1091   4                              }
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 19  
+
+1092   3                      }
+1093   2      
+1094   2              Music_EQ_Cmd(gs_DSP_GLOBAL_RAM.sc_EQ_Type);
+1095   2      
+1096   2                      if(gb_DirPlay_Flag==1)  //20090106 chiayen add
+1097   2              {
+1098   3                              tdw_File_StartCluster=gs_File_FCB[gs_System_State.c_FileHandle].dw_File_StartCluster;
+1099   3                              tdw_FDB_LogAdd=gs_File_FCB[gs_System_State.c_FileHandle].dw_FDB_LogAdd;
+1100   3                              DOS_Search_File(C_File_OneDir|C_Cnt_FileNo, C_MusicFileType, C_CmpExtName|C_Next);
+1101   3                              gs_File_FCB[gs_System_State.c_FileHandle].dw_File_StartCluster=tdw_File_StartCluster;
+1102   3                              gs_File_FCB[gs_System_State.c_FileHandle].dw_FDB_LogAdd=tdw_FDB_LogAdd;
+1103   3                      }
+1104   2      
+1105   2              if(Music_PlayCmd()==DSP_PLAY_COMMAND_ERROR)
+1106   2              {
+1107   3                  //(JC)H0521; pls check if error handle needed
+1108   3                  gc_PhaseInx=5;  //20081219 chiayen modify for 0Byte mp3
+1109   3                  return;
+1110   3              }
+1111   2              gs_DSP_GLOBAL_RAM.s_DSP_RAM.sc_RepeatMode = REPEAT_AB_NULL; // ¨C¦¸·s¼½¤@­º¦±¥Ø¡A³£­n§â RepeatAB ­
+             -«¸m
+1112   2          }
+1113   1      
+1114   1              gc_ShowTimer=0;
+1115   1              gc_TuneVolFreqStatus=0;
+1116   1          gc_PhaseInx=1;
+1117   1      }
+1118          
+1119          
+1120          void play_stop()
+1121          {
+1122   1          if(gs_System_State.c_Phase != TASK_PHASE_STOP)
+1123   1          {           
+1124   2              U8 tc_Ret = Music_StopCmd(gs_System_State.c_FileHandle);
+1125   2              gs_System_State.c_Phase = TASK_PHASE_STOP;
+1126   2              gc_PhaseInx=9;
+1127   2          }
+1128   1      }
+1129          
+1130          #if 0
+              void RandomGetFileIndex(void)
+              {
+                  xdata       U16 tw_Num;
+              
+                  tw_Num=(gw_Random_Timer%gw_FileTotalNumber[gs_System_State.c_FileHandle])+1;
+                  
+                  if(gw_FileIndex[gs_System_State.c_FileHandle]==tw_Num)
+                  {
+                      gw_FileSkipNumber = 0;
+                  }
+                  else
+                  {
+                      if (gw_FileIndex[gs_System_State.c_FileHandle] > tw_Num)
+                      {
+                          gw_FileSkipNumber=gw_FileTotalNumber[gs_System_State.c_FileHandle] - (gw_FileIndex[gs_System_S
+             -tate.c_FileHandle] - tw_Num);
+                      }
+                      else
+                      {
+                          gw_FileSkipNumber=(tw_Num - gw_FileIndex[gs_System_State.c_FileHandle]);
+                      }
+                  }
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 20  
+
+              }
+              #endif
+1154          
+1155          void play_endfile()
+1156          {
+1157   1          U32 tdw_FDB_LogAddr;
+1158   1          
+1159   1          play_SetTime2DisplayBuf((*Music_ReadTime[gc_Play_FileType])());//Jimi 080804
+1160   1      
+1161   1          if( (*Music_EOF_Proc[gc_Play_FileType])() ) //Jimi 080522
+1162   1          {
+1163   2              play_stop();
+1164   2              //============== test cyclic ==============
+1165   2              if(gc_RepPlayMode==C_NoRepeat)//(JC)no repeat
+1166   2              {
+1167   3                  //gc_PhaseInx=9;
+1168   3                  if(gw_FileIndex[gs_System_State.c_FileHandle]==gw_FileTotalNumber[gs_System_State.c_FileHandle
+             -])
+1169   3                  {
+1170   4                      //gc_PhaseInx=9;
+1171   4                                      gw_Disp_CurrentSecBak=0xFFFF;
+1172   4                                      gw_Disp_CurrentSec=0;
+1173   4                                  gc_PhaseInx=C_PlayNext;
+1174   4                  }
+1175   3                              else
+1176   3                              {
+1177   4                                      if(gb_DirPlay_Flag==1) //20090107 chiayen add
+1178   4                                      {
+1179   5                                              DOS_Search_File(C_File_OneDir|C_By_FDB, C_MusicFileType, C_CmpExtName|C_Next);
+1180   5                                      }
+1181   4                                      else
+1182   4                                      {
+1183   5                              DOS_Search_File(C_File_All|C_By_FDB, C_MusicFileType,C_CmpExtName|C_Next);
+1184   5                                      }
+1185   4                          gc_PhaseInx=3;                              
+1186   4                              }  
+1187   3              }
+1188   2              else if(gc_RepPlayMode==C_RepeatOne)//(JC)repeat one
+1189   2              {
+1190   3                  gc_PhaseInx=3;      
+1191   3              }
+1192   2              else if(gc_RepPlayMode==C_RepeatAll||gc_RepPlayMode==C_IntroPlay)//(JC)repeat all || introduction
+1193   2              {
+1194   3                              if(gb_DirPlay_Flag==1) //20090107 chiayen add
+1195   3                              {
+1196   4                                      DOS_Search_File(C_File_OneDir|C_By_FDB, C_MusicFileType, C_CmpExtName|C_Next);
+1197   4                              }
+1198   3                              else
+1199   3                              {
+1200   4                      DOS_Search_File(C_File_All|C_By_FDB, C_MusicFileType,C_CmpExtName|C_Next);
+1201   4                              }
+1202   3                  gc_PhaseInx=3;
+1203   3              }
+1204   2              else if(gc_RepPlayMode==C_RandomPlay)//(JC)random
+1205   2              {
+1206   3                  RandomGetFileIndex();
+1207   3                              if(gb_DirPlay_Flag==1) //20081226 chiayen add
+1208   3                              {
+1209   4                                      gb_TriggerFileSkip=1;
+1210   4                                      DOS_Search_File(C_File_OneDir|C_By_FDB, C_MusicFileType, C_CmpExtName|C_Next);
+1211   4                                      gb_TriggerFileSkip=0;
+1212   4                              }
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 21  
+
+1213   3                              else
+1214   3                              {
+1215   4                                      DOS_Search_File(C_File_All|C_By_FDB, C_MusicFileType, C_CmpExtName|C_Next);
+1216   4                              }
+1217   3                  gc_PhaseInx=3;
+1218   3              }
+1219   2              else if(gc_RepPlayMode==C_InDirRepeat)//(JC)repeat in a dir
+1220   2              {
+1221   3                  DOS_Search_File(C_File_OneDir|C_By_FDB, C_MusicFileType, C_CmpExtName|C_Next);
+1222   3                  gc_PhaseInx=3;
+1223   3              }
+1224   2              else if(gc_RepPlayMode==C_InDirPlay)
+1225   2              {
+1226   3                  tdw_FDB_LogAddr=gs_File_FCB[gs_System_State.c_FileHandle].dw_FDB_LogAdd;
+1227   3                  DOS_Search_File(C_File_OneDir|C_Cnt_FileNo, C_MusicFileType, C_CmpExtName|C_Next);
+1228   3                  gs_File_FCB[gs_System_State.c_FileHandle].dw_FDB_LogAdd=tdw_FDB_LogAddr;
+1229   3                  if(gw_FileIndex[gs_System_State.c_FileHandle]==gw_FileTotalNumber[gs_System_State.c_FileHandle
+             -])
+1230   3                  {
+1231   4                      gc_PhaseInx=1;  
+1232   4                  }
+1233   3                  else
+1234   3                  {
+1235   4                      DOS_Search_File(C_File_OneDir|C_By_FDB, C_MusicFileType, C_CmpExtName|C_Next);
+1236   4                      gc_PhaseInx=3;
+1237   4                  }   
+1238   3              }
+1239   2              //============== test cyclic ============== 
+1240   2          }
+1241   1      }
+1242          
+1243          
+1244          void play_next()
+1245          {
+1246   1          data        U8 tc_playmode_status;
+1247   1      
+1248   1              gw_CurrentSec = 0;
+1249   1          tc_playmode_status=gc_RepPlayMode;
+1250   1          if(gb_PickSong==1 && gc_RepPlayMode==C_RandomPlay)
+1251   1          {
+1252   2              gc_RepPlayMode=2;
+1253   2          }
+1254   1      
+1255   1          if(gs_System_State.c_Phase==TASK_PHASE_STOP)
+1256   1          {
+1257   2              if(gw_FileIndex[gs_System_State.c_FileHandle]==0)
+1258   2                      {
+1259   3                  return;//if no this line,error will happen
+1260   3                      }
+1261   2              gc_PhaseInx=9;        
+1262   2          }
+1263   1          else if(gs_System_State.c_Phase==TASK_PHASE_PLAYACT)
+1264   1          {
+1265   2              gc_PhaseInx=3;
+1266   2              gc_KeyDet_Mask=1;//(JC)H0508 avoid key-press to change phase index  //20090107 chiayen modify  
+1267   2          }
+1268   1          else if(gs_System_State.c_Phase==TASK_PHASE_PAUSE)
+1269   1          {
+1270   2              gc_PhaseInx=9;
+1271   2          }
+1272   1      
+1273   1          if(gs_System_State.c_Phase!=TASK_PHASE_STOP)//(JC)H0505
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 22  
+
+1274   1          {
+1275   2              U8 tc_Ret = Music_StopCmd(gs_System_State.c_FileHandle);
+1276   2              gs_System_State.c_Phase=TASK_PHASE_STOP;
+1277   2          }
+1278   1      
+1279   1          if((gc_RepPlayMode==C_InDirRepeat)||(gc_RepPlayMode==C_InDirPlay))
+1280   1          {
+1281   2              DOS_Search_File(C_File_OneDir|C_By_FDB, C_MusicFileType, C_CmpExtName|C_Next);  
+1282   2          }
+1283   1          else if(gc_RepPlayMode==C_RandomPlay)//Ching 080805
+1284   1          {
+1285   2              RandomGetFileIndex();
+1286   2                      if(gb_DirPlay_Flag==1) //20081226 chiayen add
+1287   2                      {
+1288   3                              gb_TriggerFileSkip=1;
+1289   3                              DOS_Search_File(C_File_OneDir|C_By_FDB, C_MusicFileType, C_CmpExtName|C_Next);
+1290   3                              gb_TriggerFileSkip=0;
+1291   3                      }
+1292   2                      else
+1293   2                      {
+1294   3                      DOS_Search_File(C_File_All|C_By_FDB, C_MusicFileType, C_CmpExtName|C_Next);
+1295   3                  }
+1296   2          }
+1297   1          else
+1298   1          {           
+1299   2                      if(gb_DirPlay_Flag==1) //20090107 chiayen add
+1300   2                      {
+1301   3                              gb_TriggerFileSkip=1;
+1302   3                              DOS_Search_File(C_File_OneDir|C_By_FDB, C_MusicFileType, C_CmpExtName|C_Next);
+1303   3                              gb_TriggerFileSkip=0;
+1304   3                      }
+1305   2                  else
+1306   2                  {
+1307   3                      DOS_Search_File(C_File_All|C_By_FDB, C_MusicFileType, C_CmpExtName|C_Next);
+1308   3                  }
+1309   2          }
+1310   1      
+1311   1          gs_System_State.c_Phase=TASK_PHASE_STOP;
+1312   1              gc_TuneVolFreqStatus=0;
+1313   1          gc_RepPlayMode=tc_playmode_status;
+1314   1          Idle_Disp_Icon();
+1315   1      }
+1316          
+1317          
+1318          void play_prev()
+1319          {
+1320   1              gw_CurrentSec = 0;
+1321   1          if(gs_System_State.c_Phase==TASK_PHASE_STOP)
+1322   1          {
+1323   2              if(gw_FileIndex[gs_System_State.c_FileHandle]==0)
+1324   2                      {
+1325   3                  return;//if no this line,error will happen
+1326   3                      }
+1327   2              gc_PhaseInx=9;        
+1328   2          }
+1329   1          else if(gs_System_State.c_Phase==TASK_PHASE_PLAYACT)
+1330   1          {
+1331   2              gc_PhaseInx=3;
+1332   2              gc_KeyDet_Mask=1;//(JC)H0508 avoid key-press to change phase index //20090107 chiayen modify     
+1333   2          }
+1334   1          else if(gs_System_State.c_Phase==TASK_PHASE_PAUSE)
+1335   1          {
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 23  
+
+1336   2              gc_PhaseInx=9;        
+1337   2          }
+1338   1          
+1339   1          if(gs_System_State.c_Phase!=TASK_PHASE_STOP)//(JC)H0505
+1340   1          {
+1341   2              U8 tc_Ret = Music_StopCmd(gs_System_State.c_FileHandle);
+1342   2              gs_System_State.c_Phase=TASK_PHASE_STOP;
+1343   2          }
+1344   1      
+1345   1          if((gc_RepPlayMode==C_InDirRepeat)||(gc_RepPlayMode==C_InDirPlay))
+1346   1          {
+1347   2              DOS_Search_File(C_File_OneDir|C_By_FDB, C_MusicFileType, C_CmpExtName|C_Prev);
+1348   2          }
+1349   1          else if(gc_RepPlayMode==C_RandomPlay)//Ching 080805
+1350   1          {
+1351   2              RandomGetFileIndex();
+1352   2                      if(gb_DirPlay_Flag==1) //20090107 chiayen add
+1353   2                      {
+1354   3                              gb_TriggerFileSkip=1;
+1355   3                              DOS_Search_File(C_File_OneDir|C_By_FDB, C_MusicFileType, C_CmpExtName|C_Next);
+1356   3                              gb_TriggerFileSkip=0;
+1357   3                      }
+1358   2                      else
+1359   2                      {
+1360   3                      DOS_Search_File(C_File_All|C_By_FDB, C_MusicFileType, C_CmpExtName|C_Next);
+1361   3                  }
+1362   2          }
+1363   1          else
+1364   1          {
+1365   2                      if(gb_DirPlay_Flag==1) //20090107 chiayen add 
+1366   2                      {
+1367   3                              gb_TriggerFileSkip=1;
+1368   3                              DOS_Search_File(C_File_OneDir|C_By_FDB, C_MusicFileType, C_CmpExtName|C_Prev);
+1369   3                              gb_TriggerFileSkip=0;
+1370   3                      }
+1371   2                  else
+1372   2                  {
+1373   3                      DOS_Search_File(C_File_All|C_By_FDB, C_MusicFileType,C_CmpExtName|C_Prev);
+1374   3                  }
+1375   2          }
+1376   1      
+1377   1          gs_System_State.c_Phase=TASK_PHASE_STOP;
+1378   1      
+1379   1              gc_TuneVolFreqStatus=0;
+1380   1          Idle_Disp_Icon();
+1381   1      }
+1382          
+1383          void play_volup()
+1384          {
+1385   1          gw_LogData_Timer=60; 
+1386   1          gc_ShowTimer=72;       
+1387   1          gb_Frequency_Song=1;    // 0=Show Frequency    1=Show Song Number/EQ
+1388   1          gc_SelectVol=1;         // 1=Show Vol
+1389   1          gb_SelectEQ=0;          // 0=Show Song Number  1=Show EQ
+1390   1          gc_VolumeMute=0;
+1391   1      
+1392   1          if (gs_DSP_GLOBAL_RAM.sw_Volume<62)
+1393   1          {
+1394   2            gs_DSP_GLOBAL_RAM.sw_Volume+=2;
+1395   2            L2_DSP_Write_DMem16(DSP_VolumeControl,gs_DSP_GLOBAL_RAM.sw_Volume);     // Vloume Range:0~63
+1396   2          }
+1397   1              gc_TuneVolFreqStatus=1;
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 24  
+
+1398   1          gc_PhaseInx=1;
+1399   1      }
+1400          
+1401          
+1402          void play_voldn()
+1403          {
+1404   1          gw_LogData_Timer=60;
+1405   1          gc_ShowTimer=72;
+1406   1          gb_Frequency_Song=1;    // 0=Show Frequency    1=Show Song Number/EQ
+1407   1          gc_SelectVol=1;         // 1=Show Vol
+1408   1          gb_SelectEQ=0;          // 0=Show Song Number  1=Show EQ
+1409   1          gc_VolumeMute=0;
+1410   1          if (gs_DSP_GLOBAL_RAM.sw_Volume>1)
+1411   1          {
+1412   2              gs_DSP_GLOBAL_RAM.sw_Volume-=2;
+1413   2                      L2_DSP_Write_DMem16(DSP_VolumeControl,gs_DSP_GLOBAL_RAM.sw_Volume);     // Vloume Range:0~63
+1414   2          }
+1415   1              gc_TuneVolFreqStatus=1;
+1416   1          gc_PhaseInx=1;  
+1417   1      }
+1418          
+1419          
+1420          void play_back2uplevel()
+1421          {
+1422   1          if((gs_System_State.c_Phase==TASK_PHASE_PLAYACT)||(gs_System_State.c_Phase==TASK_PHASE_PAUSE))
+1423   1          {
+1424   2              play_stop();    
+1425   2          }
+1426   1          gc_Task_Next=C_Task_Menu;
+1427   1          gw_init_needed |= SET_BIT8;
+1428   1          gc_PhaseInx=0;
+1429   1      }
+1430          
+1431          
+1432          UBYTE play_SetTime2DisplayBuf(U16 tw_TimeSec)
+1433          {
+1434   1          if(gw_PrevTimeSec != tw_TimeSec)
+1435   1          {
+1436   2              gw_PrevTimeSec=tw_TimeSec;
+1437   2              return 0;
+1438   2          }
+1439   1          return 1;
+1440   1      }
+1441          
+1442          
+1443          void FM_FREQ_CHGUP(void) //chiayen0807
+1444          {
+1445   1          FM_FREQ_CHG(1,1);
+1446   1          if(gs_System_State.c_Phase==TASK_PHASE_STOP)
+1447   1          {
+1448   2              gc_PhaseInx=0x09;   
+1449   2          }
+1450   1          else
+1451   1          {
+1452   2              gc_PhaseInx=1;
+1453   2          }
+1454   1      }
+1455          
+1456          
+1457          void FM_FREQ_CHGDOWN(void) //chiayen0807
+1458          {
+1459   1          FM_FREQ_CHG(0,1);
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 25  
+
+1460   1          if(gs_System_State.c_Phase==TASK_PHASE_STOP)
+1461   1          {
+1462   2              gc_PhaseInx=0x09;   
+1463   2          }
+1464   1          else
+1465   1          {
+1466   2              gc_PhaseInx=1;
+1467   2          }
+1468   1      }
+1469          
+1470          
+1471          void IR_Service_Process()
+1472          {
+1473   1          if(gc_IRCmdStatus!=0)
+1474   1          {
+1475   2                      if(gc_IRCmdStatus==1)  //20090216 chiayen add
+1476   2                      {
+1477   3                              gc_Dirchange_Timer=0;
+1478   3                      }
+1479   2              ir_service();
+1480   2          }
+1481   1      
+1482   1          if((gw_IR_Timer==0) && (gw_irkey_count!=0))
+1483   1          {
+1484   2              if(gw_FileIndex[0]<gw_irkey_count)
+1485   2              {
+1486   3                  gw_FileSkipNumber=(gw_irkey_count-gw_FileIndex[0]);
+1487   3                  play_next();
+1488   3              }
+1489   2              else if(gw_FileIndex[0]>gw_irkey_count)
+1490   2              {
+1491   3                  gw_FileSkipNumber=(gw_FileTotalNumber[0]-gw_FileIndex[0])+gw_irkey_count;
+1492   3                  play_next();
+1493   3              }
+1494   2      
+1495   2              gw_irkey_count=0;
+1496   2          }   
+1497   1      }
+1498          
+1499          
+1500          void Play_SDFlash_DosInit()
+1501          {
+1502   1              U8  tc_clock_mode_backup;  //20090526 chiayen add
+1503   1              tc_clock_mode_backup=gc_clock_mode;
+1504   1      
+1505   1              if (DOS_Initialize())
+1506   1              {
+1507   2                      // Initial Fail
+1508   2                      XBYTE[0xB400]= 0x01;
+1509   2                      gc_PhaseInx=9;
+1510   2                      gc_Dosinitfail=1;
+1511   2                      gdw_HOSTStartSectorRead=0xFFFFFFF0; //20090803 chiayen add
+1512   2              }
+1513   1              else
+1514   1              {               
+1515   2                      gb_FindFlag = 0;
+1516   2                      gc_PhaseInx=0;
+1517   2                      gw_init_needed=0xFFFF;
+1518   2                      if((gc_DirReBuildFlag != D_Valid) && (gc_CurrentCard==0))
+1519   2                      {
+1520   3                              set_clock_mode(CLOCK_MODE_MJPEG);  //20090803 chiayen move here for HOST 
+1521   3                              DOS_DIRtable();  //20090216 chiayen add
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 26  
+
+1522   3                              set_clock_mode(tc_clock_mode_backup);  //20090526 chiayen add
+1523   3                      }       
+1524   2                      gs_File_FCB[0].dw_FDB_StartCluster = gdw_DOS_RootDirClus;           
+1525   2                      DOS_Search_File(C_File_All|C_Cnt_FileNo, C_MusicFileType, C_CmpExtName|C_Next);//(JC)count music file no
+             -. in root
+1526   2                      gb_TFT_refresh=1;
+1527   2                      gc_DispWallpaper=0xFF;
+1528   2                      gc_ShowTimer=0;
+1529   2                      gc_TuneVolFreqStatus=0;
+1530   2              }
+1531   1      }
+1532          
+1533          
+1534          void Play_SourceDetect_Process()
+1535          {
+1536   1              gb_SD_Exist_pre=gb_SD_Exist;
+1537   1              if(!SD_Detect)  //SD exist
+1538   1          {
+1539   2              gb_SD_Exist=1;
+1540   2          }
+1541   1              else
+1542   1              {
+1543   2                      gb_SD_Exist=0;
+1544   2                      gb_SDNoFileflag=0;
+1545   2              }
+1546   1      
+1547   1              gb_Host_Exist_pre=gb_Host_Exist;
+1548   1              if(!Host_DetectDevice())
+1549   1              {
+1550   2                      gb_Host_Exist=1;        //host_exist            
+1551   2              }
+1552   1              else
+1553   1              {
+1554   2                      gb_Host_Exist=0;
+1555   2                      gc_HostNoFileflag=0;
+1556   2              }
+1557   1      
+1558   1              if((gc_CurrentCard==0) && ((gb_Host_Exist_pre!=gb_Host_Exist)||(gb_SD_Exist_pre!=gb_SD_Exist)))
+1559   1              {
+1560   2                      if((gb_Host_Exist_pre!=gb_Host_Exist) && (gb_Host_Exist==1))
+1561   2                      {
+1562   3                              gc_CurrentCard=5;
+1563   3                      }
+1564   2                      else if((gb_SD_Exist_pre!=gb_SD_Exist) && (gb_SD_Exist==1))
+1565   2                      {
+1566   3                              gc_CurrentCard=2;       
+1567   3                      }
+1568   2                      else
+1569   2                      {
+1570   3                              gc_CurrentCard=0;       
+1571   3                      }
+1572   2              }
+1573   1              else
+1574   1              {
+1575   2                      if(gc_CurrentCard==2)
+1576   2                      {
+1577   3                              if(gc_Dosinitfail==0)  //20090803 chiayen add
+1578   3                              {
+1579   4                                      if((gb_Host_Exist_pre!=gb_Host_Exist) && (gb_Host_Exist==1))
+1580   4                                      {
+1581   5                                              gc_CurrentCard=5;
+1582   5                                      }
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 27  
+
+1583   4                                      else if(((gb_SD_Exist==0) || (gb_SDNoFileflag==1)) && (gb_Host_Exist==1))
+1584   4                                      {
+1585   5                                              gc_CurrentCard=5;
+1586   5                                              if(gc_HostNoFileflag==1)
+1587   5                                              {
+1588   6                                                      gc_CurrentCard=0;       
+1589   6                                              }
+1590   5                                      }
+1591   4                                      else if((gb_SD_Exist==0) || (gb_SDNoFileflag==1))
+1592   4                                      {
+1593   5                                              gc_CurrentCard=0;       
+1594   5                                      }
+1595   4                              }
+1596   3                              else //20090803 chiayen add for SD Dos initial fail
+1597   3                              {
+1598   4                                      if((gb_Host_Exist==1) && (gc_HostNoFileflag==0))
+1599   4                                      {
+1600   5                                              gc_CurrentCard=5;
+1601   5                                      }
+1602   4                                      else
+1603   4                                      {
+1604   5                                              gc_CurrentCard=0;
+1605   5                                      }
+1606   4                                      gc_Dosinitfail=0;                               
+1607   4                              }
+1608   3                      }
+1609   2                      if(gc_CurrentCard==5)
+1610   2                      {
+1611   3                              if(gc_Dosinitfail==0)  //20090803 chiayen add
+1612   3                              {
+1613   4                                      if((gb_SD_Exist_pre!=gb_SD_Exist) && (gb_SD_Exist==1))
+1614   4                                      {
+1615   5                                              gc_CurrentCard=2;
+1616   5                                      }
+1617   4                                      else if(((gb_Host_Exist==0) || (gc_HostNoFileflag==1)) && (gb_SD_Exist==1))
+1618   4                                      {
+1619   5                                              gc_CurrentCard=2;
+1620   5                                              if(gb_SDNoFileflag==1)
+1621   5                                              {
+1622   6                                                      gc_CurrentCard=0;       
+1623   6                                              }
+1624   5                                      }
+1625   4                                      else if((gb_Host_Exist==0) || (gc_HostNoFileflag==1))
+1626   4                                      {
+1627   5                                              gc_CurrentCard=0;       
+1628   5                                      }
+1629   4                              }
+1630   3                              else //host dos initial fail  //20090803 chiayen add
+1631   3                              {
+1632   4                                      if((gb_SD_Exist==1) && (gb_SDNoFileflag==0))
+1633   4                                      {
+1634   5                                              gc_CurrentCard=2;
+1635   5                                      }
+1636   4                                      else
+1637   4                                      {
+1638   5                                              gc_CurrentCard=0;
+1639   5                                      }
+1640   4                                      gc_Dosinitfail=0;
+1641   4                              }
+1642   3                      }
+1643   2              }
+1644   1      
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 28  
+
+1645   1          if(gc_CurrentCard_backup!=gc_CurrentCard)  //auto  //20090803 chiayen modify
+1646   1          {
+1647   2                      U8 tc_CurrentCard;//20090803 chiayen add for media change
+1648   2                      tc_CurrentCard=gc_CurrentCard; //20090803 chiayen add for media change  
+1649   2                      gc_CurrentCard=gc_CurrentCard_backup;  //20090803 chiayen add for media change
+1650   2                      play_stop();
+1651   2                      gc_CurrentCard=tc_CurrentCard; //20090803 chiayen add for media change
+1652   2                      set_clock_mode(CLOCK_MODE_MP3); //20090803 chiayen add for media change
+1653   2      
+1654   2                      if(gc_CurrentCard==2)
+1655   2              {           
+1656   3                  if(SD_Identification_Flow())
+1657   3                  {
+1658   4                      gc_CardExist |=0x02;
+1659   4                  }
+1660   3                  else if((gb_Host_Exist==1) && (gc_HostNoFileflag==0)) //20090730 chiayen modify
+1661   3                  {
+1662   4                                      XBYTE[0xB400]= 0x01;  //20090730 chiayen add
+1663   4                                      if(!Host_Initial())
+1664   4                                      {
+1665   5                                              gc_CurrentCard = CURRENT_MEDIA_HOST;
+1666   5                                              gb_FindFlag = 0;
+1667   5                      }
+1668   4                          else
+1669   4                          {
+1670   5                                              gc_CurrentCard=0;
+1671   5                                              gc_CardExist &=0xFD;
+1672   5                                              gb_FindFlag = 0;
+1673   5                                              InitFlash();                                
+1674   5                          }
+1675   4                      }
+1676   3                              else 
+1677   3                      {
+1678   4                                      XBYTE[0xB400]= 0x01;  //20090730 chiayen add
+1679   4                                      gc_CurrentCard=0;
+1680   4                                      gc_CardExist &=0xFD;
+1681   4                                      gb_FindFlag = 0;
+1682   4                                      InitFlash();
+1683   4                              }
+1684   3                              Play_SDFlash_DosInit();
+1685   3              }
+1686   2                      else if(gc_CurrentCard==CURRENT_MEDIA_HOST)
+1687   2                      {
+1688   3                              XBYTE[0xB400]= 0x01;  //20090803 chiayen add                    
+1689   3                              if(!Host_Initial())
+1690   3                              {
+1691   4                                      gc_CurrentCard = CURRENT_MEDIA_HOST;
+1692   4                                      gb_FindFlag = 0;
+1693   4                              }
+1694   3                              else if((gb_SD_Exist==1) && (gb_SDNoFileflag==0)) //20090730 chiayen add
+1695   3                              {
+1696   4                          if(SD_Identification_Flow())
+1697   4                          { 
+1698   5                              gc_CardExist |=0x02;
+1699   5                                              gc_CurrentCard=2;      
+1700   5                                      }
+1701   4                                      else
+1702   4                                      {
+1703   5                                              gc_CurrentCard=0;
+1704   5                                              gc_CardExist &=0xFD;
+1705   5                                              gb_FindFlag = 0;
+1706   5                                              InitFlash();
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 29  
+
+1707   5                                      }
+1708   4                              }
+1709   3                              else 
+1710   3                      {
+1711   4                                      gc_CurrentCard=0;
+1712   4                                      gb_FindFlag = 0;
+1713   4                                      InitFlash();
+1714   4                              }
+1715   3                              Play_SDFlash_DosInit();
+1716   3                      }
+1717   2                      else if(gc_CurrentCard==0)
+1718   2              {
+1719   3                              gc_CardExist &=0xFD;
+1720   3                              InitFlash();
+1721   3                              Play_SDFlash_DosInit();
+1722   3                      }
+1723   2          }
+1724   1      }
+1725          
+1726          
+1727          void MediaChange_Play(void)  //20090803 chiayen add
+1728          {
+1729   1              if(gc_Dosinitfail==0)  //20090818 chiayen add
+1730   1              {
+1731   2                      if((gb_SD_Exist==1) && (gb_SDNoFileflag==0))
+1732   2                      {
+1733   3                              gc_CurrentCard=2;       
+1734   3                      }
+1735   2                      else
+1736   2                      {
+1737   3                              gc_CurrentCard=0;
+1738   3                      }
+1739   2              }
+1740   1      }
+1741          
+1742          
+1743          void LCM_Display_Func1(void)
+1744          {
+1745   1              //xdata U8      playstate =0;                   //ÊÇ·ñÎª²¥·Å×´Ì¬
+1746   1              // For WMA file size=0
+1747   1              if(((gc_Play_FileType==1)&&(gs_System_State.c_Phase == TASK_PHASE_PLAYACT))&&(((gb_PickSong==1)||(gb_Chan
+             -nelSet==1)) || gc_CurrentCard!=5))
+1748   1              {
+1749   2                      if(gs_File_FCB[0].dw_File_TotalSize==0)
+1750   2                      {
+1751   3                              gc_PhaseInx=5;
+1752   3                              return;
+1753   3                      }
+1754   2                      WMA_DataIn();
+1755   2              }
+1756   1      
+1757   1              // maxliao-20090602
+1758   1              if(gdw_FreeClusterNum[1] < (gdw_DOS_FatMaxCluster - 1)) 
+1759   1              {
+1760   2                      if(gc_loopcount==20)
+1761   2                      {         
+1762   3      //                      DOS_SearchFreeCluster(1);
+1763   3                              gc_loopcount=0;
+1764   3                      }
+1765   2                      gc_loopcount++; 
+1766   2              } 
+1767   1      
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 30  
+
+1768   1              if(gb_LrcFileName_Exist==1)
+1769   1              {
+1770   2                      return;
+1771   2              }
+1772   1      
+1773   1              // ¼½©ñ¥Dµe­±
+1774   1              if(gc_DispWallpaper!=1)
+1775   1              {
+1776   2                      gc_DispWallpaper=1;
+1777   2                      gb_TFT_refresh=1;
+1778   2                      TFT_Main();
+1779   2              }
+1780   1      
+1781   1              // ¥Dµe­±ÀW²v
+1782   1              if((gw_DisplayFreq!=gw_FM_frequency)||(gb_TFT_refresh==1))
+1783   1              {
+1784   2                      gb_FlashNoFileflag=0;
+1785   2                      gw_DisplayFreq=gw_FM_frequency;
+1786   2                      TFT_ShowFMFrequency();            
+1787   2              }       
+1788   1      /*      if((gs_System_State.c_Phase==TASK_PHASE_PLAYACT))//&&(gb_ShowPingpu==1))
+1789   1              {
+1790   1                      playstate=1;                            //²¥·Å×´Ì¬
+1791   1              }
+1792   1              else
+1793   1              {
+1794   1                      playstate =0;                           //·Ç²¥·Å×´Ì¬
+1795   1              }
+1796   1      
+1797   1      */      
+1798   1              if((gb_ShowPingpu && (gs_System_State.c_Phase==TASK_PHASE_PLAYACT))||(gb_TFT_refresh ==1))
+1799   1              {
+1800   2                      TFT_ShowPingpu();
+1801   2                      TFT_ShowPlayRatioBar();
+1802   2                      gc_ShowPingpuTimer=5;
+1803   2              
+1804   2              }
+1805   1              // ÀÉ®×®æ¦¡:MP3/WMA/APE
+1806   1              if((gc_Media_type!=gc_Play_FileType)||(gb_TFT_refresh==1))
+1807   1              {
+1808   2                      gc_Media_type=gc_Play_FileType;
+1809   2                      TFT_ShowMusicType();
+1810   2              }
+1811   1      
+1812   1              // Àx¦s¸Ë¸m:NAND/U-disk/SDC
+1813   1              if((gc_CurrentCard_Bak!=gc_CurrentCard)||(gb_TFT_refresh==1))
+1814   1              {
+1815   2                      gc_CurrentCard_Bak=gc_CurrentCard;
+1816   2                      TFT_ShowMediaIcon();
+1817   2              }
+1818   1      
+1819   1              // Show Play Mode:Normal/Repeat 1/Repeat All
+1820   1              if((gc_DisplayPlayMode!=gc_RepPlayMode)||(gb_TFT_refresh==1))
+1821   1              {
+1822   2                      gc_DisplayPlayMode=gc_RepPlayMode;
+1823   2                      TFT_ShowPlayMode();
+1824   2              }
+1825   1      
+1826   1              // ¼½©ñ¦±¼Æ                             
+1827   1              if((gw_DispSongNum!=gw_FileIndex[0])||(gb_TFT_refresh==1))
+1828   1              {
+1829   2                      gw_DispSongNum=gw_FileIndex[0]; 
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 31  
+
+1830   2                      TFT_ShowSongIndex();
+1831   2              }
+1832   1      
+1833   1              // Á`¦±¼Æ
+1834   1              if((gw_DispTotalSong!=gw_FileTotalNumber[0])||(gb_TFT_refresh==1))
+1835   1              {
+1836   2                      gw_DispTotalSong=gw_FileTotalNumber[0]; 
+1837   2                      TFT_ShowTotalSong();
+1838   2              }
+1839   1      
+1840   1              // Show EQ icon
+1841   1              if((gc_DisplayEQIcon!=gs_DSP_GLOBAL_RAM.sc_EQ_Type)||(gb_TFT_refresh==1))
+1842   1              {
+1843   2                      gc_EQBak=gs_DSP_GLOBAL_RAM.sc_EQ_Type;
+1844   2                      gc_DisplayEQIcon=gs_DSP_GLOBAL_RAM.sc_EQ_Type;
+1845   2                      TFT_ShowEQIcon();
+1846   2              }
+1847   1      
+1848   1              // ¼½©ñª¬ºA:Play/Pause
+1849   1              if((gc_DispPlayStatus!=gs_System_State.c_Phase)||(gb_TFT_refresh==1))
+1850   1              {
+1851   2                      gc_DispPlayStatus=gs_System_State.c_Phase;
+1852   2                      TFT_ShowPlayPauseIcon();
+1853   2              }
+1854   1      
+1855   1              // ·í«e¼½©ñ®É¶¡
+1856   1              if((gw_Disp_CurrentSecBak!=gw_Disp_CurrentSec)||(gb_TFT_refresh==1))
+1857   1              {       
+1858   2                      gw_Disp_CurrentSecBak=gw_Disp_CurrentSec;
+1859   2                      TFT_ShowPlayTime();
+1860   2              }
+1861   1      #ifdef TFT_18H     //sunzhk add 090617
+1862   1          // ºq¦±®É¶¡
+1863   1              if((gw_DispTotalTime!=gw_TotalSec)||(gb_TFT_refresh==1))
+1864   1              {
+1865   2                      gw_DispTotalTime=gw_TotalSec;
+1866   2                      TFT_ShowSongLength();
+1867   2              }
+1868   1      #endif
+1869   1              // Show BitRate
+1870   1              if(((gw_DisplayBitRate!=gs_System_State.w_BitRate)&&(gw_DisplayBitrateTime==0))||(gb_TFT_refresh==1))
+1871   1              {
+1872   2                      gw_DisplayBitRate=gs_System_State.w_BitRate;
+1873   2                      gw_DisplayBitrateTime=30;
+1874   2                      TFT_ShowBitRate();
+1875   2              }
+1876   1      
+1877   1              // Display Song name
+1878   1              if(gw_FileTotalNumber[0]==0)
+1879   1              {                       
+1880   2                      if((gc_CurrentCard==0)  && (gb_FlashNoFileflag==0))
+1881   2                      {
+1882   3                              gb_FlashNoFileflag=1;
+1883   3                      }
+1884   2              }
+1885   1              else
+1886   1              {
+1887   2                      if((gw_DispSongNum1!=gw_FileIndex[0])||(gb_TFT_refresh==1))
+1888   2                      {
+1889   3                              U8      i;
+1890   3      
+1891   3                              if((gc_CurrentCard==2) && (SD_Detect!=0))  //if SD not exist return DOS_CLUSTER_LINK_ERR chiayen0813
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 32  
+
+1892   3                              {
+1893   4                                      return;         
+1894   4                              }
+1895   3      
+1896   3                              if((gc_CurrentCard==5) && (gb_HostConnect==0))  //if Host not exist return DOS_CLUSTER_LINK_ERR chiayen
+             - 20081017
+1897   3                              {
+1898   4                                      return;         
+1899   4                              }
+1900   3      
+1901   3                              for(i=0;i<48;i++)
+1902   3                              {
+1903   4                                      gc_FileLongName[i]=0;
+1904   4                              }
+1905   3                              gw_DispSongNum1=gw_FileIndex[0];
+1906   3                              DOS_GetLongFileName(0,gc_FileLongName);
+1907   3      
+1908   3                              gw_LogData_Timer=2;  //20090107 chiayen modify 
+1909   3                              gs_str_scroll_state.c_str_1st_char=0;  //20090331
+1910   3                          gs_str_scroll_state.c_shift_in_1st_char=0;
+1911   3                              LCD_Disp_FileName(&gc_FileLongName[5], gc_FileLongName[2], gc_FileLongName[4], 1);
+1912   3                              gw_LCMScrollTimer=40;
+1913   3                      }
+1914   2      
+1915   2                      if((gw_LCMScrollTimer==0)&&(gb_TFT_scroll==1))
+1916   2                      {
+1917   3                              if(gb_LrcFileName_Exist==0)
+1918   3                              {
+1919   4                                      LCD_Disp_FileName(&gc_FileLongName[5], gc_FileLongName[2], gc_FileLongName[4], 1);
+1920   4                              }
+1921   3                              gw_LCMScrollTimer=20;
+1922   3                      }                                       
+1923   2              }
+1924   1      
+1925   1              if(((gc_Play_FileType==1)&&(gs_System_State.c_Phase == TASK_PHASE_PLAYACT))&&(((gb_PickSong==1)||(gb_Chan
+             -nelSet==1)) || gc_CurrentCard!=5))
+1926   1              {
+1927   2                      WMA_DataIn();
+1928   2              }
+1929   1      
+1930   1              gb_TFT_refresh=0;
+1931   1      }
+1932          
+1933          
+1934          void RepeatMode_Process()
+1935          {
+1936   1              bit     tc_Confirm=0;
+1937   1      
+1938   1              if(gc_PhaseInx)
+1939   1              {
+1940   2              switch(gc_PhaseInx)
+1941   2              {
+1942   3                  case C_PlayMenu:
+1943   3                                      gc_ShowTimer =150;
+1944   3                                      gc_refresh_type=REFRESH_NOT;//¸ÃÏîÈ·‘Âºó²»ÐèÒªË¢ÐÂ²Ëµ¥  ¡¢¡¢sunzhkadd 00703
+1945   3                                      tc_Confirm=1;
+1946   3                  break;
+1947   3      
+1948   3                  case C_PlayNext:
+1949   3                                      gc_ShowTimer =150;
+1950   3                                      gc_refresh_type=REFRESH_NEXT;
+1951   3                                      if(gc_LCMDispIndex==2)
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 33  
+
+1952   3                                      {
+1953   4                                              gc_LCMDispIndex=0;
+1954   4                                      }
+1955   3                                      else
+1956   3                                      {
+1957   4                                              gc_LCMDispIndex++;
+1958   4                                      }
+1959   3                  break;
+1960   3      
+1961   3                  case C_PlayPrev:
+1962   3                                      gc_ShowTimer =150;
+1963   3                                      gc_refresh_type=REFRESH_PREV;
+1964   3                                      if(gc_LCMDispIndex==0)
+1965   3                                      {
+1966   4                                              gc_LCMDispIndex=2;
+1967   4                                      }
+1968   3                                      else
+1969   3                                      {
+1970   4                                              gc_LCMDispIndex--;
+1971   4                                      }
+1972   3                  break;
+1973   3              }
+1974   2              
+1975   2                      if(tc_Confirm==1) //enter child dir or confirm selected item
+1976   2                      {
+1977   3                              if(gc_LCMDispIndex==0)
+1978   3                              {
+1979   4                                      gc_RepPlayMode=0;
+1980   4                              }
+1981   3                              else if(gc_LCMDispIndex==1)
+1982   3                              {
+1983   4                                      gc_RepPlayMode=1;
+1984   4                              }
+1985   3                              else if(gc_LCMDispIndex==2)
+1986   3                              {
+1987   4                                      gc_RepPlayMode=2;
+1988   4                              }
+1989   3                              gc_ShowTimer=0;
+1990   3                              gc_TuneVolFreqStatus=0;
+1991   3                              if(gb_LrcFileName_Exist==1)
+1992   3                              {
+1993   4                                      UI_FulllcdDis_Lrc();
+1994   4                                      gc_DispWallpaper=0;
+1995   4                              }
+1996   3                      }
+1997   2              }
+1998   1      }       
+1999          
+2000          
+2001          void EQMenu_Process()
+2002          {
+2003   1              bit tb_Confirm=0;
+2004   1      
+2005   1              if(gc_PhaseInx!=1)
+2006   1              {
+2007   2              switch(gc_PhaseInx)
+2008   2              {
+2009   3                  case C_PlayMenu:
+2010   3                                      gc_ShowTimer =150;
+2011   3                                      gc_refresh_type=REFRESH_NOT;
+2012   3                                      tb_Confirm = 1;
+2013   3                  break;
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 34  
+
+2014   3      
+2015   3                  case C_PlayNext:
+2016   3                                      gc_ShowTimer =150;
+2017   3                                      gc_refresh_type=REFRESH_NEXT;
+2018   3                                      if(gc_LCMDispIndex==5)
+2019   3                                      {
+2020   4                                              gc_LCMDispIndex=0;
+2021   4                                      }
+2022   3                                      else
+2023   3                                      {
+2024   4                                              gc_LCMDispIndex++;
+2025   4                                      }
+2026   3                  break;
+2027   3      
+2028   3                  case C_PlayPrev:
+2029   3                                      gc_ShowTimer =150;
+2030   3                                      gc_refresh_type=REFRESH_PREV;
+2031   3                                      if(gc_LCMDispIndex==0)
+2032   3                                      {
+2033   4                                              gc_LCMDispIndex=5;
+2034   4                                      }
+2035   3                                      else
+2036   3                                      {
+2037   4                                              gc_LCMDispIndex--;
+2038   4                                      }
+2039   3                  break;
+2040   3              }
+2041   2              
+2042   2                      if(gs_DSP_GLOBAL_RAM.sc_EQ_Type!=gc_LCMDispIndex)
+2043   2                      {
+2044   3                              gs_DSP_GLOBAL_RAM.sc_EQ_Type=gc_LCMDispIndex;
+2045   3                              gc_EQChangeFlag=1;
+2046   3                      }
+2047   2      
+2048   2                      if(tb_Confirm==1) //enter child dir or confirm selected item
+2049   2                      {
+2050   3                              gs_DSP_GLOBAL_RAM.sc_EQ_Type=gc_LCMDispIndex;
+2051   3                              gc_ShowTimer=0;
+2052   3                              gc_TuneVolFreqStatus=0;
+2053   3                              if(gb_LrcFileName_Exist==1)
+2054   3                              {
+2055   4                                      UI_FulllcdDis_Lrc();
+2056   4                                      gc_DispWallpaper=0;
+2057   4                              }
+2058   3                      }
+2059   2              }
+2060   1      }       
+2061          
+2062          
+2063          void PlayMenu_Process()
+2064          {
+2065   1              bit tb_Confirm=0;
+2066   1      
+2067   1              gc_refresh_type=REFRESH_ALL;
+2068   1              if(gc_PhaseInx!=1)
+2069   1              {
+2070   2              switch(gc_PhaseInx)
+2071   2              {
+2072   3                  case C_PlayMenu:
+2073   3                                      gc_refresh_type=REFRESH_ALL;
+2074   3                                      tb_Confirm=1;
+2075   3                                      gc_ShowTimer =150;
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 35  
+
+2076   3                  break;
+2077   3      
+2078   3                  case C_PlayNext:
+2079   3                                      gc_ShowTimer =150;
+2080   3                                      gc_refresh_type=REFRESH_NEXT;
+2081   3                                      if(gc_LCMDispIndex==4)
+2082   3                                      {
+2083   4                                              gc_LCMDispIndex=0;
+2084   4                                      }
+2085   3                                      else
+2086   3                                      {
+2087   4                                              gc_LCMDispIndex++;
+2088   4                                      }
+2089   3                  break;
+2090   3      
+2091   3                  case C_PlayPrev:
+2092   3                                      gc_ShowTimer =150;
+2093   3                                      gc_refresh_type=REFRESH_PREV;
+2094   3                                      if(gc_LCMDispIndex==0)
+2095   3                                      {
+2096   4                                              gc_LCMDispIndex=4;
+2097   4                                      }
+2098   3                                      else
+2099   3                                      {
+2100   4                                              gc_LCMDispIndex--;
+2101   4                                      }
+2102   3                  break;      
+2103   3              }
+2104   2      
+2105   2                      if(tb_Confirm==1) //confirm selected item
+2106   2                      {
+2107   3                              if(gc_LCMDispIndex==0)  //File Select
+2108   3                              {
+2109   4                              if(gw_FileTotalNumber[0])
+2110   4                              {
+2111   5                                              play_stop();                     //Terry20090527
+2112   5                                              gc_TaskMode_BkUp=C_Task_Play;    //
+2113   5                                              gc_Task_Next=C_Task_Dir;         //
+2114   5                              }
+2115   4                              }
+2116   3                              else if(gc_LCMDispIndex==1)  //Play All
+2117   3                              {
+2118   4                                      play_stop();
+2119   4                                      gb_DirPlay_Flag=0; //20081224 chiayen test
+2120   4                                      gc_PlayModeChange_Flag=1;
+2121   4                                      gw_init_needed=0xFFFF;             
+2122   4                                      gb_FindFlag = 0;            
+2123   4                                      gs_File_FCB[0].dw_FDB_StartCluster = gdw_DOS_RootDirClus;           
+2124   4                                      DOS_Search_File(C_File_All|C_Cnt_FileNo, C_MusicFileType, C_CmpExtName|C_Next);//(JC)count music file 
+             -no. in root
+2125   4                                      gc_ShowTimer=0;
+2126   4                                      gc_TuneVolFreqStatus=0;
+2127   4                                      gc_PhaseInx=0;
+2128   4                              }
+2129   3                              else if(gc_LCMDispIndex==2)  //Equalizer
+2130   3                              {
+2131   4                                      gc_DispPlayMenuAct=1;
+2132   4                                      gc_TuneVolFreqStatus=4;
+2133   4                              }
+2134   3                              else if(gc_LCMDispIndex==3)  //Repeat
+2135   3                              {
+2136   4                                      gc_DispPlayMenuAct=2;
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 36  
+
+2137   4                                      gc_TuneVolFreqStatus=5;
+2138   4                              }
+2139   3                              else if(gc_LCMDispIndex==4)  //Exit
+2140   3                              {
+2141   4                                      gc_ShowTimer=0;
+2142   4                                      gc_TuneVolFreqStatus=0;
+2143   4                                      if(gb_LrcFileName_Exist==1)
+2144   4                                      {
+2145   5                                              UI_FulllcdDis_Lrc();
+2146   5                                              gc_DispWallpaper=0;
+2147   5                                      }
+2148   4                              }
+2149   3                      }
+2150   2              }       
+2151   1      }
+2152          
+2153          
+2154          data    U8      gc_ShowIRNumMain=0;
+2155          extern U8 LCD_Disp_FileName(U8 *tpc_DataBuf, U8 tc_ANSI, U8 tc_nByte, U8 tc_scroll_flag);
+2156          extern UBYTE DOS_GetDIRName(UBYTE tc_FileHandle, UBYTE tb_UicodeToISN, UBYTE * tpc_LongName);
+2157          extern void Folder_Display();
+2158          void LCM_Display_Func2(void)    // ¥\¯à¿ï¶µ:MP3/MP4/JPG/Setup
+2159          {
+2160   1              // IR NUM
+2161   1              if(gb_ShowIRNum==1)
+2162   1              {
+2163   2                      gb_ShowIRNum=0;
+2164   2                      gc_TuneVolFreqStatus=0;
+2165   2                      if(gc_ShowIRNumMain==0)
+2166   2                      {
+2167   3                              gc_ShowIRNumMain=1;
+2168   3                              gb_TFT_refresh=1;
+2169   3                              gc_DispWallpaper=0;
+2170   3                              TFT_IRNumMain();
+2171   3                      }
+2172   2      
+2173   2                      TFT_IRNum();
+2174   2              }
+2175   1      
+2176   1              // EQ Frame(»»±±¾¹¿ïEQ)
+2177   1              if(gb_Frequency_Song==1)
+2178   1              {
+2179   2                      if(gc_EQBak!=gs_DSP_GLOBAL_RAM.sc_EQ_Type)
+2180   2                      {
+2181   3                              gc_TuneVolFreqStatus=0;
+2182   3                              gc_EQBak=gs_DSP_GLOBAL_RAM.sc_EQ_Type;
+2183   3                              TFT_EQFrame();
+2184   3                              gb_TFT_refresh=1;
+2185   3                              gc_DispWallpaper=0xFF;
+2186   3                              return;
+2187   3                      }
+2188   2              }
+2189   1      
+2190   1              if(gc_TuneVolFreqStatus==1)     // VOLUME ADJ.
+2191   1              {
+2192   2                  gc_ShowIRNumMain=0;
+2193   2                      if(gc_DispWallpaper!=2)
+2194   2                      {
+2195   3                              gb_TFT_VOL_FM=0;        // 0=VOL adj.  1=FM adj.
+2196   3                              //TFT_Main_VOL_FM_ADJ();
+2197   3                              Menu_Disp_Item_Play(gc_TuneVolFreqStatus,gc_LCMDispIndex,0);//ÏÔÊ¾ÒôÁ¿µ÷ÕûµÄ±³¾°Í¼
+2198   3                              gc_DispWallpaper=2;
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 37  
+
+2199   3                              gc_DisplayVol=0xFF;
+2200   3                      }
+2201   2                      if(gc_DisplayVol!=gs_DSP_GLOBAL_RAM.sw_Volume)
+2202   2                      {
+2203   3                              gc_DisplayVol=gs_DSP_GLOBAL_RAM.sw_Volume;
+2204   3                              TFT_ShowVOLAdj();
+2205   3                      }
+2206   2              }
+2207   1              else if(gc_TuneVolFreqStatus==2)        // FM ADJ.
+2208   1              {
+2209   2                      if(gc_DispWallpaper!=3)
+2210   2                      {
+2211   3                              gb_TFT_VOL_FM=1;        // 0=VOL adj.  1=FM adj.
+2212   3                              //TFT_Main_VOL_FM_ADJ();
+2213   3                              Menu_Disp_Item_Play(gc_TuneVolFreqStatus,gc_LCMDispIndex,0);//ÏÔÊ¾ÒôÁ¿µ÷ÕûµÄ±³¾°Í¼
+2214   3                              gc_DispWallpaper=3;
+2215   3                              gw_DisplayFreq=0;
+2216   3                      }
+2217   2      
+2218   2                      if(gw_DisplayFreq!=gw_FM_frequency)
+2219   2                      {
+2220   3                              gb_FlashNoFileflag=0;
+2221   3                              gw_DisplayFreq=gw_FM_frequency;
+2222   3                              TFT_ShowFMFreqAdj(); 
+2223   3                              gc_ShowIRNumMain=0;
+2224   3                      }
+2225   2              }
+2226   1              else if(gc_TuneVolFreqStatus==3)        // Playing operation(play menu)
+2227   1              {
+2228   2                      //gc_ShowTimer=72;
+2229   2                      IR_Service_Process_Menu();
+2230   2                      if(gc_DispWallpaper!=4)
+2231   2                      {
+2232   3                              gc_DispWallpaper=4;
+2233   3                              gc_LCMDispIndex=0;
+2234   3                              gc_LCMDispIndexBak=0xFF;
+2235   3                              gc_PhaseInx=1;
+2236   3                      }
+2237   2                      PlayMenu_Process();
+2238   2                      if(gc_LCMDispIndexBak!=gc_LCMDispIndex)
+2239   2                      {
+2240   3                              gc_LCMDispIndexBak=gc_LCMDispIndex;
+2241   3      //                      TFT_PlayingOperation_new(gc_LCMDispIndex,gc_TuneVolFreqStatus);
+2242   3                              Menu_Disp_Item_Play(gc_TuneVolFreqStatus,gc_LCMDispIndex,gc_refresh_type);
+2243   3                              
+2244   3                      }               
+2245   2              }
+2246   1              else if(gc_TuneVolFreqStatus==4)
+2247   1              {
+2248   2                      //gc_ShowTimer=72;
+2249   2                      IR_Service_Process_Menu();
+2250   2                      if(gc_DispWallpaper!=5)
+2251   2                      {
+2252   3                              gc_DispWallpaper=5;
+2253   3                              gc_LCMDispIndex=gs_DSP_GLOBAL_RAM.sc_EQ_Type;
+2254   3                              gc_LCMDispIndexBak=0xFF;
+2255   3                              gc_PhaseInx=1;
+2256   3                      }
+2257   2      
+2258   2                      EQMenu_Process();               
+2259   2                      if(gc_LCMDispIndexBak!=gc_LCMDispIndex)
+2260   2                      {
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 38  
+
+2261   3                              gc_EQBak=gs_DSP_GLOBAL_RAM.sc_EQ_Type;
+2262   3                              gc_LCMDispIndexBak=gc_LCMDispIndex;
+2263   3                              //TFT_EQMenu();
+2264   3                              Menu_Disp_Item_Play(gc_TuneVolFreqStatus,gc_LCMDispIndex,gc_refresh_type);
+2265   3                      }               
+2266   2              }
+2267   1              else if(gc_TuneVolFreqStatus==5)
+2268   1              {
+2269   2                      //gc_ShowTimer=72;
+2270   2                      IR_Service_Process_Menu();
+2271   2                      if(gc_DispWallpaper!=6)
+2272   2                      {
+2273   3                              gc_DispWallpaper=6;
+2274   3                              gc_LCMDispIndex=0;
+2275   3                              gc_LCMDispIndexBak=0xFF;
+2276   3                              gc_PhaseInx=1;
+2277   3                      }
+2278   2      
+2279   2                      RepeatMode_Process();           
+2280   2                      if(gc_LCMDispIndexBak!=gc_LCMDispIndex)
+2281   2                      {
+2282   3                              gc_LCMDispIndexBak=gc_LCMDispIndex;
+2283   3                              Menu_Disp_Item_Play(gc_TuneVolFreqStatus,gc_LCMDispIndex,gc_refresh_type);
+2284   3                      //      TFT_RepeatMenu();
+2285   3                      }               
+2286   2              }
+2287   1      //////////////sunzhk add disp folder name
+2288   1              else if(gc_folder_disp==1)
+2289   1              {
+2290   2                      gc_ShowTimer=72;
+2291   2                      IR_Service_Process_Menu();
+2292   2                      if(gc_DispWallpaper!=6)
+2293   2                      {
+2294   3                              gc_DispWallpaper=6;
+2295   3                              gc_LCMDispIndex=0;
+2296   3                              gc_LCMDispIndexBak=0xFF;
+2297   3                              gc_PhaseInx=1;
+2298   3                      }
+2299   2      
+2300   2                      /*RepeatMode_Process();         
+2301   2                      if(gc_LCMDispIndexBak!=gc_LCMDispIndex)
+2302   2                      {
+2303   2                              gc_LCMDispIndexBak=gc_LCMDispIndex;
+2304   2                              Menu_Disp_Item_Play(gc_TuneVolFreqStatus,gc_LCMDispIndex,gc_refresh_type);
+2305   2                      //      TFT_RepeatMenu();
+2306   2                      }*/
+2307   2                      Folder_Display();
+2308   2                              DOS_GetDIRName(0, 0, gc_FileLongName);                                          
+2309   2                              LCD_Disp_FileName(&gc_FileLongName[5], gc_FileLongName[2], gc_FileLongName[4], 1);
+2310   2                              gc_folder_disp=0;               
+2311   2              }
+2312   1      /////////
+2313   1              if(gc_PhaseInx!=0)
+2314   1              {
+2315   2                      if(gs_System_State.c_Phase==TASK_PHASE_STOP)
+2316   2                  {
+2317   3                      gc_PhaseInx=0x09;   
+2318   3                  }
+2319   2                  else
+2320   2                  {
+2321   3                      gc_PhaseInx=1;
+2322   3                  }
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 39  
+
+2323   2              }
+2324   1      }
+2325          
+2326          
+2327          void Play_Task()
+2328          {
+2329   1              gb_TFT_refresh=1;       // ©Ò¦³ICON/¼Æ¦r¥þ³¡Åã¥Ü¤@¦¸
+2330   1              gc_DispWallpaper=0;
+2331   1              LCD_BACKLIGHT_ON;
+2332   1              while(1)
+2333   1              {
+2334   2              switch(gc_PhaseInx)
+2335   2              {
+2336   3                  case C_PlayInit:
+2337   3                      play_init();
+2338   3                  break;
+2339   3      
+2340   3                  case C_PlayProc:
+2341   3                      play_proc();
+2342   3                  break;
+2343   3                  
+2344   3                  case C_PlayEndfile:
+2345   3                                      if(gb_LrcFileName_Exist==1)
+2346   3                                      {
+2347   4                                              gb_TFT_refresh=1;
+2348   4                                              gc_DispWallpaper=0;
+2349   4                                      }
+2350   3                      play_endfile();
+2351   3                  break;
+2352   3      
+2353   3                  case C_PlayPause:
+2354   3                                      if(!gb_FlashNoFileflag)
+2355   3                                      {
+2356   4                              play_playpause();
+2357   4                                      }
+2358   3                                      else
+2359   3                                      {
+2360   4                                              gc_PhaseInx=9;  
+2361   4                                      }
+2362   3                  break;
+2363   3      
+2364   3                  case C_PlayStop:
+2365   3                      play_stop();    
+2366   3                  break;
+2367   3      
+2368   3                  case C_PlayNext:
+2369   3                                      if(!gb_FlashNoFileflag)
+2370   3                                      {
+2371   4                                              if((gb_LrcFileName_Exist==1)&&(gc_ShowTimer==0))
+2372   4                                              {
+2373   5                                                      gb_TFT_refresh=1;
+2374   5                                                      gc_DispWallpaper=0;
+2375   5                                              }
+2376   4      
+2377   4                                              if(gc_TuneVolFreqStatus==0)
+2378   4                                              {
+2379   5                                      play_next();
+2380   5                                              }
+2381   4                                              else if(gc_TuneVolFreqStatus==1)
+2382   4                                              {
+2383   5                                                      play_volup();   
+2384   5                                              }
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 40  
+
+2385   4                                              else if(gc_TuneVolFreqStatus==2)
+2386   4                                              {
+2387   5                                                      FM_FREQ_CHGUP();        
+2388   5                                              }
+2389   4                                      }
+2390   3                  break;
+2391   3      
+2392   3                  case C_PlayPrev:
+2393   3                                      if(!gb_FlashNoFileflag)
+2394   3                                      {
+2395   4                                              if((gb_LrcFileName_Exist==1)&&(gc_ShowTimer==0))
+2396   4                                              {
+2397   5                                                      gb_TFT_refresh=1;
+2398   5                                                      gc_DispWallpaper=0;
+2399   5                                              }
+2400   4      
+2401   4                                              if(gc_TuneVolFreqStatus==0)
+2402   4                                              {
+2403   5                                                      play_prev();
+2404   5                                              }
+2405   4                                              else if(gc_TuneVolFreqStatus==1)
+2406   4                                              {
+2407   5                                                      play_voldn();   
+2408   5                                              }
+2409   4                                              else if(gc_TuneVolFreqStatus==2)
+2410   4                                              {
+2411   5                                                      FM_FREQ_CHGDOWN();      
+2412   5                                              }                                       
+2413   4                                      }
+2414   3                  break;
+2415   3      
+2416   3                  case C_PlayIdle:
+2417   3                      play_idle();
+2418   3                  break;
+2419   3      
+2420   3                  case C_PlayVolUp:
+2421   3                                              
+2422   3                                               if(gc_TuneVolFreqStatus==0||gc_TuneVolFreqStatus==1)
+2423   3                                              {
+2424   4                                      play_volup();
+2425   4                                              }
+2426   3                                              
+2427   3                                               if(gc_TuneVolFreqStatus==2)
+2428   3                                              {
+2429   4                                                      FM_FREQ_CHGUP();
+2430   4                                              }
+2431   3                                      
+2432   3                                              
+2433   3                                              if(gs_System_State.c_Phase==TASK_PHASE_STOP)
+2434   3                                          {
+2435   4                                              gc_PhaseInx=0x09;
+2436   4                                          }
+2437   3                                              else        
+2438   3                                          {
+2439   4                                              gc_PhaseInx=1;
+2440   4                                          }
+2441   3                                                      
+2442   3                               break;
+2443   3      
+2444   3                  case C_PlayVolDn:
+2445   3                      if(gc_TuneVolFreqStatus==0||gc_TuneVolFreqStatus==1)
+2446   3                      {
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 41  
+
+2447   4                                                      play_voldn();
+2448   4                                      }
+2449   3                                      else if(gc_TuneVolFreqStatus==2)
+2450   3                                      {
+2451   4                                                      FM_FREQ_CHGDOWN();      
+2452   4                                      }
+2453   3                              
+2454   3                                      if(gs_System_State.c_Phase==TASK_PHASE_STOP)
+2455   3                                  {
+2456   4                                      gc_PhaseInx=0x09;   
+2457   4                                  }
+2458   3                                      else        
+2459   3                                  {
+2460   4                                      gc_PhaseInx=1;
+2461   4                                  }
+2462   3                              
+2463   3                  break;
+2464   3      
+2465   3                  case C_PlayUpLevel:
+2466   3                      play_back2uplevel();
+2467   3                  break;
+2468   3      
+2469   3                  case C_PlayMenu:  //short key mode
+2470   3                              gc_ShowTimer=72;
+2471   3                              
+2472   3                                      if(gc_DispPlayMenuAct==0&&gc_TuneVolFreqStatus!=3)
+2473   3                                      {
+2474   4                                              gc_DispWallpaper=0; 
+2475   4                                              gc_TuneVolFreqStatus=3;
+2476   4                                      }
+2477   3                  break;
+2478   3                              case C_PlayChgDn:
+2479   3                                              FM_FREQ_CHG(0,1);
+2480   3                              break;
+2481   3      
+2482   3                              case C_PlayChgUp:
+2483   3                                              FM_FREQ_CHG(1,1);
+2484   3                              break;
+2485   3                  case C_TuneVolFreq:  //tune vol key
+2486   3                                      if(gc_TuneVolFreqStatus<3)  //20090331
+2487   3                                      {
+2488   4                                              gc_ShowTimer=72;
+2489   4                                              gc_TuneVolFreqStatus++;
+2490   4                                              if(gc_TuneVolFreqStatus>2)
+2491   4                                              {
+2492   5                                                      gc_ShowTimer=0;
+2493   5                                                      gc_TuneVolFreqStatus=0; 
+2494   5                                              }                               
+2495   4                                      }
+2496   3      
+2497   3                                      if(gs_System_State.c_Phase==TASK_PHASE_STOP)
+2498   3                                  {
+2499   4                                      gc_PhaseInx=0x09;   
+2500   4                                  }
+2501   3                                  else
+2502   3                                  {
+2503   4                                      gc_PhaseInx=1;
+2504   4                                  }
+2505   3                  break;
+2506   3      
+2507   3                  case C_PowerOff:
+2508   3                                      gc_TaskMode_BkUp=C_Task_Play;
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 42  
+
+2509   3                                      if(gs_System_State.c_Phase!=TASK_PHASE_STOP)
+2510   3                                      {
+2511   4                                              play_stop();    
+2512   4                                      }
+2513   3                                      gc_Task_Next=C_Task_PowerOff;                                           
+2514   3      
+2515   3                  break;
+2516   3      
+2517   3                              case C_MainMenu: //Long key mode
+2518   3                                      play_stop();
+2519   3                                      gc_Task_Next=C_Task_Menu;
+2520   3                              break;
+2521   3      
+2522   3                  case C_PlayFF:
+2523   3                                      
+2524   3                                              if(gc_TuneVolFreqStatus==0)
+2525   3                                              {
+2526   4                                                      UI_fastFFFR_Play(0);
+2527   4                                              }
+2528   3                                              
+2529   3                                      
+2530   3                              break;
+2531   3      
+2532   3                              case C_PlayFR:
+2533   3                                              if(gc_TuneVolFreqStatus==0)
+2534   3                                              {
+2535   4                                      UI_fastFFFR_Play(1);
+2536   4                                              }
+2537   3      
+2538   3                                      
+2539   3                  break;
+2540   3      
+2541   3                  case C_PlayFfFrEnd:
+2542   3                                      play_fffr_end();
+2543   3                              break;
+2544   3      
+2545   3              }
+2546   2      
+2547   2              if((gs_System_State.c_Phase == TASK_PHASE_PLAYACT)  && (gc_Play_FileType!=0x03))
+2548   2              {
+2549   3                  gs_System_State.w_BitRate = (*Music_Bitrate[gc_Play_FileType])();
+2550   3              }
+2551   2      
+2552   2                      if((gc_Dirchange_Timer==0)&&(gc_ShowTimer==0)&&(gw_IR_Timer==0)&&(gc_folder_disp==0))
+2553   2                      {       
+2554   3                      LCM_Display_Func1();    // ¼½©ñ¥Dµe­±           
+2555   3                              gc_DispPlayMenuAct=0;
+2556   3                              gc_ShowIRNumMain=0;
+2557   3                              if((gb_LrcFileName_Exist==1) && ((gc_DispWallpaper==2)||(gc_DispWallpaper==3))) //for LRC Volkey
+2558   3                              {
+2559   4                                      UI_FulllcdDis_Lrc();
+2560   4                                      gc_DispWallpaper=0;
+2561   4                              }
+2562   3                      }
+2563   2                      else
+2564   2                      {
+2565   3                              LCM_Display_Func2();
+2566   3                      }
+2567   2      
+2568   2                      gc_CurrentCard_backup=gc_CurrentCard;
+2569   2                      IR_Service_Process();
+2570   2      
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 43  
+
+2571   2                      if(gb_PickSongSet==1)
+2572   2                      {
+2573   3                              gb_PickSongSet=0;
+2574   3                              if(gb_ChannelSet==0)
+2575   3                              {                       
+2576   4                                      PickSong_Process();
+2577   4                              }
+2578   3                              else
+2579   3                              {
+2580   4                                      ChannelSet_Process();
+2581   4                                      gb_ChannelSet=0;
+2582   4                                      gc_ShowIRNumMain=0;
+2583   4                              }                       
+2584   3                      }
+2585   2              Polling_TaskEvents();
+2586   2              if(gc_LogDataFlag==1)
+2587   2              {
+2588   3                  USER_LogFile_ReadWrite(1);
+2589   3                  gc_LogDataFlag=0;
+2590   3              }
+2591   2      
+2592   2                      if(gb_HostError==1)  //20090107 chiayen add
+2593   2                      {
+2594   3                              gb_HostError=0;
+2595   3                              MediaChange_Play();
+2596   3                      }
+2597   2                      Play_SourceDetect_Process();
+2598   2      
+2599   2                      if(gc_Task_Current!=gc_Task_Next)
+2600   2              {
+2601   3                  gc_Task_Current=gc_Task_Next;
+2602   3                              gc_ShowTimer=0;  //20090331
+2603   3                              gc_DispWallpaper=1;
+2604   3                              gc_TuneVolFreqStatus=0;
+2605   3                              gc_Dirchange_Timer =0;
+2606   3                              gw_IR_Timer=0;
+2607   3                              gc_folder_disp=0;
+2608   3                              ClearIRBuffer();
+2609   3                  if((gc_Task_Current==C_Task_USB) || (gc_Task_Current==C_Task_Dir) || (gc_Task_Current==C_Task_
+             -PlayMenu) || (gc_Task_Current==C_Task_PlayMenu_IR)) //20090107 chiayen add
+2610   3                  {
+2611   4                      if((gs_System_State.c_Phase==TASK_PHASE_PLAYACT)||(gs_System_State.c_Phase==TASK_PHASE_PAU
+             -SE))
+2612   4                      {
+2613   5                          play_stop();    
+2614   5                      }
+2615   4                  }
+2616   3                  break;  
+2617   3              }
+2618   2          }
+2619   1      }
+2620          
+2621          void ir_service_menu(void)
+2622          {
+2623   1              U16 tw_temp;
+2624   1              
+2625   1              if(gc_IRCmdStatus!=0)
+2626   1              {
+2627   2                      tw_temp=(IR_REG[0x1b]<<8)+IR_REG[0x1a];
+2628   2              
+2629   2                      
+2630   2                      if(tw_temp==IR_21_Key)
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 44  
+
+2631   2                      {
+2632   3                              gc_irkey=5;     
+2633   3                      }
+2634   2                      else if(tw_temp==IR_21_1_Key)
+2635   2                      {
+2636   3                              gc_irkey=7;     
+2637   3                      }
+2638   2                      if(gc_irkey!=0)
+2639   2                      {
+2640   3                              if((IR_REG[0x1c]+IR_REG[0x1d])==0xFF)
+2641   3                              {
+2642   4                                      if(gc_IRCmdStatus==1)
+2643   4                                      {
+2644   5                                              ir_commandservice_menu();
+2645   5                                              gc_IRCmdStatus=0;
+2646   5                                      }
+2647   4                                      if(gc_IRCmdStatus==2)
+2648   4                                      {                                       
+2649   5                                              ir_commandservice_menu();
+2650   5                                              gc_IRCmdStatus=0;
+2651   5                                      }
+2652   4                              }                                       
+2653   3                      }
+2654   2                      else
+2655   2                      {
+2656   3                              gc_IRCmdStatus=0;
+2657   3                      }
+2658   2                      gc_IRCmdStatus=0;
+2659   2              }
+2660   1              gc_irkey=0;
+2661   1      }
+2662          
+2663          
+2664          void ir_commandservice_menu(void)
+2665          {
+2666   1      
+2667   1              
+2668   1              if(gc_irkey==5)
+2669   1              {
+2670   2                  switch(IR_REG[0x1c])
+2671   2                  {
+2672   3                              case 0x1e:                                                              //just for suo lang.
+2673   3                              case 0x01:      //Mode  //Menu   
+2674   3                                      if(gc_Task_Current == C_Task_Jpeg)
+2675   3                                      gc_PhaseInx = C_JpegMenu;
+2676   3                                      else if(gc_Task_Current == C_Task_Mjpeg)
+2677   3                                      gc_PhaseInx = C_MjpegMenu;
+2678   3                                      else
+2679   3                                      gc_PhaseInx = C_PlayMenu;
+2680   3      
+2681   3                                      break;
+2682   3                      
+2683   3                              case 0x0d:      // PlayPrev --
+2684   3                                      if(gc_Task_Current == C_Task_Jpeg)
+2685   3                                      gc_PhaseInx = C_JpegPrev;
+2686   3                                      else if(gc_Task_Current == C_Task_Mjpeg)
+2687   3                                      gc_PhaseInx = C_MjpegPrev;
+2688   3                                      else
+2689   3                                      gc_PhaseInx = C_PlayPrev;
+2690   3      
+2691   3                                      break;
+2692   3                      case 0x0e:      // PlayNext ++
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 45  
+
+2693   3                                      if(gc_Task_Current == C_Task_Jpeg)
+2694   3                                      gc_PhaseInx = C_JpegNext;
+2695   3                                      else if(gc_Task_Current == C_Task_Mjpeg)
+2696   3                                      gc_PhaseInx = C_MjpegNext;
+2697   3                                      else
+2698   3                                      gc_PhaseInx = C_PlayNext;
+2699   3      
+2700   3                                      break;
+2701   3                              case 0x00:      //ON/OFF 
+2702   3                   
+2703   3                                              if(gs_System_State.c_Phase!=TASK_PHASE_STOP)
+2704   3                                              {
+2705   4                                                      if(gc_Task_Current == C_Task_Play)
+2706   4                                                      {
+2707   5                                                              play_stop();
+2708   5                                                      }
+2709   4                                                      else if(gc_Task_Current == C_Task_Jpeg)
+2710   4                                                      {
+2711   5                                                              jpeg_stop();
+2712   5                                                      }
+2713   4                                                      else if(gc_Task_Current == C_Task_Mjpeg)
+2714   4                                                      {
+2715   5                                                              mjpeg_stop();
+2716   5                                                      }
+2717   4                                              }
+2718   3                              gc_Task_Next=C_Task_PowerOff;
+2719   3                                              gc_PhaseInx=0xff; 
+2720   3                                      
+2721   3      
+2722   3                                      break;
+2723   3                              default:                
+2724   3                              break;
+2725   3                  }
+2726   2              }
+2727   1              else if(gc_irkey==7)    // 21-key
+2728   1              {
+2729   2                  switch(IR_REG[0x1c])
+2730   2                  {
+2731   3                      case 0x0d:      // Menu
+2732   3                                      if(gc_Task_Current == C_Task_Jpeg)
+2733   3                                      gc_PhaseInx = C_JpegMenu;
+2734   3                                      else if(gc_Task_Current == C_Task_Mjpeg)
+2735   3                                      gc_PhaseInx = C_MjpegMenu;
+2736   3                                      else
+2737   3                                      gc_PhaseInx = C_PlayMenu;
+2738   3      
+2739   3                                      break;
+2740   3                      case 0x44:      // PlayPrev --
+2741   3                                      if(gc_Task_Current == C_Task_Jpeg)
+2742   3                                      gc_PhaseInx = C_JpegPrev;
+2743   3                                      else if(gc_Task_Current == C_Task_Mjpeg)
+2744   3                                      gc_PhaseInx = C_MjpegPrev;
+2745   3                                      else
+2746   3                                      gc_PhaseInx = C_PlayPrev;
+2747   3      
+2748   3                                      break;
+2749   3                      case 0x40:      // PlayNext ++
+2750   3                                      if(gc_Task_Current == C_Task_Jpeg)
+2751   3                                      gc_PhaseInx = C_JpegNext;
+2752   3                                      else if(gc_Task_Current == C_Task_Mjpeg)
+2753   3                                      gc_PhaseInx = C_MjpegNext;
+2754   3                                      else
+C51 COMPILER V9.00   PLAY_PROCESS                                                          07/10/2012 15:51:53 PAGE 46  
+
+2755   3                                      gc_PhaseInx = C_PlayNext;
+2756   3      
+2757   3                                      break;
+2758   3                              default:                
+2759   3                              break;
+2760   3                  }           
+2761   2              }
+2762   1      }
+2763          
+2764          
+2765          void IR_Service_Process_Menu()
+2766          {
+2767   1          if(gc_IRCmdStatus==1)
+2768   1          {
+2769   2              ir_service_menu();
+2770   2          }
+2771   1      }
+2772          
+2773          
+*** WARNING C291 IN LINE 902 OF PLAY\PLAY_PROCESS.C: not every exit path returns a value
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   8236    ----
+   CONSTANT SIZE    =    114    ----
+   XDATA SIZE       =      8     113
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      1      65
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       4
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)

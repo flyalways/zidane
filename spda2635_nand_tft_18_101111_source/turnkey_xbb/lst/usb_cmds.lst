@@ -1,0 +1,893 @@
+C51 COMPILER V9.00   USB_CMDS                                                              07/10/2012 15:51:44 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE USB_CMDS
+OBJECT MODULE PLACED IN .\obj\usb_cmds.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE ..\libsource\USB\usb_cmds.c LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDIR(..
+                    -\libsource\header) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\usb_cmds.lst) OBJECT(.\obj\usb_cmds.obj)
+
+line level    source
+
+   1          #include "SPDA2K.h"
+   2          
+   3          void ReadSectors(void) 
+   4          {
+   5   1              gc_ErrorCode = 0;
+   6   1              Check_LBA_ID();
+   7   1              USB_REG[0xE9] = 0x01;                           //Clear EP1
+   8   1              gbt_OddTemp = 0;                                    //Device Buffer Pin-pon use~~
+   9   1              
+  10   1              if (gc_ErrorCode||gbt_RW_UsbBuf) 
+  11   1              {  //090520  Jay add
+  12   2                      NoCard_ReadSectors();
+  13   2              }
+  14   1              else 
+  15   1              {
+  16   2                      switch(gc_CardType)
+  17   2                      {
+  18   3                              case 1:
+  19   3                                      ReadATABlock();
+  20   3                              break;
+  21   3      
+  22   3                              case 2: 
+  23   3                                      SD_ReadSectors_USB();
+  24   3                              break;
+  25   3      
+  26   3                              default:                                   
+  27   3                                      NoCard_ReadSectors();
+  28   3                              break;
+  29   3              }
+  30   2              }
+  31   1              USB_REG[0x2B] =0x00; //0529 Jay add
+  32   1              gc_USBStage = CSWStage;                // 資料都傳完了,進入下一stage==>Comand Status Wrapper
+  33   1      }
+  34          
+  35           
+  36          void NoCard_ReadSectors(void) 
+  37          {
+  38   1              USB_REG[0x10] = 0x01;   
+  39   1              USB_REG[0x2B] = 0x00; //0529 Jay add
+  40   1              memset(USB_BUF_Bank0 ,0x00,512);
+  41   1              do {
+  42   2                      USB_REG[0x15]  = 0x00;
+  43   2                      USB_REG[0x16]  = 0x02;
+  44   2                      USB_REG[0xA1] |= 0x01;
+  45   2                      while (USB_REG[0xA1] & 0x01){
+  46   3                              USB_PlugDetect();                                                               // 081014 Jay add for usb plug out
+  47   3                              if(!gbt_USB_Detected){
+  48   4                                      return ;
+  49   4                              }
+  50   3                      }
+  51   2                      TotalXferPageNum.WD--;
+  52   2                      LBA.LW++;
+  53   2              } while (TotalXferPageNum.WD);
+  54   1              USB_REG[0x10] = 0x00;
+C51 COMPILER V9.00   USB_CMDS                                                              07/10/2012 15:51:44 PAGE 2   
+
+  55   1      }
+  56          
+  57          
+  58          void ReadATABlock(void) 
+  59          {
+  60   1              bit  tbt_RW_Buf;
+  61   1              bit  tbt_ChangeHBlock;
+  62   1              tbt_RW_Buf =0;
+  63   1              tbt_ChangeHBlock =0;
+  64   1              LBA2DBP();      
+  65   1              SetHBlockToHDev();
+  66   1              do {             
+  67   2                      if(tbt_ChangeHBlock){
+  68   3                              SetHBlock_To_WhichGroup();
+  69   3                      }
+  70   2                      if(gc_ErrorCode && gbt_Support_Dummy_Capacity){// 090416 add for dummy capacity             
+  71   3      //                  dbprintf("\n RataBlock _RW");
+  72   3                              gc_ErrorCode =0; 
+  73   3                              tbt_RW_Buf =1;                           // 若其已經超過Dummy capacity 只能等下一個CMD將其回Error statu
+             -s
+  74   3                      }
+  75   2                      if(gbt_enableCDROM & (!gc_bCBWLUN)){//09/05/06,joyce for remove device
+  76   3                              if(LBA.LW>=Capacity.LW){                                //防止超過remove size,會讀到CD-ROM area
+  77   4                                      gc_ErrorCode =0; 
+  78   4                                      tbt_RW_Buf =1;                          
+  79   4                              }
+  80   3                      }
+  81   2                      if (gc_ErrorCode||tbt_RW_Buf) {
+  82   3                              NoCard_ReadSectors();
+  83   3                              break;
+  84   3                      }
+  85   2                      NAND_FlashReadSector_Large();
+  86   2                      HPage.WD = 0;
+  87   2                      LBlock.WD++ ;
+  88   2                      HBlock.WD++;
+  89   2                      gbt_OddTemp = 0;
+  90   2                      gc_HInAddr =0;
+  91   2                      tbt_ChangeHBlock =1;
+  92   2                      #if 0 //20100330 Jay mark 
+                              HPage.WD = 0;
+                              gw_CylTemp++;
+                              HBlock.WD++;
+                              LBA.LW++;                                                                                       //09/06/02,joyce
+                              gbt_OddTemp = 0;
+                              #endif
+  99   2                      USB_PlugDetect();                                                                       // 081014 Jay add for usb plug out
+ 100   2                      if(!gbt_USB_Detected){
+ 101   3                              break;
+ 102   3                      }                       
+ 103   2              } while (TotalXferPageNum.WD);
+ 104   1      }
+ 105          
+ 106          
+ 107          void WriteSectors(void) 
+ 108          {
+ 109   1              gbt_OddTemp = 0;
+ 110   1              gc_ErrorCode = 0;
+ 111   1      
+ 112   1              Check_LBA_ID();
+ 113   1              if (gc_ErrorCode || gc_WriteProof||gbt_RW_UsbBuf) {
+ 114   2                      NoCard_WriteSectors();
+ 115   2              }
+C51 COMPILER V9.00   USB_CMDS                                                              07/10/2012 15:51:44 PAGE 3   
+
+ 116   1              else if((gc_CardType==0x01)&& gc_WriteProof)
+ 117   1              {
+ 118   2                      NoCard_WriteSectors();
+ 119   2              }
+ 120   1              else 
+ 121   1              {
+ 122   2                      switch(gc_CardType)
+ 123   2                      {
+ 124   3                              case 1:
+ 125   3                                      WriteATABlock();
+ 126   3                              break;
+ 127   3      
+ 128   3                              case 2:
+ 129   3                                      SD_WriteSectors_USB();
+ 130   3                              break;
+ 131   3      
+ 132   3                              default:
+ 133   3                                      NoCard_WriteSectors();
+ 134   3                              break;
+ 135   3                      }
+ 136   2              }
+ 137   1              gc_USBStage = CSWStage;
+ 138   1      }
+ 139          
+ 140          
+ 141          void NoCard_WriteSectors(void) 
+ 142          {
+ 143   1              USB_REG[0x11]  = 0x01;                                                                  //Turn on BulkOutEn, Turn off by data xfer done.
+ 144   1              USB_REG[0x19]  = 0x00;
+ 145   1              USB_REG[0x16]  = 0x02;
+ 146   1              USB_REG[0x15]  = 0x00;
+ 147   1              USB_REG[0xA1] |= 0x02;
+ 148   1              while ((USB_REG[0xA1] & 0x02));
+ 149   1              USB_REG[0xC2] &= 0xFD;
+ 150   1              USB_REG[0xE9]  = 0x02;
+ 151   1              USB_REG[0x11]  = 0x00;                                                                  //Turn-off BulkOutEn
+ 152   1              TotalXferPageNum.WD--;
+ 153   1              while (TotalXferPageNum.WD) 
+ 154   1              {
+ 155   2                      USB_REG[0x11]  = 0x01;                                                  //Turn on BulkOutEn, Turn off by data xfer done.
+ 156   2                      USB_REG[0x19]  = 0x00;
+ 157   2                      USB_REG[0x16]  = 0x02;
+ 158   2                      USB_REG[0x15]  = 0x00;
+ 159   2                      USB_REG[0xA1] |= 0x02;
+ 160   2                      while (USB_REG[0xA1] & 0x02){
+ 161   3                              USB_PlugDetect();                                                               // 081014 Jay add for usb plug out
+ 162   3                              if(!gbt_USB_Detected){
+ 163   4                                      return ;
+ 164   4                              }
+ 165   3                      }
+ 166   2                      USB_REG[0xC2] &= 0xFD;
+ 167   2                      USB_REG[0x11]  = 0x00;                                                  //Turn-off BulkOutEn
+ 168   2                      USB_REG[0xE9]  = 0x02;
+ 169   2                      TotalXferPageNum.WD--;
+ 170   2              }
+ 171   1      }
+ 172          
+ 173          
+ 174          void WriteATABlock(void) 
+ 175          {
+ 176   1              bit  tbt_RW_Buf;
+ 177   1              bit  tbt_ChangeHBlock;
+C51 COMPILER V9.00   USB_CMDS                                                              07/10/2012 15:51:44 PAGE 4   
+
+ 178   1              tbt_RW_Buf =0;
+ 179   1              tbt_ChangeHBlock =0;
+ 180   1              LBA2DBP();
+ 181   1              gbt_Force_SeqWrite_Mode =0;
+ 182   1              SetHBlockToHDev();
+ 183   1              do {     
+ 184   2                      if(tbt_ChangeHBlock){
+ 185   3                              SetHBlock_To_WhichGroup();
+ 186   3              }
+ 187   2       
+ 188   2                      if(gc_ErrorCode && gbt_Support_Dummy_Capacity){// 090416 add for dummy capacity             
+ 189   3                          gc_ErrorCode =0;                            // 若其已經超過Dummy capacity 只能等下一個CMD將其回Error
+             - status
+ 190   3                              tbt_RW_Buf =1;
+ 191   3                      }
+ 192   2      
+ 193   2                      if(gbt_enableCDROM & (!gc_bCBWLUN)){//09/05/06,joyce for remove device
+ 194   3                              if(LBA.LW>=Capacity.LW){                                        //防止超過remove size,會寫到CD-ROM area
+ 195   4                                      gc_ErrorCode =0;
+ 196   4                                      tbt_RW_Buf =1;
+ 197   4                              }
+ 198   3                      }
+ 199   2                      if (gc_ErrorCode||tbt_RW_Buf) {
+ 200   3                              NoCard_WriteSectors();
+ 201   3                              break;
+ 202   3                      }
+ 203   2                      NAND_FlashWriteSector_Large();
+ 204   2                      if(HPage.WD==H_INFO.wHBLOCKPAGE){
+ 205   3                              HPage.WD = 0;
+ 206   3                              HBlock.WD++;
+ 207   3                              gc_HInAddr =0;
+ 208   3                              gbt_OddTemp = 0;        
+ 209   3                              tbt_ChangeHBlock =1;
+ 210   3                              LBlock.WD++ ;
+ 211   3                              //dbprintf("\n Change to New HBlock :%x",HBlock.WD);
+ 212   3                      }
+ 213   2                      else{
+ 214   3                              gbt_OddTemp = 0;        
+ 215   3                              tbt_ChangeHBlock =0;
+ 216   3                      }
+ 217   2                      #if 0 //20100330 Jay mark 
+                              HPage.WD = 0x0000;
+                              gw_CylTemp++;
+                              HBlock.WD++;
+                              LBA.LW++;
+                              gbt_OddTemp = 0;                
+                              #endif
+ 224   2                      USB_PlugDetect();                                                                       // 081014 Jay add for usb plug out
+ 225   2                      if(!gbt_USB_Detected){
+ 226   3                              break;
+ 227   3                      }                               
+ 228   2              } while (TotalXferPageNum.WD);
+ 229   1      }
+ 230          
+ 231          
+ 232          
+ 233          void  NAND_FlashWriteSector_Large(void) {
+ 234   1              data    bit     tbt_SmartLastBI,tbt_Extend_Found, tbt_Random_Found,tbt_SmartRandom;    
+ 235   1              data    bit     tbt_HPage_Euq_Q2;                                                                               
+             -                                                                                                                        
+             -                                                           
+ 236   1              data    U8      tc_Extend_Count,tc_Random_Count;                                                                 
+C51 COMPILER V9.00   USB_CMDS                                                              07/10/2012 15:51:44 PAGE 5   
+
+             -                                                                                                                        
+             -                                                                          
+ 237   1              data    bit     tbt_DoSendCommand;      
+ 238   1              data    bit     tbt_PreLoadData;
+ 239   1              data    U8      tc_Operate_Mode;  
+ 240   1              data    U8      tc_XferPageCnt;
+ 241   1              data    U8      tc_Pre_XferCnt;
+ 242   1              data    U8      tc_Offset;
+ 243   1              //dbprintf("\n W:%lX , CNT:%x",LBA.LW,TotalXferPageNum.WD);
+ 244   1              USB_PlugDetect();
+ 245   1              if(!gbt_USB_Detected){
+ 246   2                      return ;
+ 247   2              }
+ 248   1              DEVICE_REG[0x00]|=0x10;  
+ 249   1              DEVICE_REG[0x00]&=0xEF;
+ 250   1              DEVICE_REG[0x00]= 0x01;
+ 251   1              #if 0 
+                      Flash_State_Initial();
+                      if (gbt_USBHostIsHighSpeed) {
+                              USB_REG[0x12]=0x01;
+                      }
+                      else{
+                              USB_REG[0x12]=0x00;
+                      }       
+                      if((TotalXferPageNum.WD==1)||(gc_HInAddr==(NAND_INFO.cINADDRMAX-1))){
+                              USB_Bank0_1_BulkOut(0,0);               
+                              gbt_USB_Data_In_Buf=1;
+                      }
+                      else{
+                              USB_Bank0_1_BulkOut(0,1);               
+                              gbt_USB_Data_In_Buf=1;
+                      }       
+                      USB_CHK_Bank0_1_BulkOut_Done(0);
+                      #endif
+ 269   1              if(!gbt_USB_Detected){
+ 270   2                      return;
+ 271   2              }               
+ 272   1              Check_LoadMap();        
+ 273   1              tbt_SmartLastBI = 0;
+ 274   1              tbt_SmartRandom =0;
+ 275   1              tbt_Extend_Found = 0;
+ 276   1              tbt_Random_Found =0;
+ 277   1              tbt_PreLoadData =0;
+ 278   1              tbt_DoSendCommand = 1;
+ 279   1              tbt_HPage_Euq_Q2 = 0;
+ 280   1              gbt_Send_80_81_CMD =0;
+ 281   1              gbt_Data_In_Buf    = 0;                 
+ 282   1              gc_Write_EDRS     = 0; 
+ 283   1              gbt_OddTemp      = 0;
+ 284   1              NAND_HPage_To_SBlock_SPage(); 
+ 285   1              for(tc_Extend_Count=0;tc_Extend_Count<Extend_NUM;tc_Extend_Count++){
+ 286   2                      if(Mapping_Table[EINX+tc_Extend_Count]==HBlock.WD){
+ 287   3                              tbt_SmartLastBI = 1;                    
+ 288   3                              gc_E_SBlock = (Mapping_Table[Q2_INX+tc_Extend_Count]>>8);
+ 289   3                              gc_E_SPage  =(U8)Mapping_Table[Q2_INX+tc_Extend_Count]; 
+ 290   3                              gc_Q1_SBlock = (Mapping_Table[Q1_INX+tc_Extend_Count]>>8);
+ 291   3                              QTable.WD =Mapping_Table[INVERTINX]; 
+ 292   3                              QTable.BY[0] =tc_Extend_Count;
+ 293   3                              Mapping_Table[INVERTINX] = QTable.WD;                   
+ 294   3                              if(gc_SBlock ==gc_E_SBlock){                             
+ 295   4                                      tbt_HPage_Euq_Q2 = 1;
+ 296   4                                      if(gc_SPage==gc_E_SPage){
+C51 COMPILER V9.00   USB_CMDS                                                              07/10/2012 15:51:44 PAGE 6   
+
+ 297   5                                                 
+ 298   5                                              tc_Operate_Mode=0x00;
+ 299   5                                      }   
+ 300   4                                      else if(gc_SPage<gc_E_SPage){
+ 301   5                                              tc_Operate_Mode = 0x01;
+ 302   5                                      }
+ 303   4                                      else{
+ 304   5                                              tc_Operate_Mode =0x02; 
+ 305   5                                      }                                                                                               
+ 306   4                              }
+ 307   3                              else if(gc_SBlock<gc_E_SBlock){ 
+ 308   4                                      tc_Operate_Mode=0x01;                                   
+ 309   4                              }      
+ 310   3                              else{                                                                   
+ 311   4                                      tc_Operate_Mode =0x02;  
+ 312   4                              }
+ 313   3                              break;
+ 314   3                       
+ 315   3                      }
+ 316   2              }
+ 317   1              if(!tbt_SmartLastBI){ 
+ 318   2      
+ 319   2                              for(tc_Random_Count=0;tc_Random_Count<MAX_RANDOM_HBLOCK;tc_Random_Count++){
+ 320   3                                      if(Wear_Table[RINX+tc_Random_Count]==HBlock.WD){
+ 321   4                                              tbt_SmartRandom= 1;                                             
+ 322   4                                              break;
+ 323   4                                      }
+ 324   3                              }
+ 325   2                              
+ 326   2                              if(tbt_SmartRandom){
+ 327   3                                      //if((TotalXferPageNum.WD>=RANDOM_MAX_SECTORCNT)||gbt_Force_SeqWrite_Mode){  
+ 328   3                                      if((TotalXferPageNum.WD>RANDOM_MAX_SECTORCNT)||gbt_Force_SeqWrite_Mode){
+ 329   4                                              gbt_Force_SeqWrite_Mode=0;
+ 330   4                                              for(tc_Extend_Count=0;tc_Extend_Count<Extend_NUM;tc_Extend_Count++){
+ 331   5                                                      if(Mapping_Table[EINX+tc_Extend_Count]==0xFFFF){
+ 332   6                                                              tbt_Extend_Found = 1;
+ 333   6                                                              QTable.WD =Mapping_Table[INVERTINX]; 
+ 334   6                                                              QTable.BY[0] =tc_Extend_Count;
+ 335   6                                                              Mapping_Table[INVERTINX] = QTable.WD;                                   
+ 336   6                                                              break;
+ 337   6                                                      }
+ 338   5                                              }
+ 339   4                                              tc_Operate_Mode = 0x03;                         
+ 340   4                                      }
+ 341   3                                      else{
+ 342   4                                              tc_Operate_Mode=0x04;   
+ 343   4                                              QTable.WD =Mapping_Table[INVERTINX]; 
+ 344   4                                              QTable.BY[1] =tc_Random_Count;
+ 345   4                                              Mapping_Table[INVERTINX] = QTable.WD;           
+ 346   4                                      }               
+ 347   3                              }
+ 348   2                              else{
+ 349   3                                      //if((TotalXferPageNum.WD>=RANDOM_MAX_SECTORCNT)||gbt_Force_SeqWrite_Mode){
+ 350   3                                      if((TotalXferPageNum.WD>RANDOM_MAX_SECTORCNT)||gbt_Force_SeqWrite_Mode){          
+ 351   4                                              gbt_Force_SeqWrite_Mode=0;
+ 352   4                                              for(tc_Extend_Count=0;tc_Extend_Count<Extend_NUM;tc_Extend_Count++){
+ 353   5                                                      if(Mapping_Table[EINX+tc_Extend_Count]==0xFFFF){
+ 354   6                                                              tbt_Extend_Found = 1;
+ 355   6                                                              QTable.WD =Mapping_Table[INVERTINX]; 
+ 356   6                                                              QTable.BY[0] =tc_Extend_Count;
+ 357   6                                                              Mapping_Table[INVERTINX] = QTable.WD;                                                   
+ 358   6                                                              break;
+C51 COMPILER V9.00   USB_CMDS                                                              07/10/2012 15:51:44 PAGE 7   
+
+ 359   6                                                      }
+ 360   5                                              }
+ 361   4                                              tc_Operate_Mode = 0x05 ;        
+ 362   4                                      }
+ 363   3                                      else{
+ 364   4                                              for(tc_Random_Count=0;tc_Random_Count<MAX_RANDOM_HBLOCK;tc_Random_Count++){
+ 365   5                                                      if(Wear_Table[RINX+tc_Random_Count]==0xFF){
+ 366   6                                                              tbt_Random_Found = 1;
+ 367   6                                                              QTable.WD =Mapping_Table[INVERTINX]; 
+ 368   6                                                              QTable.BY[1] =tc_Random_Count;
+ 369   6                                                              Mapping_Table[INVERTINX] = QTable.WD;
+ 370   6                                                              break;
+ 371   6                                                      }
+ 372   5                                              }               
+ 373   4                                              tc_Operate_Mode =0x06;
+ 374   4                                      }
+ 375   3                              }
+ 376   2                      
+ 377   2                              
+ 378   2              }                                                                                                        
+             -                                                                                                                        
+             -                         
+ 379   1              
+ 380   1              
+ 381   1              DEVICE_REG[0x0F] =gc_HDev;
+ 382   1              CHK_Flash_Ready();      
+ 383   1              FlashReset();
+ 384   1              LoadBlock_From_MAP(0);  
+ 385   1              CHK_Flash_Ready();
+ 386   1              Flash_State_Initial();
+ 387   1              #if 1
+ 388   1              if (gbt_USBHostIsHighSpeed) {
+ 389   2                      USB_REG[0x12]=0x01;
+ 390   2              }
+ 391   1              else{
+ 392   2                      USB_REG[0x12]=0x00;
+ 393   2              }       
+ 394   1              if((TotalXferPageNum.WD==1)||(gc_HInAddr==(NAND_INFO.cINADDRMAX-1))){
+ 395   2                      USB_Bank0_1_BulkOut(0,0);               
+ 396   2                      gbt_USB_Data_In_Buf=1;
+ 397   2              }
+ 398   1              else{
+ 399   2                      USB_Bank0_1_BulkOut(0,1);               
+ 400   2                      gbt_USB_Data_In_Buf=1;
+ 401   2              }       
+ 402   1              USB_CHK_Bank0_1_BulkOut_Done(0);
+ 403   1              #endif
+ 404   1              //--- chk pre_load data ----//
+ 405   1              if((gc_HInAddr+ TotalXferPageNum.WD)<NAND_INFO.cINADDRMAX){     
+ 406   2                      tbt_PreLoadData =1;             
+ 407   2              }       
+ 408   1              
+ 409   1              if(tbt_SmartLastBI){ //EXT  mode  
+ 410   2                      Load_E_D_Block_From_MAP(0,tc_Extend_Count);
+ 411   2                      gc_Q1_SBlock = (Mapping_Table[Q1_INX+tc_Extend_Count]>>8);
+ 412   2                      gc_E_SBlock = (Mapping_Table[Q2_INX+tc_Extend_Count]>>8);
+ 413   2                      gc_E_SPage  =(U8)Mapping_Table[Q2_INX+tc_Extend_Count]; 
+ 414   2                      if(tc_Operate_Mode==0x00){
+ 415   3                              if(gc_HInAddr||tbt_PreLoadData){ 
+ 416   4                                      APort_FBlock[0]= APort_LBlock[0];                                       
+ 417   4                                      gw_SourcePage=((U16)gc_SBlock*H_INFO.cSMALLPAGE_NUM)+gc_SPage;
+ 418   4                                      NAND_Laod_Data_To_Buf(gw_SourcePage,0);
+C51 COMPILER V9.00   USB_CMDS                                                              07/10/2012 15:51:44 PAGE 8   
+
+ 419   4                                      gbt_Data_In_Buf=1;
+ 420   4                              }
+ 421   3                              gw_TargetPage = ((U16)gc_SBlock*H_INFO.cSMALLPAGE_NUM)+gc_SPage;
+ 422   3                              gc_Write_EDRS =0x00; 
+ 423   3                      }                       
+ 424   2                      if(tc_Operate_Mode==0x01){
+ 425   3                              if(tbt_HPage_Euq_Q2&&(gc_E_SPage>0)){
+ 426   4                                      NAND_Close_E_SBlock(tc_Extend_Count);                   
+ 427   4                              }       
+ 428   3                      gc_T_SBlock =(U8)Mapping_Table[Q1_INX+tc_Extend_Count];
+ 429   3                      if(gc_T_SBlock==H_INFO.cSMALLBLOCK_NUM){
+ 430   4                              NAND_Close_Dummy_Block(tc_Extend_Count); 
+ 431   4                              gc_T_SBlock =(U8)Mapping_Table[Q1_INX+tc_Extend_Count];                 
+ 432   4                      }                       
+ 433   3                              if(CHK_DSBlock_Exist_Or_New(tc_Extend_Count,gc_SBlock,1)){
+ 434   4                                      QTable.WD=Mapping_Table[Q2_INX+tc_Extend_Count];
+ 435   4                                      NAND_Combin_E_D_To_New_E(tc_Extend_Count ,QTable.BY[0]);
+ 436   4                                      gc_T_SBlock =(U8)Mapping_Table[Q1_INX+tc_Extend_Count];                 
+ 437   4                              }                               
+ 438   3                      CHK_DSBlock_Exist_Or_New(tc_Extend_Count,gc_SBlock,1);
+ 439   3                      if(SQTable.WD== 0x0000){  
+ 440   4                                      if(gc_HInAddr||tbt_PreLoadData){
+ 441   5                                              if(gc_SBlock<gc_Q1_SBlock){
+ 442   6                                                      APort_FBlock[0] =APort_LBlock[0];
+ 443   6                                              }
+ 444   5                                              else{
+ 445   6                                                      APort_FBlock[0]= APort_EBlock[0];
+ 446   6                                              }                                                       
+ 447   5                                              gw_SourcePage=((U16)gc_SBlock*H_INFO.cSMALLPAGE_NUM)+gc_SPage;
+ 448   5                                              NAND_Laod_Data_To_Buf(gw_SourcePage,0);
+ 449   5                                              gbt_Data_In_Buf=1;
+ 450   5                                      }
+ 451   4                                      SQTable.BY[0] =gc_SPage;
+ 452   4                                      gw_TargetPage=((U16)gc_T_SBlock*H_INFO.cSMALLPAGE_NUM)+0;
+ 453   4                              }       
+ 454   3                              else{
+ 455   4                                      if(gc_SPage<SQTable.BY[0]){     
+ 456   5                                              if(gc_HInAddr||tbt_PreLoadData){
+ 457   6                                                      if(gc_SBlock<gc_Q1_SBlock){
+ 458   7                                                              APort_FBlock[0] =APort_LBlock[0];
+ 459   7                                                      }
+ 460   6                                                      else{
+ 461   7                                                              APort_FBlock[0]= APort_EBlock[0];
+ 462   7                                                      }                                       
+ 463   6                                                      gw_SourcePage=((U16)gc_SBlock*H_INFO.cSMALLPAGE_NUM)+gc_SPage;
+ 464   6                                                      NAND_Laod_Data_To_Buf(gw_SourcePage,0);
+ 465   6                                                      gbt_Data_In_Buf=1;
+ 466   6                                              }
+ 467   5                                              SQTable.BY[0] = gc_SPage;                               
+ 468   5                                              gw_TargetPage=((U16)gc_T_SBlock*H_INFO.cSMALLPAGE_NUM)+0;                                       
+ 469   5                                      }       
+ 470   4                                      else if((SQTable.BY[0]<=gc_SPage)&&(gc_SPage<SQTable.BY[1])){
+ 471   5                                              APort_FBlock[0]= APort_DBlock[0];
+ 472   5                                              APort_FBlock[1]= APort_DBlock[0];
+ 473   5                                              gw_SourcePage=((U16)gc_D_SBlock*H_INFO.cSMALLPAGE_NUM)+0;
+ 474   5                                      gw_TargetPage=((U16)gc_T_SBlock*H_INFO.cSMALLPAGE_NUM)+0;                                       
+ 475   5                                              ZSpare[0] = 0x5A;               ZSpare[1] = gc_SBlock;
+ 476   5                                              ZSpare[2] = HBlock.WD;  ZSpare[3] = SQTable.BY[0];      
+ 477   5                                              ZSpare[4] = 0x5A;               ZSpare[5] = gc_SBlock;
+ 478   5                                              ZSpare[6] = HBlock.WD;  ZSpare[7] = SQTable.BY[0];                              
+ 479   5                                              tc_XferPageCnt = gc_SPage-SQTable.BY[0];
+ 480   5                                              RW_Data_Stage(gw_SourcePage,gw_TargetPage,tc_XferPageCnt );
+C51 COMPILER V9.00   USB_CMDS                                                              07/10/2012 15:51:44 PAGE 9   
+
+ 481   5                                              if(gc_HInAddr||tbt_PreLoadData){ 
+ 482   6                                                      APort_FBlock[0]= APort_DBlock[0];                                       
+ 483   6                                                      gw_SourcePage=((U16)gc_D_SBlock*H_INFO.cSMALLPAGE_NUM)+(gc_SPage-SQTable.BY[0]);
+ 484   6                                                      NAND_Laod_Data_To_Buf(gw_SourcePage,0);
+ 485   6                                                      gbt_Data_In_Buf=1;
+ 486   6                                              }
+ 487   5                                              gw_TargetPage=gw_TargetPage+tc_XferPageCnt;
+ 488   5                                                                                      
+ 489   5                                      }
+ 490   4                                      else{
+ 491   5                                              
+ 492   5                                              APort_FBlock[0]= APort_DBlock[0];
+ 493   5                                              APort_FBlock[1]= APort_DBlock[0];
+ 494   5                                              tc_XferPageCnt = SQTable.BY[1]-SQTable.BY[0];
+ 495   5                                              gw_SourcePage=((U16)gc_D_SBlock*H_INFO.cSMALLPAGE_NUM)+0;
+ 496   5                                      gw_TargetPage=((U16)gc_T_SBlock*H_INFO.cSMALLPAGE_NUM)+0;                                       
+ 497   5                                              ZSpare[0] = 0x5A;               ZSpare[1] = gc_SBlock;
+ 498   5                                              ZSpare[2] = HBlock.WD;  ZSpare[3] = SQTable.BY[0];
+ 499   5                                              ZSpare[4] = 0x5A;               ZSpare[5] = gc_SBlock;
+ 500   5                                              ZSpare[6] = HBlock.WD;  ZSpare[7] = SQTable.BY[0];                                      
+ 501   5                                              RW_Data_Stage(gw_SourcePage,gw_TargetPage,tc_XferPageCnt );
+ 502   5                                      
+ 503   5                                              if(gc_SBlock<gc_Q1_SBlock){
+ 504   6                                                      APort_FBlock[0] =APort_LBlock[0];
+ 505   6                                              }
+ 506   5                                              else{
+ 507   6                                                      APort_FBlock[0]= APort_EBlock[0];
+ 508   6                                              }
+ 509   5                                              APort_FBlock[1]= APort_DBlock[0];
+ 510   5                                              tc_XferPageCnt = gc_SPage-SQTable.BY[1];
+ 511   5                                              gw_SourcePage=((U16)gc_SBlock*H_INFO.cSMALLPAGE_NUM)+SQTable.BY[1];
+ 512   5                                      gw_TargetPage=((U16)gc_T_SBlock*H_INFO.cSMALLPAGE_NUM)+(SQTable.BY[1]-SQTable.BY[0]);                                   
+ 513   5                                              RW_Data_Stage(gw_SourcePage,gw_TargetPage,tc_XferPageCnt );
+ 514   5                                              if(gc_HInAddr||tbt_PreLoadData){ 
+ 515   6                                                      if(gc_SBlock<gc_Q1_SBlock){
+ 516   7                                                              APort_FBlock[0] =APort_LBlock[0];
+ 517   7                                                      }
+ 518   6                                                      else{
+ 519   7                                                              APort_FBlock[0]= APort_EBlock[0];
+ 520   7                                                      }                               
+ 521   6                                                      gw_SourcePage=((U16)gc_SBlock*H_INFO.cSMALLPAGE_NUM)+gc_SPage;
+ 522   6                                                      NAND_Laod_Data_To_Buf(gw_SourcePage,0);
+ 523   6                                                      gbt_Data_In_Buf=1;
+ 524   6                                              }
+ 525   5                                              gw_TargetPage=gw_TargetPage+tc_XferPageCnt;     
+ 526   5                                                                      
+ 527   5                                      }                               
+ 528   4                              }
+ 529   3                      
+ 530   3                      gc_Write_EDRS =0x01;                            
+ 531   3                      }
+ 532   2                      if(tc_Operate_Mode==0x02){                      
+ 533   3                      
+ 534   3                              if(tbt_HPage_Euq_Q2){
+ 535   4                                      NAND_Fill_H2E_SPage(tc_Extend_Count, gc_SPage);
+ 536   4                              }
+ 537   3                              else{                           
+ 538   4                                      if(gc_E_SPage>0){  
+ 539   5                                              NAND_Close_E_SBlock(tc_Extend_Count);   
+ 540   5                                      }       
+ 541   4                                      NAND_Fill_H2E_SBlock(tc_Extend_Count,gc_SBlock);
+ 542   4                                      NAND_Fill_H2E_SPage(tc_Extend_Count, gc_SPage);
+C51 COMPILER V9.00   USB_CMDS                                                              07/10/2012 15:51:44 PAGE 10  
+
+ 543   4                              }
+ 544   3                              if(gc_HInAddr||tbt_PreLoadData){ 
+ 545   4                                      APort_FBlock[0]= APort_LBlock[0];                                       
+ 546   4                                      gw_SourcePage=((U16)gc_SBlock*H_INFO.cSMALLPAGE_NUM)+gc_SPage;
+ 547   4                                      NAND_Laod_Data_To_Buf(gw_SourcePage,0);
+ 548   4                                      gbt_Data_In_Buf=1;
+ 549   4                              }                               
+ 550   3                              gw_TargetPage = ((U16)gc_SBlock*H_INFO.cSMALLPAGE_NUM)+gc_SPage;        
+ 551   3                              gc_Write_EDRS =0x00;            
+ 552   3                                      
+ 553   3                      }                                                                                                                    
+             -                                                                                                                        
+             -                    
+ 554   2              }
+ 555   1              else if(tbt_SmartRandom){
+ 556   2                      if(tc_Operate_Mode==0x03){ 
+ 557   3                              NAND_Combin_H_R_To_New_H(tc_Random_Count);              
+ 558   3                                      
+ 559   3                              if(!tbt_Extend_Found ){
+ 560   4                                      QTable.WD =Mapping_Table[INVERTINX]; 
+ 561   4                                      tc_Extend_Count = (QTable.BY[0]+1)&(Extend_NUM-1);
+ 562   4                                      QTable.BY[0] =tc_Extend_Count;
+ 563   4                                      Mapping_Table[INVERTINX] = QTable.WD;
+ 564   4                              
+ 565   4                                      tc_Offset = Mapping_Table[EINX+tc_Extend_Count];                        
+ 566   4                                      APort_LBlock[0] = Mapping_Table[tc_Offset];
+ 567   4                                      APort_LCNT[0] = Wear_Table[tc_Offset];
+ 568   4                                      Load_E_D_Block_From_MAP(0,tc_Extend_Count);                             
+ 569   4                              
+ 570   4                                      NAND_Combin_H_E_D_To_New_H(tc_Extend_Count);
+ 571   4                                              
+ 572   4                              }
+ 573   3                              LoadBlock_From_MAP(0);
+ 574   3                              Load_E_D_Block_From_MAP(0,tc_Extend_Count);         
+ 575   3                              Mapping_Table[EINX+tc_Extend_Count] =HBlock.WD;
+ 576   3                              
+ 577   3                              NAND_Update_PWR_INX(tc_Extend_Count);
+ 578   3                              if(gc_SBlock>(H_INFO.cSMALLBLOCK_NUM>>COPY_OR_PASS)){
+ 579   4                                      QTable.WD= Mapping_Table[Q1_INX+tc_Extend_Count];
+ 580   4                                      QTable.BY[0] =gc_SBlock;
+ 581   4                                      Mapping_Table[Q1_INX+tc_Extend_Count]=QTable.WD;
+ 582   4                                      QTable.BY[0] =gc_SBlock;
+ 583   4                                      QTable.BY[1] =0x00;
+ 584   4                                      Mapping_Table[Q2_INX+tc_Extend_Count]= QTable.WD;
+ 585   4                                      NAND_Write_Q1_Mark(tc_Extend_Count);                    
+ 586   4                              }
+ 587   3                              else{   
+ 588   4                                      QTable.WD= Mapping_Table[Q1_INX+tc_Extend_Count];
+ 589   4                                      QTable.BY[0] =0;
+ 590   4                                      Mapping_Table[Q1_INX+tc_Extend_Count]=QTable.WD;
+ 591   4                                      Mapping_Table[Q2_INX+tc_Extend_Count]= 0x0000;                  
+ 592   4                              }                       
+ 593   3                              NAND_Fill_H2E_SBlock(tc_Extend_Count,gc_SBlock);
+ 594   3                              NAND_Fill_H2E_SPage(tc_Extend_Count,gc_SPage);
+ 595   3                      
+ 596   3                              if(gc_HInAddr||tbt_PreLoadData){
+ 597   4                                      APort_FBlock[0]= APort_LBlock[0];                                       
+ 598   4                                      gw_SourcePage=((U16)gc_SBlock*H_INFO.cSMALLPAGE_NUM)+gc_SPage;
+ 599   4                                      NAND_Laod_Data_To_Buf(gw_SourcePage,0);
+ 600   4                                      gbt_Data_In_Buf=1;
+ 601   4                              }
+ 602   3                              gw_TargetPage=((U16)gc_SBlock*H_INFO.cSMALLPAGE_NUM)+gc_SPage;
+C51 COMPILER V9.00   USB_CMDS                                                              07/10/2012 15:51:44 PAGE 11  
+
+ 603   3                              gc_Write_EDRS =0x00;
+ 604   3                              tbt_SmartLastBI=1;
+ 605   3                              tbt_SmartRandom=0;      
+ 606   3                      }
+ 607   2                      if(tc_Operate_Mode==0x04){
+ 608   3                              if(CHK_RandomPage_Exist(tc_Random_Count,HPage.WD)){
+ 609   4                                      gw_R_SPage=Mapping_Table[RPAGEINX];                             
+ 610   4                                      if(gw_R_SPage== H_INFO.wHBLOCKPAGE){
+ 611   5                                              NAND_Close_Random_Block();                 
+ 612   5                                              gw_R_SPage = Mapping_Table[RPAGEINX];
+ 613   5                                      }
+ 614   4                                      if(gc_HInAddr||tbt_PreLoadData){ 
+ 615   5                                              APort_FBlock[0]= APort_RBlock[0];                                       
+ 616   5                                              tc_Offset = (tc_Random_Count*MAX_RANDOM_HPAGE); 
+ 617   5                                              gw_SourcePage=Mapping_Table[R_PAGE+tc_Offset+gc_NowIndex];
+ 618   5                                              NAND_Laod_Data_To_Buf(gw_SourcePage,0);
+ 619   5                                              gbt_Data_In_Buf=1;
+ 620   5                                      }                                               
+ 621   4                              }
+ 622   3                              else if(CHK_RandomPage_Space(tc_Random_Count)){
+ 623   4                                      gw_R_SPage=Mapping_Table[RPAGEINX];                             
+ 624   4                                      if(gw_R_SPage==H_INFO.wHBLOCKPAGE){
+ 625   5                                              NAND_Close_Random_Block();
+ 626   5                                              gw_R_SPage = Mapping_Table[RPAGEINX];              
+ 627   5                                      }
+ 628   4                                      if(gc_HInAddr||tbt_PreLoadData){                                        
+ 629   5                                              APort_FBlock[0]= APort_LBlock[0];                                       
+ 630   5                                              gw_SourcePage=HPage.WD;
+ 631   5                                              NAND_Laod_Data_To_Buf(gw_SourcePage,0);
+ 632   5                                              gbt_Data_In_Buf=1;
+ 633   5                                      }                                       
+ 634   4                              }
+ 635   3                              else{
+ 636   4                                              
+ 637   4                                      NAND_Combin_H_R_To_New_H(tc_Random_Count);
+ 638   4                              
+ 639   4                                      gw_R_SPage=Mapping_Table[RPAGEINX];                              
+ 640   4                                      if(gw_R_SPage==H_INFO.wHBLOCKPAGE){
+ 641   5                                              NAND_Close_Random_Block();
+ 642   5                                              gw_R_SPage = Mapping_Table[RPAGEINX];              
+ 643   5                                      }                       
+ 644   4                                      Wear_Table[RINX+tc_Random_Count] =HBlock.WD;
+ 645   4                                      CHK_RandomPage_Space(tc_Random_Count);                  
+ 646   4                                      if(gc_HInAddr||tbt_PreLoadData){ 
+ 647   5                                              APort_FBlock[0]= APort_LBlock[0];                                       
+ 648   5                                              gw_SourcePage=HPage.WD;
+ 649   5                                              NAND_Laod_Data_To_Buf(gw_SourcePage,0);
+ 650   5                                              gbt_Data_In_Buf=1;
+ 651   5                                      }
+ 652   4                              }
+ 653   3                              
+ 654   3                              gw_TargetPage=gw_R_SPage;
+ 655   3                              gc_Write_EDRS =0x02;
+ 656   3                      }       
+ 657   2              }
+ 658   1              else{
+ 659   2                      if(tc_Operate_Mode==0x05){
+ 660   3                              if(!tbt_Extend_Found ){                         
+ 661   4                                      QTable.WD =Mapping_Table[INVERTINX]; 
+ 662   4                                      tc_Extend_Count = (QTable.BY[0]+1)&(Extend_NUM-1);
+ 663   4                                      QTable.BY[0] =tc_Extend_Count;
+ 664   4                                      Mapping_Table[INVERTINX] = QTable.WD;
+C51 COMPILER V9.00   USB_CMDS                                                              07/10/2012 15:51:44 PAGE 12  
+
+ 665   4                                      
+ 666   4                                      tc_Offset = Mapping_Table[EINX+tc_Extend_Count];                        
+ 667   4                                      APort_LBlock[0] = Mapping_Table[tc_Offset];
+ 668   4                                      APort_LCNT[0] = Wear_Table[tc_Offset];
+ 669   4                                      Load_E_D_Block_From_MAP(0,tc_Extend_Count);                             
+ 670   4                                      
+ 671   4                                      NAND_Combin_H_E_D_To_New_H(tc_Extend_Count);
+ 672   4                                      
+ 673   4                              }
+ 674   3                              LoadBlock_From_MAP(0);
+ 675   3                              Load_E_D_Block_From_MAP(0,tc_Extend_Count);     
+ 676   3                      
+ 677   3                              Mapping_Table[EINX+tc_Extend_Count] =HBlock.WD;
+ 678   3                              NAND_Update_PWR_INX(tc_Extend_Count);
+ 679   3                              if(gc_SBlock>(H_INFO.cSMALLBLOCK_NUM>>COPY_OR_PASS)){
+ 680   4                                      QTable.WD= Mapping_Table[Q1_INX+tc_Extend_Count];
+ 681   4                                      QTable.BY[0] =gc_SBlock;
+ 682   4                                      Mapping_Table[Q1_INX+tc_Extend_Count]=QTable.WD;
+ 683   4                                      QTable.BY[0] =gc_SBlock;
+ 684   4                                      QTable.BY[1] =0x00;
+ 685   4                                      Mapping_Table[Q2_INX+tc_Extend_Count]= QTable.WD;
+ 686   4                                      NAND_Write_Q1_Mark(tc_Extend_Count);                    
+ 687   4                              }
+ 688   3                              else{   
+ 689   4                                      QTable.WD= Mapping_Table[Q1_INX+tc_Extend_Count];
+ 690   4                                      QTable.BY[0] =0;
+ 691   4                                      Mapping_Table[Q1_INX+tc_Extend_Count]=QTable.WD;
+ 692   4                                      Mapping_Table[Q2_INX+tc_Extend_Count]= 0x0000;                  
+ 693   4                              }
+ 694   3                              NAND_Fill_H2E_SBlock(tc_Extend_Count,gc_SBlock);
+ 695   3                              NAND_Fill_H2E_SPage(tc_Extend_Count,gc_SPage);                  
+ 696   3                              if(gc_HInAddr||tbt_PreLoadData){
+ 697   4                                      APort_FBlock[0]= APort_LBlock[0];                                       
+ 698   4                                      gw_SourcePage=((U16)gc_SBlock*H_INFO.cSMALLPAGE_NUM)+gc_SPage;
+ 699   4                                      NAND_Laod_Data_To_Buf(gw_SourcePage,0);
+ 700   4                                      gbt_Data_In_Buf=1;
+ 701   4                              }                       
+ 702   3                              gw_TargetPage=((U16)gc_SBlock*H_INFO.cSMALLPAGE_NUM)+gc_SPage;
+ 703   3                              gc_Write_EDRS =0x00;
+ 704   3                              tbt_SmartLastBI=1;
+ 705   3                              
+ 706   3                      }
+ 707   2                      if(tc_Operate_Mode==0x06){
+ 708   3                              if(!tbt_Random_Found){
+ 709   4                                      QTable.WD =Mapping_Table[INVERTINX]; 
+ 710   4                                      tc_Random_Count = (QTable.BY[1]+1)&(MAX_RANDOM_HBLOCK-1);
+ 711   4                                      QTable.BY[1] =tc_Random_Count;
+ 712   4                                      Mapping_Table[INVERTINX] = QTable.WD;
+ 713   4                                      
+ 714   4                                      tc_Offset = Wear_Table[RINX+tc_Random_Count];                   
+ 715   4                                      APort_LBlock[0] = Mapping_Table[tc_Offset];
+ 716   4                                      APort_LCNT[0] = Wear_Table[tc_Offset];
+ 717   4                                      
+ 718   4                                      NAND_Combin_H_R_To_New_H(tc_Random_Count);                              
+ 719   4                                      
+ 720   4                              }               
+ 721   3                              LoadBlock_From_MAP(0);
+ 722   3                      
+ 723   3                              gw_R_SPage = Mapping_Table[RPAGEINX];
+ 724   3                              if(gw_R_SPage==H_INFO.wHBLOCKPAGE){
+ 725   4                                      NAND_Close_Random_Block();
+ 726   4                                      gw_R_SPage = Mapping_Table[RPAGEINX];              
+C51 COMPILER V9.00   USB_CMDS                                                              07/10/2012 15:51:44 PAGE 13  
+
+ 727   4                              }                       
+ 728   3                              Wear_Table[RINX+tc_Random_Count] = HBlock.WD;
+ 729   3                              CHK_RandomPage_Space(tc_Random_Count);
+ 730   3                              if(gc_HInAddr||tbt_PreLoadData){ 
+ 731   4                                      APort_FBlock[0]= APort_LBlock[0];                                       
+ 732   4                                      gw_SourcePage=HPage.WD;
+ 733   4                                      NAND_Laod_Data_To_Buf(gw_SourcePage,0);
+ 734   4                                      gbt_Data_In_Buf=1;
+ 735   4                              }                       
+ 736   3                              gw_TargetPage = gw_R_SPage;
+ 737   3                              gc_Write_EDRS =0x02; 
+ 738   3                      }               
+ 739   2              }
+ 740   1              #if EN_WEAR_LEVELING
+ 741   1              if(Wear_Table[SCNT]>=0xF0){
+ 742   2      //              dbprintf("\n Zone:%x ,SBLK:%x ",gw_WhichGroup,Mapping_Table[SBK]);
+ 743   2                      NAND_Update_WearBlock(gc_HDev);
+ 744   2              }       
+ 745   1              #endif
+ 746   1              
+ 747   1              LoadBlock_From_MAP(0);
+ 748   1              if(tbt_SmartLastBI){
+ 749   2                      Load_E_D_Block_From_MAP(0,tc_Extend_Count);
+ 750   2                      gc_E_SBlock = (Mapping_Table[Q2_INX+tc_Extend_Count]>>8);
+ 751   2                      gc_E_SPage  =(U8)Mapping_Table[Q2_INX+tc_Extend_Count]; 
+ 752   2                      gc_Q1_SBlock = (Mapping_Table[Q1_INX+tc_Extend_Count]>>8);
+ 753   2              }
+ 754   1              
+ 755   1              NAND_Set_FBlock(gc_Write_EDRS);
+ 756   1              
+ 757   1              if((tc_Operate_Mode==0x04)||(tc_Operate_Mode==0x06)){
+ 758   2                      
+ 759   2              
+ 760   2                      NAND_Set_Spare_Data(gc_Write_EDRS,tc_Random_Count);
+ 761   2                      if(gc_HInAddr){
+ 762   3                              tc_XferPageCnt= NAND_INFO.cINADDRMAX-gc_HInAddr;
+ 763   3                      }
+ 764   2                      else{   
+ 765   3                              tc_XferPageCnt = NAND_INFO.cINADDRMAX;
+ 766   3                      }
+ 767   2                      tc_Pre_XferCnt = (tc_XferPageCnt<=TotalXferPageNum.WD)? tc_XferPageCnt: TotalXferPageNum.WD;
+ 768   2                      
+ 769   2                      USB_Rcevie_Data_To_BUf(gc_HInAddr,tc_Pre_XferCnt);      
+ 770   2                      if(!gbt_USB_Detected){
+ 771   3                              goto USB_Plug_Out;
+ 772   3                      }               
+ 773   2                      TotalXferPageNum.WD-= tc_Pre_XferCnt;
+ 774   2                      Device_Write_SRAM_Index.BY[0] = 0x80;                   
+ 775   2                      Device_Write_SRAM_Index.BY[1] = 0x00;
+ 776   2                      NAND_SBlock_SPage_To_FDBP();
+ 777   2                      Flash_Sequent_Write(NAND_INFO.cINADDRMAX,1);    
+ 778   2                      
+ 779   2                      tc_Offset = (tc_Random_Count *MAX_RANDOM_HPAGE)+gc_NowIndex; 
+ 780   2                      Mapping_Table[R_HPAGE+tc_Offset] = HPage.WD;
+ 781   2                      Mapping_Table[R_PAGE+tc_Offset]  =  gw_TargetPage;
+ 782   2                      Wear_Table[RINX+tc_Random_Count] = HBlock.WD; 
+ 783   2                      gw_R_SPage++;
+ 784   2                      HPage.WD++;
+ 785   2                      gc_HInAddr=0;
+ 786   2                      Mapping_Table[RPAGEINX] =gw_R_SPage;
+ 787   2                      BMT_KEY[gw_NowBMTPoint]=1;
+ 788   2      
+C51 COMPILER V9.00   USB_CMDS                                                              07/10/2012 15:51:44 PAGE 14  
+
+ 789   2              }
+ 790   1              else{
+ 791   2                              
+ 792   2                      if(tc_Operate_Mode==0x01){
+ 793   3                              NAND_Set_Spare_Data(gc_Write_EDRS,tc_Extend_Count);
+ 794   3                              NAND_OverWrite_Mode(tc_Extend_Count);           
+ 795   3                              if(!gbt_USB_Detected){
+ 796   4                                      goto USB_Plug_Out;
+ 797   4                              }
+ 798   3                              
+ 799   3                      }
+ 800   2                      else{ 
+ 801   3                              
+ 802   3                              NAND_Set_Spare_Data(gc_Write_EDRS,tc_Extend_Count);
+ 803   3                              NAND_SequentWrite_Mode(tc_Extend_Count);
+ 804   3                              gbt_Force_SeqWrite_Mode =1;
+ 805   3                              if(!gbt_USB_Detected){
+ 806   4                                      goto USB_Plug_Out;
+ 807   4                              }               
+ 808   3                      
+ 809   3                      }
+ 810   2                      BMT_KEY[gw_NowBMTPoint]=1;
+ 811   2              }
+ 812   1                              
+ 813   1      USB_Plug_Out:
+ 814   1              
+ 815   1              if(!gbt_USB_Detected){          
+ 816   2                      DMA_REG[0xC0] =0x00;
+ 817   2                      DEVICE_REG[0x00]|=0x10;                                                                 // 將Flash module reset
+ 818   2                      DEVICE_REG[0x00]&=0xEF;
+ 819   2                      DEVICE_REG[0x00]= 0x01;
+ 820   2                      FLASH_REG[0x06] = 0xFF;
+ 821   2                      FLASH_REG[0x04] = 0x08;
+ 822   2                      CHK_Flash_Ready();
+ 823   2                      FLASH_REG[0x03] = 0x01;         
+ 824   2      
+ 825   2               }
+ 826   1              
+ 827   1      
+ 828   1      }
+ 829          
+ 830          
+ 831          
+ 832          
+ 833          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   3944    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       6
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----      11
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

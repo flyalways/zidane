@@ -1,0 +1,480 @@
+C51 COMPILER V9.00   HOST_COMMAND_SCSI                                                     07/10/2012 15:51:55 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE HOST_COMMAND_SCSI
+OBJECT MODULE PLACED IN .\obj\Host_command_scsi.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE Host\Host_command_scsi.c LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDIR(..\li
+                    -bsource\header) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\Host_command_scsi.lst) OBJECT(.\obj\Host_command_sc
+                    -si.obj)
+
+line level    source
+
+   1          #include "SPDA2K.h"
+   2          #include "dos\fs_struct.h"
+   3          #include "Memalloc.h"
+   4          #include "..\header\host_init.h"
+   5          
+   6          #define HostDMAtoHOSTBUFFER     1               // 1K/2K sector一次讀取
+   7          #define HOSTBUFFER                      0x80
+   8          
+   9          data    bit     gb_HostError;
+  10          data    bit     gb_Repeat=0;
+  11          
+  12          xdata   U8      MaxLUN;
+  13          xdata   U8      CBWLUN;
+  14          xdata   U8      Host_StallCmd_Timeout;
+  15          xdata   U32     gdw_HOSTStartSectorRead;
+  16          
+  17          extern  data    U16     Offset;
+  18          extern  data    bit     gb_shortpack;
+  19          
+  20          extern  xdata   U16     gw_VID;
+  21          
+  22          extern  data    U8      gc_CurrentCard;
+  23          extern  xdata   U8      gc_HostSectorUnit;
+  24          extern  xdata   U8      gc_HostUnitNum;
+  25          
+  26          extern  void    tran_in_(U8 addr,U8 amount,U16 offset);
+  27          extern  U8              Host_phy_Command_check_(U8 offset,int toggle);
+  28          
+  29          
+  30          U8 HOST_Read_Logicsector(U32 tdw_LogicSectorAddr)
+  31          {
+  32   1          U8 j;
+  33   1              U8 *buffer;
+  34   1      
+  35   1              if(gb_ReadWriteDataArea == 0)   
+  36   1              {
+  37   2                      buffer = gc_PlayRecordDataBuf;
+  38   2              } 
+  39   1              else
+  40   1              {
+  41   2                      buffer = gc_UserDataBuf;
+  42   2              }
+  43   1      
+  44   1      #if HostDMAtoHOSTBUFFER==1
+  45   1              if((tdw_LogicSectorAddr>=gdw_HOSTStartSectorRead)&&(tdw_LogicSectorAddr<=(gdw_HOSTStartSectorRead+gc_Host
+             -SectorUnit-1)))
+  46   1              {
+  47   2                      data    U8      x;
+  48   2                      x=tdw_LogicSectorAddr-gdw_HOSTStartSectorRead;
+  49   2                      XBYTE[0xB301]=0x00;        //DMA src: MCU Data SRAM;  dst: DSP DM
+  50   2                      XBYTE[0xB302]=0xFF;
+  51   2                      XBYTE[0xB303]=0x01;
+  52   2                      XBYTE[0xB112]=0x00;
+C51 COMPILER V9.00   HOST_COMMAND_SCSI                                                     07/10/2012 15:51:55 PAGE 2   
+
+  53   2                      XBYTE[0xB113]=HOSTBUFFER+2*x;
+  54   2                      XBYTE[0xB114]=(U16)buffer;
+  55   2                      XBYTE[0xB115]=(U16)buffer>>8;
+  56   2                      XBYTE[0xB3B0]=0x01;
+  57   2                      while(!(XBYTE[0xB3C0]&0x01));
+  58   2                      XBYTE[0xB3C0]=0x00;
+  59   2                      return 0;
+  60   2              }
+  61   1              else
+  62   1              {
+  63   2                      gdw_HOSTStartSectorRead=tdw_LogicSectorAddr;
+  64   2              }
+  65   1      #endif
+  66   1              gc_HostUnitNum=tdw_LogicSectorAddr%gc_HostSectorUnit;
+  67   1              tdw_LogicSectorAddr=tdw_LogicSectorAddr/gc_HostSectorUnit;
+  68   1      
+  69   1              gb_HostError=0;
+  70   1              j=HOST_Readsector(tdw_LogicSectorAddr,buffer);  //read one sector       
+  71   1              if(j!=0)                
+  72   1              {
+  73   2                      if(j==HOST_SCSICMD_MEDIACHANGED)
+  74   2                      {
+  75   3                              return HOST_SCSICMD_MEDIACHANGED;
+  76   3                      }
+  77   2              else if(j==3)
+  78   2                      {
+  79   3                              gb_HostError=1;
+  80   3                              return 3;
+  81   3                      }
+  82   2              }
+  83   1      
+  84   1              return 0;
+  85   1      }
+  86          
+  87          
+  88          U8 HOST_Readsector(U32 SectorAddr,U8 *buffer)
+  89          {
+  90   1              code    U8      CBW[31]={0x55,0x53,0x42,0x43,0x01,0x02,0x66,0x01,0x00,0x02,0x00,0x00,0x80,0x00,0x0A,0x28,0x00,0x0
+             -0,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+  91   1              data    U8      i,j;
+  92   1              data    U8      CBWTag;
+  93   1              data    U8      tc_state;
+  94   1              data    U8      tc_RetryCount;
+  95   1              xdata   U8      k;
+  96   1              xdata   U16     Offset;
+  97   1      
+  98   1              if(gb_HostConnect == 0)
+  99   1              { 
+ 100   2                      return HOST_PHYCOUNECT_FAIL;
+ 101   2              }
+ 102   1      
+ 103   1              // Prepare CBW data
+ 104   1          for(i=0;i<31;i++)           
+ 105   1              {
+ 106   2                      XBYTE[HOST_BUF_SA+i]=CBW[i];
+ 107   2              }
+ 108   1          XBYTE[HOST_BUF_SA+7]=CBWTag++;
+ 109   1              XBYTE[HOST_BUF_SA+9]=gc_HostSectorUnit*2;
+ 110   1          XBYTE[HOST_BUF_SA+17]=(U8)(SectorAddr>>24);
+ 111   1          XBYTE[HOST_BUF_SA+18]=(U8)(SectorAddr>>16);
+ 112   1          XBYTE[HOST_BUF_SA+19]=(U8)(SectorAddr>>8);
+ 113   1          XBYTE[HOST_BUF_SA+20]=(U8)(SectorAddr>>0);
+C51 COMPILER V9.00   HOST_COMMAND_SCSI                                                     07/10/2012 15:51:55 PAGE 3   
+
+ 114   1      
+ 115   1              // OUT CBW
+ 116   1          if(gb_HostConnect == 0) 
+ 117   1              {
+ 118   2                      return HOST_PHYCOUNECT_FAIL;
+ 119   2              }
+ 120   1      
+ 121   1              tc_RetryCount=0;
+ 122   1              while(1)
+ 123   1              {
+ 124   2                      tc_RetryCount++;
+ 125   2                      if(tc_RetryCount>5)
+ 126   2                      {
+ 127   3                              return 1;
+ 128   3                      }
+ 129   2      
+ 130   2                      tran_out(DeviceAddress, 31);
+ 131   2                      tc_state = Host_phy_Command_check();
+ 132   2                      if(gb_HostConnect == 0) 
+ 133   2                      {
+ 134   3                              return HOST_PHYCOUNECT_FAIL;
+ 135   3                      }
+ 136   2                      if((tc_state==HOST_TEST_ERROR)||(tc_state==HOST_TimeOut_ERROR)||(tc_state==HOST_TEST_ERROR1))
+ 137   2                      {
+ 138   3                              gb_dtg_out = (!gb_dtg_out);             
+ 139   3                      }
+ 140   2                      else if(tc_state!=0) 
+ 141   2                      {
+ 142   3                              gb_HostConnect = 0; 
+ 143   3                              return HOST_SCSICMD_MEDIUMNOTPRESENT;
+ 144   3                      }
+ 145   2                      else
+ 146   2                      {
+ 147   3                              break;
+ 148   3                      }
+ 149   2              }
+ 150   1      
+ 151   1              Offset = 0;
+ 152   1              // maxliao 20070116 - For My Disk(U-disk) and Action MP3 player can't access 
+ 153   1              if(gw_VID==0x10D6)
+ 154   1              {
+ 155   2                      XBYTE[0xB01C]|=0x20;    //Non Auto Ack in for action mp3 player
+ 156   2              }
+ 157   1              delay(1000);
+ 158   1              while(1)
+ 159   1              {
+ 160   2                      tran_in_(DeviceAddress, 64, Offset);
+ 161   2                      tc_state=Host_phy_Command_check_(Offset,gb_dtg_in);
+ 162   2                      if(tc_state==0)
+ 163   2                      {
+ 164   3                              break;
+ 165   3                      }
+ 166   2                      if(gb_HostConnect == 0) 
+ 167   2                      {
+ 168   3                              return HOST_PHYCOUNECT_FAIL;
+ 169   3                      }
+ 170   2                      if(tc_state==HOST_STALL)
+ 171   2                      {
+ 172   3                              gb_dtg_in=0;
+ 173   3                              ClearFeature(DeviceAddress,0,EP_IN,0);
+ 174   3                              tran_in(DeviceAddress, 13, Offset);
+ 175   3                              tc_state = Host_phy_Command_check();
+C51 COMPILER V9.00   HOST_COMMAND_SCSI                                                     07/10/2012 15:51:55 PAGE 4   
+
+ 176   3                              if(tc_state!=0) // 20080620
+ 177   3                              {
+ 178   4                                      return tc_state;
+ 179   4                              }                           
+ 180   3                              SCSICMD_03_REQUESTSENSE();
+ 181   3                              return 1;
+ 182   3                      }
+ 183   2      
+ 184   2                      k=0;
+ 185   2                      if(tc_state==HOST_TEST_ERROR)
+ 186   2                      {
+ 187   3                              k++;
+ 188   3                              if(k>12)
+ 189   3                              {
+ 190   4                                      return 3;
+ 191   4                              }
+ 192   3                      }
+ 193   2              }
+ 194   1      
+ 195   1              // maxliao 20070116 - For My Disk(U-disk) and Action MP3 player can't access 
+ 196   1              XBYTE[0xB01C]&=0xdf; //Auto Ack in
+ 197   1      
+ 198   1              gb_dtg_in=!gb_dtg_in;
+ 199   1              Offset = 64;
+ 200   1                      
+ 201   1              if(tc_state==0)
+ 202   1              {
+ 203   2                      for(j=0;j<gc_HostSectorUnit;j++)
+ 204   2                      {
+ 205   3                              if(j==0)
+ 206   3                              {
+ 207   4                                      i=1;
+ 208   4                              }
+ 209   3                              else
+ 210   3                              {
+ 211   4                                      i=0;
+ 212   4                                      Offset=0;
+ 213   4                              }
+ 214   3      
+ 215   3                              for(;i<8;i++)
+ 216   3                              {
+ 217   4                                      if(gb_HostConnect == 0) 
+ 218   4                                      {
+ 219   5                                              return HOST_PHYCOUNECT_FAIL;
+ 220   5                                      }
+ 221   4      
+ 222   4                                      XBYTE[0xB604] = Offset & 0xFF;
+ 223   4                                      XBYTE[0xB605] = (Offset>>8) + (HOST_BUF_SA>>8);
+ 224   4              
+ 225   4                                      tc_RetryCount=0;
+ 226   4                                      while(1)
+ 227   4                                      {       
+ 228   5                                              tc_RetryCount++;
+ 229   5                                              if(tc_RetryCount>5)
+ 230   5                                              {
+ 231   6                                                      return 1;
+ 232   6                                              }
+ 233   5              
+ 234   5                                              if(gb_dtg_in == 0) 
+ 235   5                                              {
+ 236   6                                                      XBYTE[0xB601]=0x91;
+ 237   6                                              }
+C51 COMPILER V9.00   HOST_COMMAND_SCSI                                                     07/10/2012 15:51:55 PAGE 5   
+
+ 238   5                                              else
+ 239   5                                              {
+ 240   6                                                      XBYTE[0xB601]=0x93;
+ 241   6                                              }
+ 242   5      
+ 243   5                                              tc_state = Host_phy_Command_check();
+ 244   5                                              if(tc_state==0)
+ 245   5                                              {
+ 246   6                                                      break;
+ 247   6                                              }
+ 248   5                                              else
+ 249   5                                              {
+ 250   6                                                      return 1;
+ 251   6                                              }
+ 252   5                                      }
+ 253   4                                      gb_dtg_in = (!gb_dtg_in);
+ 254   4                                      Offset = Offset + 64;   
+ 255   4                              }
+ 256   3      
+ 257   3                              XBYTE[0xB3C0]=0x00;
+ 258   3                              XBYTE[0xB301]=0x00;        //DMA src: MCU Data SRAM;  dst: DSP DM
+ 259   3                              XBYTE[0xB302]=0xFF;
+ 260   3                              XBYTE[0xB303]=0x01;
+ 261   3                              XBYTE[0xB112]=0x00;
+ 262   3                              XBYTE[0xB113]=HOST_BUF_SA>>8;
+ 263   3                              XBYTE[0xB114]=0x00;
+ 264   3      
+ 265   3                              // 將指定Sector之512-byte資料DMA至指定buffer
+ 266   3                              if(j==gc_HostUnitNum)
+ 267   3                              {
+ 268   4                                      XBYTE[0xB115]=((U16)buffer)>>8;
+ 269   4                                      XBYTE[0xB3B0]=0x01;
+ 270   4                                      while(!(XBYTE[0xB3C0]&0x01));
+ 271   4                                      XBYTE[0xB3C0]=0x00;
+ 272   4                              }
+ 273   3      
+ 274   3                              #if HostDMAtoHOSTBUFFER==1
+ 275   3                              // 備份USB資料至Host buffer, 若下一次是同一Sector則直接DMA至destination buffer
+ 276   3                              XBYTE[0xB115]=HOSTBUFFER+2*j;
+ 277   3                              XBYTE[0xB3B0]=0x01;
+ 278   3                              while(!(XBYTE[0xB3C0]&0x01));
+ 279   3                              XBYTE[0xB3C0]=0x00;
+ 280   3                              #endif
+ 281   3                      }
+ 282   2      
+ 283   2                      // maxliao 20061205 - Enable SOF
+ 284   2                      XBYTE[0xB630]=1;
+ 285   2              }
+ 286   1              else if(tc_state & 0x10)
+ 287   1              {//stall
+ 288   2                      XBYTE[0xB630]=1;                                //enable SOF
+ 289   2                      gb_dtg_in = 0;          
+ 290   2                      ClearFeature(DeviceAddress,0,EP_IN,0);
+ 291   2      
+ 292   2                      tran_in_(DeviceAddress, 13, 0);         //stored at HOST_BUF_SA 
+ 293   2                  tc_state = Host_phy_Command_check();
+ 294   2      
+ 295   2                      if ( XBYTE[HOST_BUF_SA+12]==0x01 )
+ 296   2                      {
+ 297   3                              SCSICMD_03_REQUESTSENSE();
+ 298   3                              return 1;
+ 299   3                      }
+C51 COMPILER V9.00   HOST_COMMAND_SCSI                                                     07/10/2012 15:51:55 PAGE 6   
+
+ 300   2              }
+ 301   1              
+ 302   1              // IN CSW
+ 303   1              if(gb_HostConnect == 0) 
+ 304   1              {
+ 305   2                      return HOST_PHYCOUNECT_FAIL;
+ 306   2              }
+ 307   1              
+ 308   1              for(i=0;i<20;i++)
+ 309   1              {
+ 310   2                      tran_in(DeviceAddress, 13, 0);
+ 311   2                      tc_state = Host_phy_Command_check();
+ 312   2                      if((tc_state==0)&&(gb_shortpack==0))
+ 313   2                      {
+ 314   3                              break;
+ 315   3                      }
+ 316   2                      gb_dtg_in=!gb_dtg_in;
+ 317   2              }
+ 318   1      
+ 319   1              if(tc_state!=0)
+ 320   1              {
+ 321   2                      return 0xff;    // fail
+ 322   2              }
+ 323   1      
+ 324   1              return 0;
+ 325   1      }
+ 326          
+ 327          
+ 328          void delay(U16  i)
+ 329          {
+ 330   1              while(i)   i--;
+ 331   1      }
+ 332          
+ 333          
+ 334          void Syn_Reset(void)
+ 335          {
+ 336   1              XBYTE[0xB601]=0x04;     //syn reset
+ 337   1              delay(1000);
+ 338   1              XBYTE[0xB601]=0x04;
+ 339   1              delay(8000);
+ 340   1      }
+ 341          
+ 342          
+ 343          U8 ClearFeature(U8 addr,U16 wValue,U16 wIndex,U16 wLength)
+ 344          {
+ 345   1              U8 tc_state;
+ 346   1      
+ 347   1              XBYTE[HOST_BUF_SA+0]=0x02;
+ 348   1              XBYTE[HOST_BUF_SA+1]=0x01;
+ 349   1              XBYTE[HOST_BUF_SA+2]=(U8)(wValue&0xff);
+ 350   1              XBYTE[HOST_BUF_SA+3]=(U8)((wValue>>8)&0xff);
+ 351   1              XBYTE[HOST_BUF_SA+4]=(U8)(wIndex&0xff) | 0x80;
+ 352   1              XBYTE[HOST_BUF_SA+5]=(U8)((wIndex>>8)&0xff);
+ 353   1              XBYTE[HOST_BUF_SA+6]=(U8)(wLength&0xff);
+ 354   1              XBYTE[HOST_BUF_SA+7]=(U8)((wLength>>8)&0xff);
+ 355   1      
+ 356   1              tran_setup(addr);
+ 357   1              tc_state = Host_phy_Command_check();
+ 358   1      
+ 359   1              if(tc_state)
+ 360   1              {
+ 361   2                      return HOST_TRANSETUP_ERROR;
+C51 COMPILER V9.00   HOST_COMMAND_SCSI                                                     07/10/2012 15:51:55 PAGE 7   
+
+ 362   2              }
+ 363   1              delay(1000);
+ 364   1              setup_in(addr, 0, 0, 1);
+ 365   1              tc_state = Host_phy_Command_check();
+ 366   1      
+ 367   1              if(tc_state)
+ 368   1              {
+ 369   2                      return HOST_SETUPIN_ERROR;
+ 370   2              }
+ 371   1              else
+ 372   1              {
+ 373   2                      return 0;
+ 374   2              }
+ 375   1      }
+ 376          
+ 377          
+ 378          U8 SCSICMD_03_REQUESTSENSE(void)
+ 379          {
+ 380   1              data    U8      i;
+ 381   1              data    U8      tc_state;
+ 382   1              code    U8      CBW_REQUEST_SENSE[31]={0x55,0x53,0x42,0x43,0x55,0xAA,0x99,0x04,0x12,0x00,0x00,0x00,0x80,0x00,0x0C
+             -,0x03,0x00,0x00,0x00,0x12,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+ 383   1      
+ 384   1              gb_Repeat=0;
+ 385   1      
+ 386   1              // Prepare CBW data
+ 387   1              for(i=0;i<31;i++)               
+ 388   1              {
+ 389   2                      XBYTE[HOST_BUF_SA+i]=CBW_REQUEST_SENSE[i];
+ 390   2              }       
+ 391   1              
+ 392   1              // OUT CBW
+ 393   1              tran_out(DeviceAddress, 31);//send command 03
+ 394   1              Host_phy_Command_check();
+ 395   1      
+ 396   1              // IN data
+ 397   1          if(gb_HostConnect == 0)
+ 398   1          {
+ 399   2                      return HOST_PHYCOUNECT_FAIL;
+ 400   2              }
+ 401   1      
+ 402   1              for(i=0;i<20;i++)
+ 403   1              {
+ 404   2                      tran_in(DeviceAddress, 18, 0);
+ 405   2                      tc_state = Host_phy_Command_check();            
+ 406   2                      if((tc_state==0)&&(gb_shortpack==0))
+ 407   2                      {
+ 408   3                              break;
+ 409   3                      }
+ 410   2                      gb_dtg_in=!gb_dtg_in;
+ 411   2              }
+ 412   1      
+ 413   1              if((XBYTE[HOST_BUF_SA+0x02]==0x06)&&(XBYTE[HOST_BUF_SA+0x0C]==0x3A))
+ 414   1              {
+ 415   2                      gb_Repeat=1;
+ 416   2              }
+ 417   1              // IN CSW
+ 418   1              if(gb_HostConnect == 0)
+ 419   1          {
+ 420   2                      return HOST_PHYCOUNECT_FAIL;
+ 421   2              }
+ 422   1              for(i=0;i<20;i++)
+C51 COMPILER V9.00   HOST_COMMAND_SCSI                                                     07/10/2012 15:51:55 PAGE 8   
+
+ 423   1              {
+ 424   2                      tran_in(DeviceAddress, 13, 0);
+ 425   2                      tc_state=Host_phy_Command_check();
+ 426   2                      if((tc_state==0)&&(gb_shortpack==0))
+ 427   2                      {
+ 428   3                              break;
+ 429   3                      }
+ 430   2                      gb_dtg_in=!gb_dtg_in;
+ 431   2              }
+ 432   1              return 0;
+ 433   1      }
+ 434          
+ 435          
+ 436          
+ 437                           
+ 438          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1222    ----
+   CONSTANT SIZE    =     62    ----
+   XDATA SIZE       =      7      24
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       8
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      2    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

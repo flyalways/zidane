@@ -1,0 +1,261 @@
+C51 COMPILER V9.00   VARIABLES                                                             07/10/2012 15:51:50 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE VARIABLES
+OBJECT MODULE PLACED IN .\obj\variables.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE MAIN\variables.c LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDIR(..\libsource\
+                    -header) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\variables.lst) OBJECT(.\obj\variables.obj)
+
+line level    source
+
+   1          #include "..\header\variables.h"
+   2          
+   3          //Play
+   4          xdata   U8  gc_PlayModeChange_Flag=0;  //20090107 chiayen add
+   5          
+   6          data    bit gb_SDNoFileflag=0; 
+   7          data    bit gb_InitLogFileIndex=0;
+   8          data    bit gb_SD_Exist=0;
+   9          data    bit gb_SD_Exist_pre=0;
+  10          data    bit gb_Host_Exist=0;
+  11          data    bit gb_Host_Exist_pre=0;
+  12          xdata   U8      gc_HostNoFileflag=0;
+  13          xdata   U8  gc_RepPlayMode_Pre=0;
+  14          xdata   U8      gc_Play_FileType=0;
+  15          xdata   U16     gw_Disp_CurrentSec=0;
+  16          xdata   U8  gc_CurrentCard_backup=0;
+  17          
+  18          data    bit     gb_FlashNoFileflag=0;  //20090309 chiayen modify
+  19          xdata   U8      gc_SelectVol=1;       // 1=Show Vol  //20090309 chiayen modify
+  20          xdata   U8      gc_CurrentHZK;  //20090107 chiayen add  //20090309 chiayen mark
+  21          
+  22          xdata U8 gc_Media_type=0xFF;
+  23          xdata U8 gc_DisplayVol=0xFF;
+  24          
+  25          data bit         gb_Play_firstPlay=0x01;                //Jimi 081125 for EQ mode pop noise as next/prev  20090319
+  26          xdata U8 gc_MenuHZK=1;
+  27          
+  28          xdata U8 gc_DispPlayStatus=0xFF;
+  29          xdata U16 gw_DispTotalTime=0xFFFF;
+  30          xdata U8 gc_TuneVolFreqStatus=0;  //祏vol key篈 0:normal 1:turn vol 2:turn freq
+  31          xdata U8 gc_DispWallpaper=1;      //∕﹚琌璶穝陪ボ璉春  0:no 1:yes
+  32          xdata U8 gc_DispPlayMenuAct=0;    //0:PlayMenu 1:EQ 2:PlayMode
+  33          
+  34          xdata U8 gc_JpegVelocity=3;  //20090331
+  35          xdata U8 gc_AutoJpeg_Flag=1;  //20090331//自动标志
+  36          xdata U16 gw_AutoJpeg_Timer=1;  //20090331
+  37          
+  38          xdata U32 gdw_Dos_FreeMemorySizeMB=0;
+  39          
+  40          xdata U16 gw_x_start;
+  41          xdata U16 gw_y_start;
+  42          xdata U16 gw_width;
+  43          xdata U16 gw_height;
+  44          
+  45          xdata   U8      gc_CurrentCard_Bak=0xFF;
+  46          xdata   U8      gc_LCMDispIndexBak;
+  47          xdata   U8      gc_MenuItemBak=0;
+  48          xdata   U16     gw_Disp_CurrentSecBak=0xFFFF;
+  49          
+  50          data    bit     gb_LRCDispLevel;
+  51          data    bit     gb_TFT_refresh=0;       // 1=礶场ICON
+  52          data    bit     gb_TFT_VOL_FM;          // 0=VOL adj.  1=FM adj.
+  53          data    bit     gb_TFT_scroll;
+  54          xdata   U8      gc_EQBak=0xFF;
+C51 COMPILER V9.00   VARIABLES                                                             07/10/2012 15:51:50 PAGE 2   
+
+  55          
+  56          xdata   U8      gc_MenuItemCount=0;
+  57          
+  58          U16     gw_LrcNextOffset=0;
+  59          U32     gdw_LrcNextFilePointer=0;
+  60          U8      gc_LrcCurrentLenNext=0;
+  61          U8      gb_LrcGetTimeNextOrNot=0;
+  62          
+  63          xdata   U8      gc_HostSectorUnit=1;
+  64          //data U8 gc_PKSongCHSetMode=0;
+  65          data    bit     gb_ShowIRNum=0;
+  66          xdata   U16     gw_IRNum=0xFFFF;
+  67          
+  68          xdata   U8      gc_MenuItem=0;
+  69          
+  70          #ifdef Contrast_Set
+  71          xdata   U8  gc_Contrast = 0;
+  72          xdata   U8  gc_Contrast_bak = 0;
+  73          #endif
+  74          
+  75          xdata U8 gc_Dosinitfail=0;
+  76          //================================
+  77          //System
+  78          
+  79          xdata U16 gw_BmpInx;
+  80          xdata U8 gc_BmpString[1536];
+  81          
+  82          //xdata U16 gw_font_sector=538;
+  83          //xdata U16 gw_icon_sector=5036;
+  84          
+  85          
+  86          data U8 gc_KeyDet_Mask=0;  //20090107 chiayen modify
+  87          
+  88          data U8 gc_LongKeyCount=0;
+  89          
+  90          xdata U8 gc_Vrefinit_Timer=0;
+  91          xdata U8 gc_KeyValue=0;
+  92          xdata U8 gc_KeyEvent;
+  93          data U8 gc_PhaseInx=0;
+  94          xdata U8 gc_RepPlayMode=2;
+  95          xdata U16 gw_TotalSec=0;
+  96          xdata U8 gc_T0IntervalLSB=C_T0_12MhzLSB;
+  97          xdata U8 gc_T0IntervalMSB=C_T0_12MhzMSB;
+  98          
+  99          U8 gc_key_Pressed=0;
+ 100          U8 gc_key_PrevPressed=0;
+ 101          //==========================================
+ 102          //ISR
+ 103          bit gbLKeyTimer_Timeout=0;
+ 104          bit gbGetKey_Timeout=0;
+ 105          
+ 106          data bit gb_IR_Setting=0;
+ 107          data bit gb_USB_ISR_Detected=0; 
+ 108          data U8 gc_IRCmdStatus=0;
+ 109          data U8 gc_ircount=0;
+ 110          data U8 gw_ChangeFrequencyTimer=0;
+ 111          data U8 gw_IR_Setting_Timer=0;
+ 112          data U8 gw_LogData_Timer=0;  //chiayen0812
+ 113          xdata U8 gc_LogDataFlag=0;//chiayen0812 
+ 114          xdata U16 gw_Random_Timer=0;
+ 115          xdata U8 gc_XTimeBase=0;
+ 116          xdata U8 gc_LongKeyTimer=0;
+C51 COMPILER V9.00   VARIABLES                                                             07/10/2012 15:51:50 PAGE 3   
+
+ 117          xdata U8 gc_LongKeyDelay=0;
+ 118          data    bit     gb_Frequency_Song=0;  //20090309 chiayen modify
+ 119          data    bit     gb_SelectEQ=0;  //20090309 chiayen modify
+ 120          //data  bit     gb_Err=0;  //20090309 chiayen modify
+ 121          data    bit     gb_PickSong=0;  //20090309 chiayen modify  
+ 122          data    bit     gb_ChannelSet=0;  //20090309 chiayen modify  
+ 123          data    U8      gc_ShowTimer=0;  //20090309 chiayen modify  
+ 124          data    U16     gw_DisplayFreq=0;  //20090309 chiayen modify  
+ 125          data    U16     gw_DisplayTime=0;  //20090309 chiayen modify
+ 126          data    U16     gw_DisplayBitrateTime=0;
+ 127          data    U16     gw_LCMScrollTimer=0;      //20090309 chiayen modify
+ 128          //=====================================
+ 129          //Logdata
+ 130          data  U16 gw_LogFileIndex=0;
+ 131          data  U16 gw_SDLogFileIndex=0;
+ 132          data  U16 gw_USBLogFileIndex=0;
+ 133          xdata U8  gc_UIblock0_index=0;
+ 134          xdata U16 gw_DIRFileIndex=0;
+ 135          xdata U16 gw_DIRFileTotalNumber=0;
+ 136          xdata U32 gdw_DIRFDB_StartCluster=0;
+ 137          
+ 138          xdata U16 gw_SDDIRFileIndex=0;  //20090216 chiayen add
+ 139          xdata U16 gw_SDDIRFileTotalNumber=0;
+ 140          xdata U32 gdw_SDDIRFDB_StartCluster=0;
+ 141          
+ 142          xdata U16 gw_HostDIRFileIndex=0;
+ 143          xdata U16 gw_HostDIRFileTotalNumber=0;
+ 144          xdata U32 gdw_HostDIRFDB_StartCluster=0;  //20090216 chiayen add
+ 145          //======================================
+ 146          //IR
+ 147          data bit gb_PickSongSet=0;
+ 148          data U8 gc_Dirchange_Timer=0; //20090121 chiayen add
+ 149          data U8 gw_IR_Timer=0;
+ 150          data U16 gw_irkey_count=0;
+ 151          xdata U16 gw_SongNumber=1;  //temp
+ 152          xdata U16 gw_SongNumberSD;
+ 153          
+ 154          xdata U8 gc_VolumeMute=0;
+ 155          xdata U8 gc_NUMBER[4]={0xFF,0xFF,0xFF,0xFF};
+ 156          xdata U8 gc_irkey=0;
+ 157          xdata U8 gc_IRdetMask=0;
+ 158          xdata U8 gc_Volumebackup=0;
+ 159          
+ 160          xdata   U16     gw_DisplayFreq1=0;
+ 161          xdata   U8      gc_DisplayEQIcon=0xFF;  //20090309 chiayen modify
+ 162          xdata   U16     gw_DispSongNum1=0xFFFF; //20090121 chiayen test  //20090309 chiayen modify  
+ 163          data    U16     gw_DispSongNum=0xFFFF;  //20090309 chiayen modify
+ 164          data    U16     gw_DispTotalSong=0xFFFF;
+ 165          xdata U8 gc_FolderPlay_Flag=0;  //20090216 chiayen add
+ 166          //==============================
+ 167          //Dir
+ 168          bit             gb_DirPlay_Flag=0;  // 0:PlayAll  1:Play in Dir
+ 169          
+ 170          data  U8  gc_PlayMenu_Timeout=0;
+ 171          
+ 172          xdata U8  gc_DirNoFile_Flag=0;
+ 173          xdata U8  Save_c_FileType[3];
+ 174          xdata U8  Save_dw_File_StartCluster[3];//lijian.peng 081011 for return to music
+ 175          xdata U16 gw_TotalFileNum=0;
+ 176          xdata U16 Save_gw_MusicFileTotalNum;
+ 177          xdata U16 gw_DirIndexTest[4];
+ 178          xdata U16 Save_w_FDB_Offset[3];
+C51 COMPILER V9.00   VARIABLES                                                             07/10/2012 15:51:50 PAGE 4   
+
+ 179          xdata U16 Save_gw_FileIndex[3];
+ 180          xdata U16 Save_gw_FileDirIndex[3];
+ 181          xdata U32 Save_dw_FDB_StartCluster[3];
+ 182          xdata U32 Save_dw_FDB_Cluster[3];
+ 183          xdata U32 Save_dw_FDB_LogAdd[3];
+ 184          xdata U32 Save_dw_LongFDB_LogAdd0[3];
+ 185          xdata U32 Save_dw_LongFDB_LogAdd1[3];
+ 186          
+ 187          xdata U16       gw_TotalNumber=0;               //count dir+file number in one dir
+ 188          xdata U16       gw_DirTotalNumber=0;    //count dir total number in one dir
+ 189          xdata U16       gw_DirOverallNumber=0;  //count dir overall number, //20090216 chiayen add
+ 190          xdata U16       gw_AllDirTotalNumber=0;
+ 191          xdata U16       gw_DIRtableIndex=0;
+ 192          xdata U16       gw_Index=0;
+ 193          
+ 194          
+ 195          xdata U8 gc_test=0;
+ 196          xdata U8 gc_SDSetIndex=0;  //chiayen 20090320
+ 197          xdata U8 gc_TaskMode_BkUp=1;//(JC)I0304 //20090320 chiayen test
+ 198          bit     gbt_SD_BuildDIRFlag=0; //Ching 090306
+ 199          
+ 200          data     U8             gc_LCM_Media=0;  //20090309 chiayen modify
+ 201          xdata    U8             gc_DisplayPlayMode=0xFF;  //20090309 chiayen modify
+ 202          
+ 203          
+ 204          //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 205          data     U16    gw_DisplayBitRate=0xFFFF; //20090309 chiayen modify
+ 206          
+ 207          xdata   U8      gc_PlayMenu_IR=0;  //20090206 chaiyen add for IR_DIR
+ 208          xdata   U8      gc_strobe_bak;
+ 209          xdata   U8  gc_0xB400_bak; 
+ 210          xdata   U8      gc_LCMDispIndex=0;
+ 211          xdata   U8      gc_FatherIndex=0;
+ 212          xdata   U8      gc_DirReBuildFlag=0;
+ 213          xdata   U8      gc_SetIndex=0;          //for rolling mechanism
+ 214          xdata   U8      gc_SetNumber=0;
+ 215          xdata   U8      gc_EQChangeFlag=0;
+ 216          xdata   U16     gw_FM_frequency=875;  // range=87.7MHz~107.9MHz  //20090309 chiayen mark
+ 217          
+ 218          //========================sunzhk add 0703====================//
+ 219          data    U8      gc_refresh_type=0;//0:refresh all ,1:next op refresh,2:prev op refresh 0xff:not refresh
+ 220          //xdata   U8  gc_Contrast;      //对比度设置界面
+ 221          
+ 222          xdata   U16     gw_CurrentSec=0;
+ 223          xdata   U16     gw_CTStartTime=0;
+ 224          xdata   U8      gb_fffr_end=0;
+ 225          
+ 226          xdata U8 gc_folder_disp=0;
+ 227          
+ 228          
+ 229          xdata U32 gdw_ID3_v2_sz;        //Jimi 0901027
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   ----    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   1787    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     36    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =     24    ----
+END OF MODULE INFORMATION.
+
+C51 COMPILER V9.00   VARIABLES                                                             07/10/2012 15:51:50 PAGE 5   
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

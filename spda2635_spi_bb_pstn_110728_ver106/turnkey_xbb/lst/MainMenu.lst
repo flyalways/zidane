@@ -1,0 +1,114 @@
+C51 COMPILER V9.00   MAINMENU                                                              07/09/2012 21:16:51 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE MAINMENU
+OBJECT MODULE PLACED IN .\obj\MainMenu.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE Menu\MainMenu.c LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDIR(..\libsource\h
+                    -eader) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\MainMenu.lst) OBJECT(.\obj\MainMenu.obj)
+
+line level    source
+
+   1          #include "..\Header\SPDA2K.h"
+   2          #include "..\header\variables.h"
+   3          
+   4          void MainMenu(void)
+   5          {
+   6   1              gc_MenuTimer=6; // Preset Function Menu timer
+   7   1              LCM_Clear_L0_L7();
+   8   1              LCM_ShowMainMenu();
+   9   1              LCM_ShowBattIcon();
+  10   1              while(1)
+  11   1              {
+  12   2                      if(gb_ShowBatt==1)
+  13   2                      {
+  14   3                              gb_ShowBatt=0;
+  15   3                              LCM_ShowBattIcon();
+  16   3                      }
+  17   2      
+  18   2                      Key_Detect();
+  19   2                      if(gc_KeyEvent!=0)
+  20   2                      {
+  21   3                              gc_MenuTimer=6; // Reset Function Menu timer
+  22   3                              
+  23   3                              if(gc_KeyEvent==3)      // Next
+  24   3                              {
+  25   4                                      gc_MainMenuNum++;
+  26   4                                      if(gc_MainMenuNum==5)
+  27   4                                      {
+  28   5                                              gc_MainMenuNum=0;
+  29   5                                      }
+  30   4                                      LCM_ShowMainMenu();
+  31   4                              }
+  32   3                              else if(gc_KeyEvent==4) // Prev
+  33   3                              {
+  34   4                                      gc_MainMenuNum--;
+  35   4                                      if(gc_MainMenuNum==-1)
+  36   4                                      {
+  37   5                                              gc_MainMenuNum=4;
+  38   5                                      }
+  39   4                                      LCM_ShowMainMenu();
+  40   4                              }
+  41   3                              else if(gc_KeyEvent==6) // M
+  42   3                              {
+  43   4                                      if(gc_MainMenuNum==0)
+  44   4                                      {
+  45   5                                              SourceDevicePreSet();
+  46   5                                              gc_Task_Current=C_Task_MusicPlay;
+  47   5                                      }
+  48   4                                      else if(gc_MainMenuNum==1)
+  49   4                                      {
+  50   5                                              gc_Task_Current=C_Task_FM;
+  51   5                                      }
+  52   4                                      else if(gc_MainMenuNum==2)
+  53   4                                      {
+  54   5                                              gc_Task_Current=C_Task_PlayWAV;
+C51 COMPILER V9.00   MAINMENU                                                              07/09/2012 21:16:51 PAGE 2   
+
+  55   5                                      }
+  56   4                                      else if(gc_MainMenuNum==3)
+  57   4                                      {
+  58   5                                              gc_Task_Current=C_Task_Calendar;
+  59   5                                      }
+  60   4                                      else
+  61   4                                      {
+  62   5                                              gc_Task_Current=C_Task_Setup;
+  63   5                                      }
+  64   4                                      break;
+  65   4                              }
+  66   3                              else if(gc_KeyEvent==0x16)      // L-M
+  67   3                              {
+  68   4                                      gc_MenuTimer=0; // Abort
+  69   4                              }
+  70   3                      }
+  71   2      
+  72   2                      if(gb_AlarmTrigger==1)
+  73   2                      {
+  74   3                              if(CheckAlarmSetting()==0)      // Match Alarm Clock Setting
+  75   3                              {
+  76   4                                      gc_Task_Last=C_Task_FuncOption;
+  77   4                                      gc_Task_Current=C_Task_AlarmON;
+  78   4                              }
+  79   3                      }
+  80   2      
+  81   2                      if(gc_MenuTimer==0)
+  82   2                      {
+  83   3                              gc_Task_Current=C_Task_Idle;
+  84   3                              break;
+  85   3                      }
+  86   2              }
+  87   1      }
+  88          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    165    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,30 @@
+A51 MACRO ASSEMBLER  UTIL                                                                 07/10/2012 15:51:43 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.01
+OBJECT MODULE PLACED IN .\obj\util.obj
+ASSEMBLER INVOKED BY: C:\Keil\C51\BIN\A51.EXE ..\libsource\ASM\util.a51 SET(LARGE) DEBUG PRINT(.\lst\util.lst) OBJECT(.\
+                      obj\util.obj) EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1             NAME UTIL
+                       2     
+                       3     
+                       4             END
+                             
+A51 MACRO ASSEMBLER  UTIL                                                                 07/10/2012 15:51:43 PAGE     2
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+UTIL . . . . . . .  N NUMB   -----       
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

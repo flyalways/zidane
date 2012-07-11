@@ -1,0 +1,1218 @@
+; .\obj\L51_BankingLoader.SRC generated from: ..\LIBSOURCE\ASM\L51_BankingLoader.c
+; COMPILER INVOKED BY:
+;        C:\Keil\C51\BIN\C51.EXE ..\LIBSOURCE\ASM\L51_BankingLoader.c LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDIR(..\libsource\header) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\L51_BankingLoader.lst) SRC(.\obj\L51_BankingLoader.SRC)
+
+$NOMOD51
+
+NAME	L51_BANKINGLOADER
+
+ACC7	BIT	0E0H.7
+P0	DATA	080H
+P1	DATA	090H
+P2	DATA	0A0H
+P3	DATA	0B0H
+T0	BIT	0B0H.4
+AC	BIT	0D0H.6
+T1	BIT	0B0H.5
+EA	BIT	0A8H.7
+IE	DATA	0A8H
+LCD_CLK	BIT	090H.3
+P3_0	BIT	0B0H.0
+P3_1	BIT	0B0H.1
+P1_3	BIT	090H.3
+EXF2	BIT	0C8H.6
+RD	BIT	0B0H.7
+P1_6	BIT	090H.6
+P1_7	BIT	090H.7
+ES	BIT	0A8H.4
+IP	DATA	0B8H
+RI	BIT	098H.0
+INT0	BIT	0B0H.2
+CY	BIT	0D0H.7
+TI	BIT	098H.1
+INT1	BIT	0B0H.3
+RamPage	DATA	09BH
+RCAP2H	DATA	0CBH
+PS	BIT	0B8H.4
+SP	DATA	081H
+OV	BIT	0D0H.2
+RCAP2L	DATA	0CAH
+C_T2	BIT	0C8H.1
+WR	BIT	0B0H.6
+RCLK	BIT	0C8H.5
+TCLK	BIT	0C8H.4
+SBUF	DATA	099H
+PCON	DATA	087H
+COLOR_R	BIT	0B0H.0
+SCON	DATA	098H
+TMOD	DATA	089H
+TCON	DATA	088H
+IE0	BIT	088H.1
+IE1	BIT	088H.3
+B	DATA	0F0H
+CP_RL2	BIT	0C8H.0
+ACC	DATA	0E0H
+ET0	BIT	0A8H.1
+ET1	BIT	0A8H.3
+TF0	BIT	088H.5
+ET2	BIT	0A8H.5
+TF1	BIT	088H.7
+TF2	BIT	0C8H.7
+RB8	BIT	098H.2
+TH0	DATA	08CH
+EX0	BIT	0A8H.0
+IT0	BIT	088H.0
+TH1	DATA	08DH
+TB8	BIT	098H.3
+EX1	BIT	0A8H.2
+IT1	BIT	088H.2
+TH2	DATA	0CDH
+P	BIT	0D0H.0
+SM0	BIT	098H.7
+LCD_SI	BIT	090H.4
+TL0	DATA	08AH
+SM1	BIT	098H.6
+TL1	DATA	08BH
+SM2	BIT	098H.5
+TL2	DATA	0CCH
+SD_Detect	BIT	090H.1
+PT0	BIT	0B8H.1
+PT1	BIT	0B8H.3
+RS0	BIT	0D0H.3
+PT2	BIT	0B8H.5
+TR0	BIT	088H.4
+RS1	BIT	0D0H.4
+TR1	BIT	088H.6
+TR2	BIT	0C8H.2
+PX0	BIT	0B8H.0
+LCD_RS	BIT	090H.2
+PX1	BIT	0B8H.2
+DPH	DATA	083H
+LOCK_SWITCH	BIT	090H.1
+DPL	DATA	082H
+EXEN2	BIT	0C8H.3
+REN	BIT	098H.4
+T2CON	DATA	0C8H
+RXD	BIT	0B0H.0
+CKCON	DATA	08EH
+TXD	BIT	0B0H.1
+F0	BIT	0D0H.5
+ACC0	BIT	0E0H.0
+ACC1	BIT	0E0H.1
+ACC2	BIT	0E0H.2
+ACC3	BIT	0E0H.3
+PSW	DATA	0D0H
+ACC4	BIT	0E0H.4
+ACC5	BIT	0E0H.5
+ACC6	BIT	0E0H.6
+?PR?perform_nand_bank_call?L51_BANKINGLOADER SEGMENT CODE 
+?PR?return_from_nand_bank?L51_BANKINGLOADER SEGMENT CODE 
+?PR?load_nand_bank?L51_BANKINGLOADER     SEGMENT CODE 
+?XD?load_nand_bank?L51_BANKINGLOADER     SEGMENT XDATA OVERLAYABLE 
+?PR?FLASH_MultRead_DRAM?L51_BANKINGLOADER SEGMENT CODE 
+?XD?FLASH_MultRead_DRAM?L51_BANKINGLOADER SEGMENT XDATA OVERLAYABLE 
+?BI?FLASH_MultRead_DRAM?L51_BANKINGLOADER SEGMENT BIT OVERLAYABLE 
+?PR?_Banking_NAND_InAddr_To_Column_NAND?L51_BANKINGLOADER SEGMENT CODE 
+?XD?_Banking_NAND_InAddr_To_Column_NAND?L51_BANKINGLOADER SEGMENT XDATA OVERLAYABLE 
+?PR?_Banking_NAND_FBlock_FPage_FBank_To_PhyAddr_NAND?L51_BANKINGLOADER SEGMENT CODE 
+?XD?_Banking_NAND_FBlock_FPage_FBank_To_PhyAddr_NAND?L51_BANKINGLOADER SEGMENT XDATA OVERLAYABLE 
+?C_INITSEG           SEGMENT CODE 
+?DT?L51_BANKINGLOADER                    SEGMENT DATA 
+?XD?L51_BANKINGLOADER                    SEGMENT XDATA 
+?PR?L51_BANKINGLOADER                    SEGMENT CODE 
+	EXTRN	CODE (CHK_Flash_Ready)
+	EXTRN	CODE (CHK_NandAutocmp_Done)
+	EXTRN	CODE (SET_DEVICE_READ_TO_DRAM)
+	EXTRN	XDATA (gc_InAddrMax)
+	EXTRN	XDATA (Device_Xfer_DataLength)
+	EXTRN	CODE (TRIGGER_FLASH_CMD)
+	EXTRN	XDATA (Device_Read_SRAM_Index)
+	EXTRN	XDATA (NAND_INFO)
+	EXTRN	CODE (Reset_DMA)
+	EXTRN	CODE (CHK_Data_Transfer_Done)
+	EXTRN	XDATA (gw_PagesPerBlock)
+	EXTRN	BIT (gbt_Code_NeedRecover)
+	EXTRN	CODE (Trigger_Data_Transfer)
+	EXTRN	CODE (CHK_ECC_Done)
+	EXTRN	XDATA (Bank_Block_A)
+	EXTRN	XDATA (Bank_Block_B)
+	EXTRN	XDATA (gc_Flash_Data)
+	EXTRN	CODE (?C?UIDIV)
+	EXTRN	CODE (?C?IMUL)
+	PUBLIC	tgc_InAddr
+	PUBLIC	gc_bank_number
+	PUBLIC	?_Banking_NAND_FBlock_FPage_FBank_To_PhyAddr_NAND?BYTE
+	PUBLIC	_Banking_NAND_FBlock_FPage_FBank_To_PhyAddr_NAND
+	PUBLIC	_Banking_NAND_InAddr_To_Column_NAND
+	PUBLIC	?FLASH_MultRead_DRAM?BIT
+	PUBLIC	?FLASH_MultRead_DRAM?BYTE
+	PUBLIC	FLASH_MultRead_DRAM
+	PUBLIC	load_nand_bank
+	PUBLIC	return_from_nand_bank
+	PUBLIC	perform_nand_bank_call
+
+	RSEG  ?XD?load_nand_bank?L51_BANKINGLOADER
+?load_nand_bank?BYTE:
+   tc_FPage?242:   DS   1
+	ORG  1
+  tc_InAddr?243:   DS   1
+	ORG  2
+   u_FBlock?244:   DS   2
+	ORG  4
+tc_bank_block?246:   DS   1
+
+	RSEG  ?XD?_Banking_NAND_InAddr_To_Column_NAND?L51_BANKINGLOADER
+?_Banking_NAND_InAddr_To_Column_NAND?BYTE:
+tw_FColAddr?460:   DS   2
+
+	RSEG  ?XD?_Banking_NAND_FBlock_FPage_FBank_To_PhyAddr_NAND?L51_BANKINGLOADER
+?_Banking_NAND_FBlock_FPage_FBank_To_PhyAddr_NAND?BYTE:
+   tc_FPage?561:   DS   1
+   tc_FBank?562:   DS   1
+  tc_Block1?563:   DS   1
+	ORG  3
+  tc_Block0?564:   DS   1
+
+	RSEG  ?XD?FLASH_MultRead_DRAM?L51_BANKINGLOADER
+?FLASH_MultRead_DRAM?BYTE:
+   tc_FPage?350:   DS   1
+	ORG  1
+  tc_Block1?351:   DS   1
+	ORG  2
+  tc_Block0?352:   DS   1
+	ORG  3
+ tc_PageNum?353:   DS   1
+	ORG  4
+  u_FBlock1?355:   DS   2
+	ORG  6
+  tc_InAddr?356:   DS   1
+	ORG  7
+   tc_FBank?357:   DS   1
+	ORG  8
+tc_InAddrMax?358:   DS   1
+
+	RSEG  ?BI?FLASH_MultRead_DRAM?L51_BANKINGLOADER
+?FLASH_MultRead_DRAM?BIT:
+ tbt_Backup?349:   DBIT   1
+	ORG  1
+tbt_DoSendCommand?354:   DBIT   1
+
+	RSEG  ?DT?L51_BANKINGLOADER
+ gc_bank_number:   DS   1
+
+	RSEG  ?XD?L51_BANKINGLOADER
+     tgc_InAddr:   DS   1
+
+	RSEG  ?C_INITSEG
+	DB	001H
+	DB	gc_bank_number
+	DB	000H
+
+; #include <stdio.h>
+; #include "SPDA2K.h"
+; 
+; #define SECTORS_PER_BANK	32  //1 sector = 1K Byte
+; 
+; U8 data gc_bank_number = 0;	//!< The current banking number in instruction SRAM.
+; U8 tgc_InAddr; //0602 Jay add for  
+; bit FLASH_MultRead_DRAM(bit tbt_Backup, U8 tc_FPage, UBYTE tc_Block1, UBYTE tc_Block0, UBYTE tc_PageNum);
+; void Banking_NAND_InAddr_To_Column_NAND(UBYTE tc_InAddr);
+; void Banking_NAND_FBlock_FPage_FBank_To_PhyAddr_NAND(U8  tc_FPage, UBYTE tc_FBank, UBYTE tc_Block1, UBYTE tc_Block0);
+; 
+; //! Entry of the banking loader.
+
+	RSEG  ?PR?L51_BANKINGLOADER
+Com0024:
+L?0037:
+	USING	0
+	MOV  	DPTR,#0B80AH
+	MOV  	A,R7
+	MOVX 	@DPTR,A
+	MOV  	DPTR,#0B809H
+	MOV  	A,R3
+	MOVX 	@DPTR,A
+	MOV  	DPTR,#tc_Block0?564
+	MOVX 	A,@DPTR
+	MOV  	DPTR,#0B808H
+	MOVX 	@DPTR,A
+	RET  	
+L?0038:
+	USING	3
+	MOV  	DPTR,#Device_Read_SRAM_Index
+	MOV  	A,#060H
+	MOVX 	@DPTR,A
+	INC  	DPTR
+	CLR  	A
+	MOVX 	@DPTR,A
+	MOV  	DPTR,#tc_bank_block?246
+	MOVX 	A,@DPTR
+	ADD  	A,ACC
+	RET  	
+L?0039:
+	USING	3
+	MOV  	DPH,A
+	MOVX 	A,@DPTR
+	MOV  	R7,A
+	INC  	DPTR
+	MOVX 	A,@DPTR
+	MOV  	DPTR,#u_FBlock?244
+	XCH  	A,R7
+	MOVX 	@DPTR,A
+	INC  	DPTR
+	MOV  	A,R7
+	MOVX 	@DPTR,A
+	RET  	
+; END OF Com0024
+
+; void perform_nand_bank_call(void)
+
+	RSEG  ?PR?perform_nand_bank_call?L51_BANKINGLOADER
+perform_nand_bank_call:
+	USING	0
+			; SOURCE LINE # 13
+; {
+			; SOURCE LINE # 14
+; #pragma asm
+; Using3_R0 EQU	018H
+	  Using3_R0 EQU	018H
+; Using3_R1 EQU	019H
+	  Using3_R1 EQU	019H
+; Using3_R2 EQU	01AH
+	  Using3_R2 EQU	01AH
+; Using3_R3 EQU	01BH
+	  Using3_R3 EQU	01BH
+; Using3_R4 EQU	01CH
+	  Using3_R4 EQU	01CH
+; Using3_R5 EQU	01DH
+	  Using3_R5 EQU	01DH
+; Using3_R6 EQU	01EH
+	  Using3_R6 EQU	01EH
+; Using3_R7 EQU	01FH
+	  Using3_R7 EQU	01FH
+; 
+	  
+; 
+	  
+; 	cjne A, gc_bank_number, ?_need_to_load_nand_bank
+	  cjne A, gc_bank_number, ?_need_to_load_nand_bank
+; 	push DPL
+	  push DPL
+; 	push DPH
+	  push DPH
+; 	ret
+	  ret
+; 
+	  
+; ?_need_to_load_nand_bank:
+	  ?_need_to_load_nand_bank:
+; 	//Target Bank Number is in register A
+	  
+; 	push gc_bank_number
+	  push gc_bank_number
+; 	mov  gc_bank_number, A
+	  mov  gc_bank_number, A
+; 
+	  
+; 	//push the bank recover function for returning use
+	  
+; 	mov  A, #LOW return_from_nand_bank
+	  mov  A, #LOW return_from_nand_bank
+; 	push ACC
+	  push ACC
+; 	mov  A, #HIGH return_from_nand_bank
+	  mov  A, #HIGH return_from_nand_bank
+; 	push ACC
+	  push ACC
+; 	//push target address
+	  
+; 	push DPL
+	  push DPL
+; 	push DPH
+	  push DPH
+;  	//push PSW and IE
+	  
+; 	push PSW
+	  push PSW
+; 	mov  PSW, #18	//use register bank3
+	  mov  PSW, #18	 
+; 	push IE
+	  push IE
+; 	clr  EA			//disable IRQ
+	  clr  EA			 
+; 
+	  
+; 	call load_nand_bank
+	  call load_nand_bank
+; 
+	  
+; 	//recover IE and PSW
+	  
+; 	pop  IE
+	  pop  IE
+; 	pop  PSW
+	  pop  PSW
+; 	ret
+	  ret
+; #pragma endasm
+; }
+			; SOURCE LINE # 57
+	RET  	
+; END OF perform_nand_bank_call
+
+; 
+; //! Exit of the banking loader.
+; void return_from_nand_bank(void)
+
+	RSEG  ?PR?return_from_nand_bank?L51_BANKINGLOADER
+return_from_nand_bank:
+	USING	0
+			; SOURCE LINE # 60
+; {
+			; SOURCE LINE # 61
+; #pragma asm
+; 	mov  A, gc_bank_number	//A is current bank
+	  mov  A, gc_bank_number	 
+; 	pop  gc_bank_number		//gc_bank_number is return bank
+	  pop  gc_bank_number		 
+; 	push PSW
+	  push PSW
+; 	cjne A, gc_bank_number, ?_recover_need_load_nand
+	  cjne A, gc_bank_number, ?_recover_need_load_nand
+; 	pop PSW
+	  pop PSW
+; 	ret
+	  ret
+; ?_recover_need_load_nand:
+	  ?_recover_need_load_nand:
+; 	mov  PSW, #18 			//use register bank3
+	  mov  PSW, #18 			 
+; 	push IE
+	  push IE
+; 	clr  EA					//disable IRQ
+	  clr  EA					 
+; 
+	  
+; 	call load_nand_bank
+	  call load_nand_bank
+; 
+	  
+; 	//pop PSW and IE
+	  
+; 	pop  IE
+	  pop  IE
+; 	pop  PSW
+	  pop  PSW
+; 	ret
+	  ret
+; #pragma endasm
+; }
+			; SOURCE LINE # 81
+	RET  	
+; END OF return_from_nand_bank
+
+; 
+; 
+; //! NAND banking loader.
+; void load_nand_bank(void) using 3
+
+	RSEG  ?PR?load_nand_bank?L51_BANKINGLOADER
+load_nand_bank:
+	USING	3
+	PUSH 	PSW
+	MOV  	PSW,#018H
+			; SOURCE LINE # 85
+; {
+; 	U8 tc_banks_per_block, tc_bank_number;
+; 	U8  tc_FPage;
+; 	U8  tc_InAddr;
+; 	union WORDDataType u_FBlock;
+; 	U8 tc_pages_per_bank;
+; 	U8 tc_bank_block, tc_bank_offset,tc_InAddrMax;
+; 
+; 	XBYTE[0xB400]=1;
+			; SOURCE LINE # 94
+	MOV  	DPTR,#0B400H
+	MOV  	A,#01H
+	MOVX 	@DPTR,A
+; 	tc_InAddrMax=gc_InAddrMax;
+			; SOURCE LINE # 95
+	MOV  	DPTR,#gc_InAddrMax
+	MOVX 	A,@DPTR
+;---- Variable 'tc_InAddrMax?248' assigned to Register 'R3' ----
+	MOV  	R3,A
+; 
+; 	tc_pages_per_bank = SECTORS_PER_BANK/tc_InAddrMax;			// gc_InAddrMax = sectors per page
+			; SOURCE LINE # 97
+	MOV  	A,#020H
+	MOV  	B,R3
+	DIV  	AB
+;---- Variable 'tc_pages_per_bank?245' assigned to Register 'R2' ----
+	MOV  	R2,A
+; 	tc_banks_per_block = gw_PagesPerBlock/tc_pages_per_bank;	// Number of 16kB banks in a block
+			; SOURCE LINE # 98
+	MOV  	R5,A
+	MOV  	R4,#00H
+	MOV  	DPTR,#gw_PagesPerBlock
+	MOVX 	A,@DPTR
+	MOV  	R6,A
+	INC  	DPTR
+	MOVX 	A,@DPTR
+	MOV  	R7,A
+	LCALL	?C?UIDIV
+;---- Variable 'tc_banks_per_block?240' assigned to Register 'R7' ----
+; 	if (gc_bank_number == 0)
+			; SOURCE LINE # 99
+	MOV  	A,gc_bank_number
+	JNZ  	?C0003
+; 	{
+			; SOURCE LINE # 100
+; 		tc_bank_block = 0;
+			; SOURCE LINE # 101
+	MOV  	DPTR,#tc_bank_block?246
+	MOVX 	@DPTR,A
+; 		tc_FPage = (48/tc_InAddrMax);			// commom is 20k 
+			; SOURCE LINE # 102
+	MOV  	A,#030H
+	MOV  	B,R3
+	DIV  	AB
+	MOV  	DPTR,#tc_FPage?242
+	MOVX 	@DPTR,A
+; 		tgc_InAddr = 48%tc_InAddrMax;	//0602 Jay add
+			; SOURCE LINE # 103
+	XCH  	A,R7
+	MOV  	A,R3
+	XCH  	A,R7
+	MOV  	A,#030H
+	MOV  	B,R7
+	DIV  	AB
+	MOV  	DPTR,#tgc_InAddr
+	MOV  	A,B
+	MOVX 	@DPTR,A
+; 	}
+			; SOURCE LINE # 104
+	SJMP 	?C0004
+?C0003:
+; 	else
+; 	{
+			; SOURCE LINE # 106
+; 		tc_bank_number	= gc_bank_number +2;	// Offset of the bank to the start of code region in unit of 16kB
+			; SOURCE LINE # 107
+	MOV  	A,gc_bank_number
+	ADD  	A,#02H
+	MOV  	R6,A
+;---- Variable 'tc_bank_number?241' assigned to Register 'R6' ----
+; 		tc_bank_block	= tc_bank_number / tc_banks_per_block;	// in unit of 16kB
+			; SOURCE LINE # 108
+	MOV  	B,R7
+	DIV  	AB
+	MOV  	DPTR,#tc_bank_block?246
+	MOVX 	@DPTR,A
+; 		tc_bank_offset	= tc_bank_number % tc_banks_per_block;	// Offset of the bank in its block in unit of 16kB
+			; SOURCE LINE # 109
+	MOV  	A,R6
+	MOV  	B,R7
+	DIV  	AB
+	MOV  	R7,B
+;---- Variable 'tc_bank_offset?247' assigned to Register 'R7' ----
+; 		tc_FPage		= tc_bank_offset * tc_pages_per_bank;	// page offset of the bank in its block
+			; SOURCE LINE # 110
+	XCH  	A,R6
+	MOV  	A,R2
+	XCH  	A,R6
+	MOV  	A,R7
+	MOV  	B,R6
+	MUL  	AB
+	MOV  	DPTR,#tc_FPage?242
+	MOVX 	@DPTR,A
+; 		tgc_InAddr       = 0;
+			; SOURCE LINE # 111
+	CLR  	A
+	MOV  	DPTR,#tgc_InAddr
+	MOVX 	@DPTR,A
+; 	}
+			; SOURCE LINE # 112
+?C0004:
+; 	tc_InAddr =tgc_InAddr;
+			; SOURCE LINE # 113
+	MOV  	DPTR,#tgc_InAddr
+	MOVX 	A,@DPTR
+	MOV  	DPTR,#tc_InAddr?243
+	MOVX 	@DPTR,A
+;     DEVICE_REG[0x0F] = 0x00;     // CE0
+			; SOURCE LINE # 114
+	MOV  	DPTR,#0B40FH
+	CLR  	A
+	MOVX 	@DPTR,A
+;     Device_Read_SRAM_Index.WD = 0x6000;
+			; SOURCE LINE # 115
+;     u_FBlock.WD = Bank_Block_B[tc_bank_block];
+			; SOURCE LINE # 116
+	LCALL	L?0038
+	ADD  	A,#LOW (Bank_Block_B)
+	MOV  	DPL,A
+	CLR  	A
+	ADDC 	A,#HIGH (Bank_Block_B)
+	LCALL	L?0039
+; //	dbprintf("%bx ", gc_bank_number);
+;     if(FLASH_MultRead_DRAM(0, tc_FPage, u_FBlock.BY[1], u_FBlock.BY[0], SECTORS_PER_BANK-8))
+			; SOURCE LINE # 118
+	CLR  	?FLASH_MultRead_DRAM?BIT
+	LCALL	L?0035
+	JNC  	?C0007
+; 	{
+			; SOURCE LINE # 119
+; //		dbprintf("BankFail:%bx\n",gc_bank_number);
+; 		gbt_Code_NeedRecover=1;
+			; SOURCE LINE # 121
+	SETB 	gbt_Code_NeedRecover
+;     	tgc_InAddr=tc_InAddr;
+			; SOURCE LINE # 122
+	MOV  	DPTR,#tc_InAddr?243
+	MOVX 	A,@DPTR
+	MOV  	DPTR,#tgc_InAddr
+	MOVX 	@DPTR,A
+;     	Device_Read_SRAM_Index.WD = 0x6000;
+			; SOURCE LINE # 123
+;         u_FBlock.WD = Bank_Block_A[tc_bank_block];
+			; SOURCE LINE # 124
+	LCALL	L?0038
+	ADD  	A,#LOW (Bank_Block_A)
+	MOV  	DPL,A
+	CLR  	A
+	ADDC 	A,#HIGH (Bank_Block_A)
+	LCALL	L?0039
+; 		if (FLASH_MultRead_DRAM(1, tc_FPage, u_FBlock.BY[1], u_FBlock.BY[0], SECTORS_PER_BANK-8))
+			; SOURCE LINE # 125
+	SETB 	?FLASH_MultRead_DRAM?BIT
+	LCALL	L?0035
+	JNC  	?C0007
+; 		{
+			; SOURCE LINE # 126
+; 			GLOBAL_REG[0x91] &= ~0x01;	// turn off LDO
+			; SOURCE LINE # 127
+	MOV  	DPTR,#0B091H
+	MOVX 	A,@DPTR
+	ANL  	A,#0FEH
+	MOVX 	@DPTR,A
+; 			CPU_REG[0x20] = 1;	// select internal boot ROM.
+			; SOURCE LINE # 128
+	MOV  	DPTR,#0B120H
+	MOV  	A,#01H
+	MOVX 	@DPTR,A
+; 			CPU_REG[0x21] = 1;	// reset MCU
+			; SOURCE LINE # 129
+	INC  	DPTR
+	MOVX 	@DPTR,A
+; 		}
+			; SOURCE LINE # 130
+; 	}
+			; SOURCE LINE # 131
+; }
+			; SOURCE LINE # 132
+?C0007:
+	POP  	PSW
+	RET  	
+L?0035:
+	MOV  	DPTR,#tc_FPage?242
+	MOVX 	A,@DPTR
+	MOV  	DPTR,#?FLASH_MultRead_DRAM?BYTE
+	MOVX 	@DPTR,A
+	MOV  	DPTR,#u_FBlock?244+01H
+	MOVX 	A,@DPTR
+	MOV  	DPTR,#?FLASH_MultRead_DRAM?BYTE+01H
+	MOVX 	@DPTR,A
+	MOV  	DPTR,#u_FBlock?244
+	MOVX 	A,@DPTR
+	MOV  	DPTR,#?FLASH_MultRead_DRAM?BYTE+02H
+	MOVX 	@DPTR,A
+	INC  	DPTR
+	MOV  	A,#018H
+	MOVX 	@DPTR,A
+	LCALL	FLASH_MultRead_DRAM
+	RET  	
+; END OF load_nand_bank
+
+; 
+; 
+; /*********************************************************************************
+; * NAME:                    bit  FLASH_MultRead_DRAM(void)
+; * DESCRIPTION:
+; *   If ECC is Uncorrectable, return TRUE; else return FALSE. 
+; *********************************************************************************/
+; bit FLASH_MultRead_DRAM(bit tbt_Backup, U8 tc_FPage, UBYTE tc_Block1, UBYTE tc_Block0, UBYTE tc_PageNum)
+
+	RSEG  ?PR?FLASH_MultRead_DRAM?L51_BANKINGLOADER
+FLASH_MultRead_DRAM:
+	USING	0
+			; SOURCE LINE # 140
+; {
+			; SOURCE LINE # 141
+; 	bit	tbt_DoSendCommand=FALSE;
+			; SOURCE LINE # 142
+	CLR  	tbt_DoSendCommand?354
+; 	union WORDDataType u_FBlock1;
+; 	UBYTE tc_InAddr = 0, tc_FBank = 0,tc_InAddrMax;
+			; SOURCE LINE # 144
+	CLR  	A
+	MOV  	DPTR,#tc_InAddr?356
+	MOVX 	@DPTR,A
+	INC  	DPTR
+	MOVX 	@DPTR,A
+; 
+; 	tc_InAddrMax=gc_InAddrMax;
+			; SOURCE LINE # 146
+	MOV  	DPTR,#gc_InAddrMax
+	MOVX 	A,@DPTR
+	MOV  	DPTR,#tc_InAddrMax?358
+	MOVX 	@DPTR,A
+; 	tc_InAddr = tgc_InAddr;//0602 Jay add
+			; SOURCE LINE # 147
+	MOV  	DPTR,#tgc_InAddr
+	MOVX 	A,@DPTR
+	MOV  	DPTR,#tc_InAddr?356
+	MOVX 	@DPTR,A
+; 	u_FBlock1.BY[1] = tc_Block1;
+			; SOURCE LINE # 148
+	MOV  	DPTR,#tc_Block1?351
+	MOVX 	A,@DPTR
+	MOV  	DPTR,#u_FBlock1?355+01H
+	MOVX 	@DPTR,A
+; 	u_FBlock1.BY[0] = tc_Block0;
+			; SOURCE LINE # 149
+	MOV  	DPTR,#tc_Block0?352
+	MOVX 	A,@DPTR
+	MOV  	DPTR,#u_FBlock1?355
+	MOVX 	@DPTR,A
+; 	Reset_DMA();	
+			; SOURCE LINE # 150
+	LCALL	Reset_DMA
+; 	Device_Xfer_DataLength.WD = 0x03FF;   
+			; SOURCE LINE # 151
+	MOV  	DPTR,#Device_Xfer_DataLength
+	MOV  	A,#03H
+	MOVX 	@DPTR,A
+	INC  	DPTR
+	MOV  	A,#0FFH
+	MOVX 	@DPTR,A
+; 	SET_DEVICE_READ_TO_DRAM();
+			; SOURCE LINE # 152
+	LCALL	SET_DEVICE_READ_TO_DRAM
+; 	DEVICE_REG[0xA0] = 0x01;									// Reset ECC  
+			; SOURCE LINE # 153
+	MOV  	DPTR,#0B4A0H
+	MOV  	A,#01H
+	MOVX 	@DPTR,A
+; 	FLASH_REG[0xA3]  = 0x01;									// Enable ECC 
+			; SOURCE LINE # 154
+	MOV  	DPTR,#0B8A3H
+	MOVX 	@DPTR,A
+; 	FLASH_REG[0xA0]  = 0x00;									// Disable Encode RS-Code
+			; SOURCE LINE # 155
+	MOV  	DPTR,#0B8A0H
+	CLR  	A
+	MOVX 	@DPTR,A
+; 	FLASH_REG[0xA1]  = 0x01;									// Start Decode RS-Code
+			; SOURCE LINE # 156
+	INC  	DPTR
+	INC  	A
+	MOVX 	@DPTR,A
+; 	FLASH_REG[0xA2] &= 0xF3;									// Clear ECC fail register
+			; SOURCE LINE # 157
+	INC  	DPTR
+	MOVX 	A,@DPTR
+	ANL  	A,#0F3H
+	MOVX 	@DPTR,A
+; 	FLASH_REG[0x06]  = 0x00;									// cmd1
+			; SOURCE LINE # 158
+; 	FLASH_REG[0x07]  = 0x30;									// cmd2	
+			; SOURCE LINE # 159
+; 	Banking_NAND_InAddr_To_Column_NAND(tc_InAddr);				// set Column
+			; SOURCE LINE # 160
+; 	Banking_NAND_FBlock_FPage_FBank_To_PhyAddr_NAND(tc_FPage, tc_FBank, u_FBlock1.BY[1], u_FBlock1.BY[0]); // set FBank Fblock Fpage	
+			; SOURCE LINE # 161
+	LCALL	L?0034
+	LCALL	_Banking_NAND_FBlock_FPage_FBank_To_PhyAddr_NAND
+; 	CHK_Flash_Ready();
+			; SOURCE LINE # 162
+	LCALL	CHK_Flash_Ready
+; 	FLASH_REG[0x04] = 0x01;										// CMD0+ADDR+CMD1
+			; SOURCE LINE # 163
+; 	TRIGGER_FLASH_CMD();
+			; SOURCE LINE # 164
+; 	CHK_Flash_Ready();
+			; SOURCE LINE # 165
+	LCALL	L?0040
+; 	FLASH_REG[0x1A] = 0x10;
+			; SOURCE LINE # 166
+	MOV  	DPTR,#0B81AH
+	MOV  	A,#010H
+	MOVX 	@DPTR,A
+?C0008:
+; 	while(tc_PageNum){
+			; SOURCE LINE # 167
+	MOV  	DPTR,#tc_PageNum?353
+	MOVX 	A,@DPTR
+	JNZ  	$ + 5H
+	LJMP 	?C0009
+;         if(tbt_DoSendCommand ){
+			; SOURCE LINE # 168
+	JNB  	tbt_DoSendCommand?354,?C0010
+;             FLASH_REG[0x06]  = 0x00;							// cmd1
+			; SOURCE LINE # 169
+; 	        FLASH_REG[0x07]  = 0x30;							// cmd2	
+			; SOURCE LINE # 170
+; 	        Banking_NAND_InAddr_To_Column_NAND(tc_InAddr);		// set Column
+			; SOURCE LINE # 171
+;         	Banking_NAND_FBlock_FPage_FBank_To_PhyAddr_NAND(tc_FPage, tc_FBank, u_FBlock1.BY[1], u_FBlock1.BY[0]); // set FBank Fblock Fpage
+			; SOURCE LINE # 172
+	LCALL	L?0034
+	LCALL	_Banking_NAND_FBlock_FPage_FBank_To_PhyAddr_NAND
+; 	        FLASH_REG[0x04] = 0x01;								// CMD0+ADDR+CMD1
+			; SOURCE LINE # 173
+; 	        TRIGGER_FLASH_CMD(); 
+			; SOURCE LINE # 174
+; 	        CHK_Flash_Ready();
+			; SOURCE LINE # 175
+	LCALL	L?0040
+; 	        tbt_DoSendCommand= 0;
+			; SOURCE LINE # 176
+	CLR  	tbt_DoSendCommand?354
+;         }                 
+			; SOURCE LINE # 177
+?C0010:
+;         FLASH_REG[0xA1]  = 0x01;								// Start Decode RS-Code
+			; SOURCE LINE # 178
+	MOV  	DPTR,#0B8A1H
+	MOV  	A,#01H
+	MOVX 	@DPTR,A
+; 	    FLASH_REG[0xA2] &= 0xF3;
+			; SOURCE LINE # 179
+	INC  	DPTR
+	MOVX 	A,@DPTR
+	ANL  	A,#0F3H
+	MOVX 	@DPTR,A
+;         FLASH_REG[0x1A]	= 0x10; 
+			; SOURCE LINE # 180
+	MOV  	DPTR,#0B81AH
+	MOV  	A,#010H
+	MOVX 	@DPTR,A
+;         if((tc_InAddr==(tc_InAddrMax-2))||(tc_PageNum==0x02)){
+			; SOURCE LINE # 181
+	MOV  	DPTR,#tc_InAddrMax?358
+	MOVX 	A,@DPTR
+	ADD  	A,#0FEH
+	MOV  	R7,A
+	MOV  	DPTR,#tc_InAddr?356
+	MOVX 	A,@DPTR
+	XRL  	A,R7
+	JZ   	?C0012
+	MOV  	DPTR,#tc_PageNum?353
+	MOVX 	A,@DPTR
+	CJNE 	A,#02H,?C0011
+?C0012:
+; 	        FLASH_REG[0x1A]	= 0x11;								// last frag = 1
+			; SOURCE LINE # 182
+	MOV  	DPTR,#0B81AH
+	MOV  	A,#011H
+	MOVX 	@DPTR,A
+; 	    }        
+			; SOURCE LINE # 183
+?C0011:
+;         Trigger_Data_Transfer();        
+			; SOURCE LINE # 184
+	LCALL	Trigger_Data_Transfer
+; 		Device_Read_SRAM_Index.BY[0] += 0x04 ;					// 080411 Joyce add for auotcount function fail
+			; SOURCE LINE # 185
+	MOV  	DPTR,#Device_Read_SRAM_Index
+	MOVX 	A,@DPTR
+	ADD  	A,#04H
+	MOVX 	@DPTR,A
+; 		Device_Read_SRAM_Index.BY[1]  = 0x00 ;					// 080411 Joyce add for auotcount function fail          
+			; SOURCE LINE # 186
+	CLR  	A
+	INC  	DPTR
+	MOVX 	@DPTR,A
+;        
+;         tc_InAddr+=2;
+			; SOURCE LINE # 188
+	MOV  	DPTR,#tc_InAddr?356
+	MOVX 	A,@DPTR
+	ADD  	A,#02H
+	MOVX 	@DPTR,A
+;         if(tc_InAddr==tc_InAddrMax){
+			; SOURCE LINE # 189
+	MOV  	DPTR,#tc_InAddrMax?358
+	MOVX 	A,@DPTR
+	MOV  	R7,A
+	MOV  	DPTR,#tc_InAddr?356
+	MOVX 	A,@DPTR
+	XRL  	A,R7
+	JNZ  	?C0013
+;             tbt_DoSendCommand = TRUE;
+			; SOURCE LINE # 190
+	SETB 	tbt_DoSendCommand?354
+;             tc_InAddr = 0x00;
+			; SOURCE LINE # 191
+	MOVX 	@DPTR,A
+;             tc_FPage++;
+			; SOURCE LINE # 192
+	MOV  	DPTR,#tc_FPage?350
+	MOVX 	A,@DPTR
+	INC  	A
+	MOVX 	@DPTR,A
+;             if(tc_FPage==gw_PagesPerBlock){
+			; SOURCE LINE # 193
+	MOVX 	A,@DPTR
+	MOV  	R7,A
+	MOV  	DPTR,#gw_PagesPerBlock
+	MOVX 	A,@DPTR
+	JNZ  	?C0031
+	INC  	DPTR
+	MOVX 	A,@DPTR
+	XRL  	A,R7
+?C0031:
+	JNZ  	?C0013
+;                 tc_FPage = 0x00;
+			; SOURCE LINE # 194
+	MOV  	DPTR,#tc_FPage?350
+	MOVX 	@DPTR,A
+;                 tc_FBank++;
+			; SOURCE LINE # 195
+	MOV  	DPTR,#tc_FBank?357
+	MOVX 	A,@DPTR
+	INC  	A
+	MOVX 	@DPTR,A
+;                 gc_Flash_Data++;
+			; SOURCE LINE # 196
+	MOV  	DPTR,#gc_Flash_Data
+	MOVX 	A,@DPTR
+	INC  	A
+	MOVX 	@DPTR,A
+;                 //if(tc_FBank==gc_BanksPerDevice){
+;                 //    tc_FBank =0x00;
+;                 //}
+;                 if(tbt_Backup){
+			; SOURCE LINE # 200
+	JNB  	tbt_Backup?349,?C0015
+;                     u_FBlock1.WD = Bank_Block_A[gc_Flash_Data];
+			; SOURCE LINE # 201
+	MOVX 	A,@DPTR
+	ADD  	A,ACC
+	ADD  	A,#LOW (Bank_Block_A)
+	MOV  	DPL,A
+	CLR  	A
+	ADDC 	A,#HIGH (Bank_Block_A)
+;                 }
+			; SOURCE LINE # 202
+	SJMP 	?C0032
+?C0015:
+;                 else{
+			; SOURCE LINE # 203
+;                     u_FBlock1.WD = Bank_Block_B[gc_Flash_Data]; 
+			; SOURCE LINE # 204
+	MOV  	DPTR,#gc_Flash_Data
+	MOVX 	A,@DPTR
+	ADD  	A,ACC
+	ADD  	A,#LOW (Bank_Block_B)
+	MOV  	DPL,A
+	CLR  	A
+	ADDC 	A,#HIGH (Bank_Block_B)
+?C0032:
+	MOV  	DPH,A
+	MOVX 	A,@DPTR
+	MOV  	R7,A
+	INC  	DPTR
+	MOVX 	A,@DPTR
+	MOV  	DPTR,#u_FBlock1?355
+	XCH  	A,R7
+	MOVX 	@DPTR,A
+	INC  	DPTR
+	MOV  	A,R7
+	MOVX 	@DPTR,A
+;                 }
+			; SOURCE LINE # 205
+;             }
+			; SOURCE LINE # 206
+;         }
+			; SOURCE LINE # 207
+?C0013:
+;         CHK_Data_Transfer_Done();
+			; SOURCE LINE # 208
+	LCALL	CHK_Data_Transfer_Done
+;         if(CHK_ECC_Done()){
+			; SOURCE LINE # 209
+	LCALL	CHK_ECC_Done
+	JNC  	?C0017
+; //			dbprintf("\nECC-PN:%bx %bx ",tc_PageNum,tc_FPage);
+;             if(!tbt_Backup){
+			; SOURCE LINE # 211
+	JB   	tbt_Backup?349,?C0017
+;                DEVICE_REG[0x00] |=0x10;							// reset nand module because un-complete flash read process
+			; SOURCE LINE # 212
+	MOV  	DPTR,#0B400H
+	MOVX 	A,@DPTR
+	ORL  	A,#010H
+	MOVX 	@DPTR,A
+;                return 1;
+			; SOURCE LINE # 213
+	RET  	
+;             }
+			; SOURCE LINE # 214
+; 	    }
+			; SOURCE LINE # 215
+?C0017:
+;         CPU_REG[0x19] = Device_Read_SRAM_Index.BY[0];			// 080411 Joyce add for auotcount function fail
+			; SOURCE LINE # 216
+	MOV  	DPTR,#Device_Read_SRAM_Index
+	MOVX 	A,@DPTR
+	MOV  	DPTR,#0B119H
+	MOVX 	@DPTR,A
+; 		CPU_REG[0x18] = Device_Read_SRAM_Index.BY[1];			// 080411 Joyce add for auotcount function fail	
+			; SOURCE LINE # 217
+	MOV  	DPTR,#Device_Read_SRAM_Index+01H
+	MOVX 	A,@DPTR
+	MOV  	DPTR,#0B118H
+	MOVX 	@DPTR,A
+;         tc_PageNum -=2; 
+			; SOURCE LINE # 218
+	MOV  	DPTR,#tc_PageNum?353
+	MOVX 	A,@DPTR
+	ADD  	A,#0FEH
+	MOVX 	@DPTR,A
+;     }
+			; SOURCE LINE # 219
+	LJMP 	?C0008
+?C0009:
+;     CHK_NandAutocmp_Done();
+			; SOURCE LINE # 220
+	LCALL	CHK_NandAutocmp_Done
+; 	FLASH_REG[0xA1] = 0x00;
+			; SOURCE LINE # 221
+	MOV  	DPTR,#0B8A1H
+	CLR  	A
+	MOVX 	@DPTR,A
+; 	return 0;	    
+			; SOURCE LINE # 222
+	CLR  	C
+; } 
+			; SOURCE LINE # 223
+?C0019:
+	RET  	
+L?0034:
+	MOV  	DPTR,#0B806H
+	CLR  	A
+	MOVX 	@DPTR,A
+	INC  	DPTR
+	MOV  	A,#030H
+	MOVX 	@DPTR,A
+	MOV  	DPTR,#tc_InAddr?356
+	MOVX 	A,@DPTR
+	MOV  	R7,A
+	LCALL	_Banking_NAND_InAddr_To_Column_NAND
+	MOV  	DPTR,#tc_FPage?350
+	MOVX 	A,@DPTR
+	MOV  	R7,A
+	MOV  	DPTR,#tc_FBank?357
+	MOVX 	A,@DPTR
+	MOV  	R5,A
+	MOV  	DPTR,#u_FBlock1?355+01H
+	MOVX 	A,@DPTR
+	MOV  	R3,A
+	MOV  	DPTR,#u_FBlock1?355
+	MOVX 	A,@DPTR
+	MOV  	DPTR,#?_Banking_NAND_FBlock_FPage_FBank_To_PhyAddr_NAND?BYTE+03H
+	MOVX 	@DPTR,A
+	RET  	
+L?0040:
+	MOV  	DPTR,#0B804H
+	MOV  	A,#01H
+	MOVX 	@DPTR,A
+	LCALL	TRIGGER_FLASH_CMD
+	LCALL	CHK_Flash_Ready
+	RET  	
+; END OF FLASH_MultRead_DRAM
+
+; 
+; /*********************************************************************************
+; * NAME:                    Banking_NAND_InAddr_To_Column_NAND(UBYTE tc_InAddr)
+; * DESCRIPTION:
+; *********************************************************************************/
+; void Banking_NAND_InAddr_To_Column_NAND(UBYTE tc_InAddr) {
+
+	RSEG  ?PR?_Banking_NAND_InAddr_To_Column_NAND?L51_BANKINGLOADER
+_Banking_NAND_InAddr_To_Column_NAND:
+	USING	0
+			; SOURCE LINE # 229
+;---- Variable 'tc_InAddr?459' assigned to Register 'R7' ----
+; 	
+; 	unionWORD tw_FColAddr;
+;     if((FLASH_REG[0xA5]&0x03)==0x02){ //24bit
+			; SOURCE LINE # 232
+	MOV  	DPTR,#0B8A5H
+	MOVX 	A,@DPTR
+	ANL  	A,#03H
+	MOV  	R6,A
+	MOV  	A,R7
+	CJNE 	R6,#02H,?C0020
+;         tw_FColAddr.WD =  (U16)(tc_InAddr>>1)*1070;//(1024+46)        
+			; SOURCE LINE # 233
+	CLR  	C
+	RRC  	A
+	MOV  	R7,A
+	MOV  	R6,#00H
+	MOV  	R4,#04H
+	MOV  	R5,#02EH
+;     }
+			; SOURCE LINE # 234
+	SJMP 	?C0033
+?C0020:
+;     else{                             //16bit
+			; SOURCE LINE # 235
+;        tw_FColAddr.WD =  (U16)(tc_InAddr>>1)*1056;//(1024+32)
+			; SOURCE LINE # 236
+	CLR  	C
+	RRC  	A
+	MOV  	R7,A
+	MOV  	R6,#00H
+	MOV  	R4,#04H
+	MOV  	R5,#020H
+?C0033:
+	LCALL	?C?IMUL
+	MOV  	DPTR,#tw_FColAddr?460
+	MOV  	A,R6
+	MOVX 	@DPTR,A
+	INC  	DPTR
+	MOV  	A,R7
+	MOVX 	@DPTR,A
+;     }   
+			; SOURCE LINE # 237
+?C0021:
+; 	FLASH_REG[0x0C] = tw_FColAddr.BY[1];
+			; SOURCE LINE # 238
+	MOV  	DPTR,#tw_FColAddr?460+01H
+	MOVX 	A,@DPTR
+	MOV  	DPTR,#0B80CH
+	MOVX 	@DPTR,A
+; 	FLASH_REG[0x0B] = tw_FColAddr.BY[0]; 
+			; SOURCE LINE # 239
+	MOV  	DPTR,#tw_FColAddr?460
+	MOVX 	A,@DPTR
+	MOV  	DPTR,#0B80BH
+	MOVX 	@DPTR,A
+; 	
+; 	
+; 	
+; 	
+; 	
+; }
+			; SOURCE LINE # 245
+	RET  	
+; END OF _Banking_NAND_InAddr_To_Column_NAND
+
+; 
+; /*****************************************************************************************************************************
+; * NAME: Banking_NAND_FBlock_FPage_FBank_To_PhyAddr_NAND(UBYTE tc_FPage, UBYTE tc_FBank, UBYTE tc_Block1, UBYTE tc_Block0)
+; * DESCRIPTION:
+; *******************************************************************************************************************************/
+; void Banking_NAND_FBlock_FPage_FBank_To_PhyAddr_NAND(UBYTE tc_FPage, UBYTE tc_FBank, UBYTE tc_Block1, UBYTE tc_Block0) {
+
+	RSEG  ?PR?_Banking_NAND_FBlock_FPage_FBank_To_PhyAddr_NAND?L51_BANKINGLOADER
+_Banking_NAND_FBlock_FPage_FBank_To_PhyAddr_NAND:
+	USING	0
+			; SOURCE LINE # 251
+;---- Variable 'tc_FPage?561' assigned to Register 'R7' ----
+;---- Variable 'tc_Block1?563' assigned to Register 'R3' ----
+;---- Variable 'tc_FBank?562' assigned to Register 'R5' ----
+; 	U8 tc_FMAP;
+; 	tc_FBank=0;
+			; SOURCE LINE # 253
+	CLR  	A
+; 	DEVICE_REG[0x0F] =0x00;   
+			; SOURCE LINE # 254
+	MOV  	DPTR,#0B40FH
+	MOVX 	@DPTR,A
+; 	if(NAND_INFO.cFMAP&0xF0){// By MCU 
+			; SOURCE LINE # 255
+	MOV  	DPTR,#NAND_INFO+07H
+	MOVX 	A,@DPTR
+	ANL  	A,#0F0H
+	JZ   	?C0023
+;     	tc_FMAP = (NAND_INFO.cFMAP&0xF0)>>4;
+			; SOURCE LINE # 256
+	SWAP 	A
+	ANL  	A,#0FH
+;---- Variable 'tc_FMAP?565' assigned to Register 'R6' ----
+;     	switch(tc_FMAP){
+			; SOURCE LINE # 257
+	DEC  	A
+	JNZ  	?C0027
+;     		case 1:    	// 256 page  block 
+			; SOURCE LINE # 258
+?C0025:
+;         		FLASH_REG[0x0A]= tc_FPage;  
+			; SOURCE LINE # 259
+;         		FLASH_REG[0x09]= tc_Block1;
+			; SOURCE LINE # 260
+;         		FLASH_REG[0x08]= tc_Block0;        		
+			; SOURCE LINE # 261
+	LCALL	L?0037
+; 				break;
+			; SOURCE LINE # 262
+	SJMP 	?C0027
+; 			default: 
+			; SOURCE LINE # 263
+; 				break;
+			; SOURCE LINE # 264
+; 		}	              
+			; SOURCE LINE # 265
+;     }
+			; SOURCE LINE # 266
+?C0023:
+;     else{				// by HW    	
+			; SOURCE LINE # 267
+;     	FLASH_REG[0x0A] = tc_FPage;                                             // FPage
+			; SOURCE LINE # 268
+; 	    FLASH_REG[0x09] = tc_Block1;                                      // FBlock_L 
+			; SOURCE LINE # 269
+; 	    FLASH_REG[0x08] = tc_Block0;                                      // FBlock_H
+			; SOURCE LINE # 270
+	LCALL	L?0037
+; 		FLASH_REG[0x1C] = 0;                                             // FBank  
+			; SOURCE LINE # 271
+	MOV  	DPTR,#0B81CH
+	CLR  	A
+	MOVX 	@DPTR,A
+; 	}
+			; SOURCE LINE # 272
+?C0027:
+; 	if(NAND_INFO.cADDR_CYCLE==0x04){	// 4 cycle addr
+			; SOURCE LINE # 273
+	MOV  	DPTR,#NAND_INFO+08H
+	MOVX 	A,@DPTR
+	MOV  	DPTR,#0B801H
+	CJNE 	A,#04H,?C0028
+; 		FLASH_REG[0x01] = 0x30|0x01;
+			; SOURCE LINE # 274
+	MOV  	A,#031H
+	MOVX 	@DPTR,A
+; 	}
+			; SOURCE LINE # 275
+	RET  	
+?C0028:
+; 	else{
+			; SOURCE LINE # 276
+; 		FLASH_REG[0x01] = (0x40|0x01); 	// 5 cycle addr
+			; SOURCE LINE # 277
+	MOV  	A,#041H
+	MOVX 	@DPTR,A
+; 	}	  
+			; SOURCE LINE # 278
+; 	
+; 
+; }
+			; SOURCE LINE # 281
+?C0030:
+	RET  	
+; END OF _Banking_NAND_FBlock_FPage_FBank_To_PhyAddr_NAND
+
+	END

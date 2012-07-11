@@ -1,0 +1,339 @@
+C51 COMPILER V9.00   USB                                                                   07/09/2012 21:16:54 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE USB
+OBJECT MODULE PLACED IN .\obj\USB.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE USB\USB.c LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDIR(..\libsource\header)
+                    - DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\USB.lst) OBJECT(.\obj\USB.obj)
+
+line level    source
+
+   1          #include "..\header\SPDA2K.h"
+   2          #include "..\LCM\LCM_BMP.h"
+   3          #include "..\header\variables.h"
+   4          #include "..\header\usb_data.h"
+   5          
+   6          
+   7          extern void LCM_Disp_MyMP3Logo();
+   8          extern void LCM_Disp_PC();
+   9          extern void LCM_Disp_USBLine();
+  10          
+  11          void USB_Task()
+  12          {
+  13   1              set_clock_mode(CLOCK_MODE_USB);                      
+  14   1              USB_Mode();
+  15   1      
+  16   1              XBYTE[0xB010]&=0xFE;    // Disable DSP clock, Jimi 080729 for pop noise as 1st time play
+  17   1              XBYTE[0xB002]&=0xFE;    // Release DSP Reset, Jimi 080729 for pop noise as 1st time play
+  18   1      }
+  19          
+  20          void USB_DisConnect(void)
+  21          {
+  22   1              XBYTE[0xB01D]=0x01;
+  23   1              XBYTE[0xB017]=0x00;
+  24   1              XBYTE[0xB5A1]=0x00;
+  25   1          XBYTE[0xB5C0]=0x00;  //clear suspend/resume/configuration change                  //turn off USB D+
+  26   1              XBYTE[0xB5C2]=0x00;
+  27   1              //Adding for avoid losting power
+  28   1              XBYTE[0xB5D0]=0x00;
+  29   1              XBYTE[0xB5D1]=0x00;
+  30   1              XBYTE[0xB5D2]=0x00;
+  31   1              XBYTE[0xB5D3]=0x00;
+  32   1              XBYTE[0xB016]=0x05; //Close USB UTMI 30Mhz  USB匿堤綴參clock燊賸
+  33   1              XBYTE[0xB016]=0x01; //Close USB UTMI 30Mhz  USB匿堤綴參clock燊賸
+  34   1      }
+  35          
+  36          
+  37          void USB_Mode(void) 
+  38          {
+  39   1              gb_USB_Plugin=1;
+  40   1              set_clock_mode(CLOCK_MODE_USB);
+  41   1          PowerOn_Init_USB();
+  42   1              USBInitialize(); 
+  43   1              XBYTE[0xB527]=0x00;     // 080304 jay change for new fpga
+  44   1              XBYTE[0xB017]=0x01;     // UDC O/P      
+  45   1          IE=0x83;       
+  46   1              gdw_USB_CountDown=0x1FFFF;
+  47   1              while(gb_USBRST_ISR_Detected==0)    // Bulk_In_Out  將跳出while 迴圈  //20090630 chiayen modify
+  48   1              {
+  49   2              if((--gdw_USB_CountDown==0))
+  50   2                      {
+  51   3                              goto USB_QUIT;
+  52   3              }
+  53   2              }
+  54   1              
+C51 COMPILER V9.00   USB                                                                   07/09/2012 21:16:54 PAGE 2   
+
+  55   1              set_clock_mode(CLOCK_MODE_MP3);
+  56   1              LCM_ShowUSBConnectIcon();
+  57   1              set_clock_mode(CLOCK_MODE_USB);
+  58   1      
+  59   1              EA=0;   
+  60   1              while(1)
+  61   1              {
+  62   2                      gdw_USB_CountDown=0x3FFFF;
+  63   2                      if(gc_USBStage==CBWStage) 
+  64   2                      {                       
+  65   3                              EA=1;                                                   
+  66   3                              while(!gb_USB_CMD_IN)                        // Bulk_In_Out  將跳出while 迴圈
+  67   3                              {
+  68   4                                      if(gb_USB_Connect_Flag)
+  69   4                                      {
+  70   5                                              if((gb_USER_Remove_Flag)||(--gdw_USB_CountDown==0))
+  71   5                                              {
+  72   6                                                      goto USB_QUIT;
+  73   6                                              } 
+  74   5                                      }
+  75   4                                      else
+  76   4                                      {
+  77   5                                      if(--gdw_USB_CountDown==0)  
+  78   5                                              {
+  79   6                                                      goto USB_QUIT;
+  80   6                                              }
+  81   5                                      }
+  82   4                              }
+  83   3                              EA=0;
+  84   3      
+  85   3                              gb_USB_CMD_IN=0;
+  86   3                              SD_Card_Detect();               
+  87   3                              gb_USB_Connect_Flag=1;
+  88   3                      gdw_USB_CountDown=0x3FFFF; 
+  89   3                              Save_CBW_Packet();
+  90   3                              Decode_CBW_Command();                             // 解CBW和記錄相關手續                    
+  91   3                      }
+  92   2      
+  93   2                      #if 0
+                              if(gw_USBDisplayTime==0)
+                              {
+                                      USB_Mode_Disp();
+                              }
+                              #endif
+  99   2      
+ 100   2                      if(gc_USBStage==BulkInReadSectorsStage) 
+ 101   2                      {
+ 102   3                              XBYTE[0xB5D2]&=0xDD;                            //Disable Bulk-Out中斷
+ 103   3                              ReadSectors();                      
+ 104   3                              if(gb_USB_Plugin==0)
+ 105   3                              {
+ 106   4      USB_QUIT:
+ 107   4                                      set_clock_mode(CLOCK_MODE_MP3);
+ 108   4                                      USB_DisConnect();
+ 109   4                                      gb_USB_Plugin=0;
+ 110   4                                      return;
+ 111   4                              }
+ 112   3                                      
+ 113   3                              XBYTE[0xB5E9]=0x11;
+ 114   3                              gdw_dCBW_DataXferLength.LW=0;
+ 115   3                              gc_USBStage = CSWStage;                                   // 進入Comand Status Wrapper
+ 116   3                      }
+C51 COMPILER V9.00   USB                                                                   07/09/2012 21:16:54 PAGE 3   
+
+ 117   2      
+ 118   2                      if (gc_USBStage == BulkOutWriteSectorsStage) 
+ 119   2                      {
+ 120   3                              XBYTE[0xB5D2]&=0xDD;    //Disable Bulk-Out中斷
+ 121   3                              XBYTE[0xB511]=0x01;             //HW auto ACK 
+ 122   3                              WriteSectors();
+ 123   3                              XBYTE[0xB511]=0x00;
+ 124   3                              XBYTE[0xB5E9]=0x22;
+ 125   3                              gc_bCSWStatus = 0x00;
+ 126   3                              gc_RequestSenseCode = 0xFF;                        // normal
+ 127   3                              gdw_dCBW_DataXferLength.LW = 0;
+ 128   3                              gc_USBStage = CSWStage;
+ 129   3                      }
+ 130   2      
+ 131   2                      if(gc_USBStage==BulkInResponseStage)
+ 132   2                      {
+ 133   3                              XBYTE[0xB5D2]&=0xDD;                            //Disable Bulk-Out中斷
+ 134   3                              if(gb_XferNormalResponseData_ModeSense) 
+ 135   3                              {                      // '1':Normal
+ 136   4                                      if(gc_COMD_IN[0]==0x23) 
+ 137   4                                      {
+ 138   5                                              gdw_dCBW_DataXferLength.WD[1] = 0x00;
+ 139   5                                              XBYTE[0xB515]=0x0C;
+ 140   5                                              XBYTE[0xB516]=0x00;
+ 141   5                                              XBYTE[0xB5A1]|=0x01;
+ 142   5                                              while(XBYTE[0xB5A1]&0x01)
+ 143   5                                              {
+ 144   6                                              }
+ 145   5                                              XBYTE[0xB5E9]=0x01;
+ 146   5                                      }
+ 147   4                                      else 
+ 148   4                                      {
+ 149   5                                              while(gdw_dCBW_DataXferLength.WD[1]) 
+ 150   5                                              {
+ 151   6                                                      if(gdw_dCBW_DataXferLength.WD[1]>64) 
+ 152   6                                                      {
+ 153   7                                                              gdw_dCBW_DataXferLength.WD[1] = gdw_dCBW_DataXferLength.WD[1] - 64;
+ 154   7                                                              XBYTE[0xB515]=0x40;
+ 155   7                                                      XBYTE[0xB516]=0x00;
+ 156   7                                                      }
+ 157   6                                                      else 
+ 158   6                                                      {
+ 159   7                                                              XBYTE[0xB515]=gdw_dCBW_DataXferLength.BY[3];
+ 160   7                                                      XBYTE[0xB516]=gdw_dCBW_DataXferLength.BY[2]&0x0F;
+ 161   7                                                      gdw_dCBW_DataXferLength.WD[1] = 0x00;
+ 162   7                                              }
+ 163   6                                                      XBYTE[0xB5A1]|=0x01;
+ 164   6                                                      while(XBYTE[0xB5A1]&0x01)
+ 165   6                                                      {
+ 166   7                                                      }
+ 167   6                                                      XBYTE[0xB5E9]=0x01;
+ 168   6                                              }
+ 169   5                                      }
+ 170   4                              }
+ 171   3                              else 
+ 172   3                              {
+ 173   4                                      if(gc_COMD_IN[0]==0x1A) 
+ 174   4                                      {
+ 175   5                                              gdw_dCBW_DataXferLength.WD[1] = 0x00;
+ 176   5                                              XBYTE[0xB515]=0x04;
+ 177   5                                              XBYTE[0xB516]=0x00;
+ 178   5                                              XBYTE[0xB5A1]|=0x01;
+C51 COMPILER V9.00   USB                                                                   07/09/2012 21:16:54 PAGE 4   
+
+ 179   5                                              while(XBYTE[0xB5A1]&0x01)
+ 180   5                                              {
+ 181   6                                              }
+ 182   5                                              XBYTE[0xB5E9]=0x01;
+ 183   5                                      }
+ 184   4                                      else 
+ 185   4                                      {
+ 186   5                                              gdw_dCBW_DataXferLength.WD[1] = 0x00;
+ 187   5                                              XBYTE[0xB515]=0x08;
+ 188   5                                              XBYTE[0xB516]=0x00;
+ 189   5                                              XBYTE[0xB5A1]|=0x01;
+ 190   5                                              while(XBYTE[0xB5A1]&0x01)
+ 191   5                                              {
+ 192   6                                              }
+ 193   5                                              XBYTE[0xB5E9]=0x01;
+ 194   5                                      }
+ 195   4                                      gb_XferNormalResponseData_ModeSense=NormalResponseData;// 將預設設為一般型
+ 196   4                              }
+ 197   3                              gc_USBStage = CSWStage;
+ 198   3                      }
+ 199   2      
+ 200   2                      if(gc_USBStage==BulkStallStage) 
+ 201   2                      {
+ 202   3                              StallBulkRW();
+ 203   3                              gc_USBStage = CSWStage;
+ 204   3                      }
+ 205   2      
+ 206   2                      if(gc_USBStage==BulkInReadBufferStage) 
+ 207   2                      {
+ 208   3                              XBYTE[0xB5D2]&=0xDD;                            //Disable Bulk-Out中斷
+ 209   3                              NoCard_ReadSectors();               
+ 210   3                              XBYTE[0xB5E9]=0x11;
+ 211   3                              gdw_dCBW_DataXferLength.LW=0;                   
+ 212   3                              gc_USBStage=CSWStage;
+ 213   3                      }
+ 214   2      
+ 215   2                      if(gc_USBStage==BulkOutWriteBufferStage) 
+ 216   2                      {
+ 217   3                              XBYTE[0xB5D2]&=0xDD;                            //Disable Bulk-Out中斷
+ 218   3                              XBYTE[0xB511]=0x01;   //HW auto ACK 
+ 219   3                              NoCard_WriteSectors();                  
+ 220   3                              XBYTE[0xB511]=0x00;
+ 221   3                              XBYTE[0xB5E9]=0x22;
+ 222   3                              gdw_dCBW_DataXferLength.LW=0;
+ 223   3                              gc_USBStage=CSWStage;
+ 224   3                      }
+ 225   2      
+ 226   2                      if(gc_USBStage==CSWStage)
+ 227   2                      {
+ 228   3                              gc_USBStage=CBWStage;
+ 229   3                              USB_BUF_Bank0[ 0]='U';
+ 230   3                              USB_BUF_Bank0[ 1]='S';
+ 231   3                              USB_BUF_Bank0[ 2]='B';
+ 232   3                              USB_BUF_Bank0[ 3]='S';
+ 233   3                              USB_BUF_Bank0[ 4]=gc_dCBW_Tag[0];
+ 234   3                              USB_BUF_Bank0[ 5]=gc_dCBW_Tag[1];
+ 235   3                              USB_BUF_Bank0[ 6]=gc_dCBW_Tag[2];
+ 236   3                              USB_BUF_Bank0[ 7]=gc_dCBW_Tag[3];
+ 237   3                              USB_BUF_Bank0[ 8]=gdw_dCBW_DataXferLength.BY[3];
+ 238   3                              USB_BUF_Bank0[ 9]=gdw_dCBW_DataXferLength.BY[2];
+ 239   3                              USB_BUF_Bank0[10]=gdw_dCBW_DataXferLength.BY[1];
+ 240   3                              USB_BUF_Bank0[11]=gdw_dCBW_DataXferLength.BY[0];
+C51 COMPILER V9.00   USB                                                                   07/09/2012 21:16:54 PAGE 5   
+
+ 241   3                              USB_BUF_Bank0[12]=gc_bCSWStatus;
+ 242   3                              XBYTE[0xB515]=0x0D;
+ 243   3                              XBYTE[0xB516]=0x00;
+ 244   3                              XBYTE[0xB5A1]|=0x01;
+ 245   3                              gdw_USB_CountDown=1000;
+ 246   3                              while(XBYTE[0xB5A1]&0x01)
+ 247   3                              {
+ 248   4                                      if(--gdw_USB_CountDown==0)
+ 249   4                                      {
+ 250   5                                              goto USB_QUIT;
+ 251   5                                      }
+ 252   4                              }
+ 253   3                      }
+ 254   2                      XBYTE[0xB5E9]=0x01;                     
+ 255   2                      XBYTE[0xB5D2]|=0x02;    //Enable Bulk-Out中斷
+ 256   2                      XBYTE[0xB5A1]|=0x02;            //下一筆31Byte Bulk-Out
+ 257   2              }
+ 258   1      }
+ 259          
+ 260          
+ 261          
+ 262          #if 0
+              void USB_Mode_Disp(void)
+              {
+                      U8 tc_status;
+              
+                      gw_USBDisplayTime=40;
+              
+                      tc_status=DEVICE_REG[0x00];
+                      DEVICE_REG[0x00]=0x01;
+              
+                      if((gc_USBStage == BulkInReadSectorsStage)||(gc_USBStage == BulkInResponseStage)||(gc_USBStage == BulkInR
+             -esponseStage)||(gc_USBStage ==BulkInReadBufferStage))
+                      {
+                              if(gc_USBDispStatus!=1)
+                              {
+                                      LCM_Disp_USBRWLogo(0);
+                                      gc_USBDispStatus=1;
+                              }
+                      }
+                      else if((gc_USBStage == BulkOutWriteSectorsStage)||(gc_USBStage == BulkOutStage)||(gc_USBStage == BulkOut
+             -WriteBufferStage))
+                      {
+                              if(gc_USBDispStatus!=2)
+                              {
+                                      LCM_Disp_USBRWLogo(1);
+                                      gc_USBDispStatus=2;
+                              }
+                      }
+                      else
+                      {       
+                              if(gc_USBDispStatus!=3)
+                              {
+                                      LCM_Disp_USBLine();
+                                      gc_USBDispStatus=3;
+                              }
+                      }
+              
+                      DEVICE_REG[0x00]=tc_status;
+              
+              }
+              #endif 
+C51 COMPILER V9.00   USB                                                                   07/09/2012 21:16:54 PAGE 6   
+
+ 301          
+ 302                           
+ 303          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    741    ----
+   CONSTANT SIZE    =    173    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

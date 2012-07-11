@@ -1,0 +1,788 @@
+A51 MACRO ASSEMBLER  L51_BANKINGLOADER                                                    07/09/2012 21:16:44 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.01
+OBJECT MODULE PLACED IN .\obj\L51_BankingLoader.OBJ
+ASSEMBLER INVOKED BY: C:\Keil\C51\BIN\A51.EXE .\obj\L51_BankingLoader.src PR(.\lst\L51_BankingLoader.ls1) EP DEBUG
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     ; .\obj\L51_BankingLoader.SRC generated from: ASM\L51_BankingLoader.c
+                       2     ; COMPILER INVOKED BY:
+                       3     ;        C:\Keil\C51\BIN\C51.EXE ASM\L51_BankingLoader.c LARGE OPTIMIZE(9,SIZE) BROWSE NOAR
+                             EGS INCDIR(..\libsource\header) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\L51_Ba
+                             nkingLoader.lst) SRC(.\obj\L51_BankingLoader.SRC)
+                       4     
+                       5     $nomod51 
+                       6     
+                       7     NAME    L51_BANKINGLOADER
+                       8     
+  00E7                 9     ACC7    BIT     0E0H.7
+  0080                10     P0      DATA    080H
+  0090                11     P1      DATA    090H
+  00A0                12     P2      DATA    0A0H
+  00B0                13     P3      DATA    0B0H
+  00B4                14     T0      BIT     0B0H.4
+  00D6                15     AC      BIT     0D0H.6
+  00B5                16     T1      BIT     0B0H.5
+  00AF                17     EA      BIT     0A8H.7
+  00A8                18     IE      DATA    0A8H
+  00CE                19     EXF2    BIT     0C8H.6
+  00B7                20     RD      BIT     0B0H.7
+  00AC                21     ES      BIT     0A8H.4
+  00B8                22     IP      DATA    0B8H
+  0098                23     RI      BIT     098H.0
+  00B2                24     INT0    BIT     0B0H.2
+  00D7                25     CY      BIT     0D0H.7
+  0099                26     TI      BIT     098H.1
+  00B3                27     INT1    BIT     0B0H.3
+  009B                28     RamPage DATA    09BH
+  00CB                29     RCAP2H  DATA    0CBH
+  00BC                30     PS      BIT     0B8H.4
+  0081                31     SP      DATA    081H
+  00D2                32     OV      BIT     0D0H.2
+  00CA                33     RCAP2L  DATA    0CAH
+  00C9                34     C_T2    BIT     0C8H.1
+  00B6                35     WR      BIT     0B0H.6
+  00CD                36     RCLK    BIT     0C8H.5
+  00CC                37     TCLK    BIT     0C8H.4
+  0099                38     SBUF    DATA    099H
+  0087                39     PCON    DATA    087H
+  0098                40     SCON    DATA    098H
+  0089                41     TMOD    DATA    089H
+  0088                42     TCON    DATA    088H
+  0089                43     IE0     BIT     088H.1
+  008B                44     IE1     BIT     088H.3
+  00F0                45     B       DATA    0F0H
+  00C8                46     CP_RL2  BIT     0C8H.0
+  00E0                47     ACC     DATA    0E0H
+  00A9                48     ET0     BIT     0A8H.1
+  00AB                49     ET1     BIT     0A8H.3
+  008D                50     TF0     BIT     088H.5
+  00AD                51     ET2     BIT     0A8H.5
+  008F                52     TF1     BIT     088H.7
+  00CF                53     TF2     BIT     0C8H.7
+  009A                54     RB8     BIT     098H.2
+  008C                55     TH0     DATA    08CH
+  00A8                56     EX0     BIT     0A8H.0
+A51 MACRO ASSEMBLER  L51_BANKINGLOADER                                                    07/09/2012 21:16:44 PAGE     2
+
+  0088                57     IT0     BIT     088H.0
+  008D                58     TH1     DATA    08DH
+  009B                59     TB8     BIT     098H.3
+  00AA                60     EX1     BIT     0A8H.2
+  008A                61     IT1     BIT     088H.2
+  00CD                62     TH2     DATA    0CDH
+  00D0                63     P       BIT     0D0H.0
+  009F                64     SM0     BIT     098H.7
+  008A                65     TL0     DATA    08AH
+  009E                66     SM1     BIT     098H.6
+  008B                67     TL1     DATA    08BH
+  009D                68     SM2     BIT     098H.5
+  00CC                69     TL2     DATA    0CCH
+  0091                70     SD_Detect       BIT     090H.1
+  00B9                71     PT0     BIT     0B8H.1
+  00BB                72     PT1     BIT     0B8H.3
+  00D3                73     RS0     BIT     0D0H.3
+  00BD                74     PT2     BIT     0B8H.5
+  008C                75     TR0     BIT     088H.4
+  00D4                76     RS1     BIT     0D0H.4
+  008E                77     TR1     BIT     088H.6
+  00CA                78     TR2     BIT     0C8H.2
+  00B8                79     PX0     BIT     0B8H.0
+  00BA                80     PX1     BIT     0B8H.2
+  0083                81     DPH     DATA    083H
+  0082                82     DPL     DATA    082H
+  00CB                83     EXEN2   BIT     0C8H.3
+  009C                84     REN     BIT     098H.4
+  00C8                85     T2CON   DATA    0C8H
+  00B0                86     RXD     BIT     0B0H.0
+  008E                87     CKCON   DATA    08EH
+  00B1                88     TXD     BIT     0B0H.1
+  00D5                89     F0      BIT     0D0H.5
+  00E0                90     ACC0    BIT     0E0H.0
+  00E1                91     ACC1    BIT     0E0H.1
+  00E2                92     ACC2    BIT     0E0H.2
+  00E3                93     ACC3    BIT     0E0H.3
+  00D0                94     PSW     DATA    0D0H
+  00E4                95     ACC4    BIT     0E0H.4
+  00E5                96     ACC5    BIT     0E0H.5
+  00E6                97     ACC6    BIT     0E0H.6
+                      98     ?PR?perform_nand_bank_call?L51_BANKINGLOADER SEGMENT CODE 
+                      99     ?PR?return_from_nand_bank?L51_BANKINGLOADER SEGMENT CODE 
+                     100     ?PR?load_nand_bank?L51_BANKINGLOADER     SEGMENT CODE 
+                     101     ?XD?load_nand_bank?L51_BANKINGLOADER     SEGMENT XDATA OVERLAYABLE 
+                     102     ?PR?_SPI_Load_Code_To_DRAM?L51_BANKINGLOADER SEGMENT CODE 
+                     103     ?XD?_SPI_Load_Code_To_DRAM?L51_BANKINGLOADER SEGMENT XDATA OVERLAYABLE 
+                     104     ?BI?_SPI_Load_Code_To_DRAM?L51_BANKINGLOADER SEGMENT BIT OVERLAYABLE 
+                     105     ?DT?_SPI_Load_Code_To_DRAM?L51_BANKINGLOADER SEGMENT DATA OVERLAYABLE 
+                     106     ?PR?L51_BANKINGLOADER                    SEGMENT CODE 
+                     107             EXTRN   XDATA (gc_ProgRAM_Index)
+                     108             EXTRN   CODE (SET_DEVICE_READ_TO_DRAM)
+                     109             EXTRN   XDATA (gc_SPI_Addr1)
+                     110             EXTRN   XDATA (gc_SPI_Addr2)
+                     111             EXTRN   DATA (gc_bank_number)
+                     112             EXTRN   DATA (gc_clock_mode)
+                     113             EXTRN   CODE (_set_clock_mode)
+                     114             EXTRN   CODE (Trigger_Data_Transfer_Done)
+                     115             EXTRN   CODE (_SPI_Send_Byte)
+                     116             EXTRN   BIT (gb_ReloadProgram)
+                     117             EXTRN   CODE (?C?IMUL)
+                     118             PUBLIC  _SPI_Load_Code_To_DRAM
+                     119             PUBLIC  load_nand_bank
+                     120             PUBLIC  return_from_nand_bank
+                     121             PUBLIC  perform_nand_bank_call
+                     122     
+A51 MACRO ASSEMBLER  L51_BANKINGLOADER                                                    07/09/2012 21:16:44 PAGE     3
+
+----                 123             RSEG  ?XD?load_nand_bank?L51_BANKINGLOADER
+0000                 124     ?load_nand_bank?BYTE:
+0000                 125        tc_clock?240:   DS   1
+0001                 126             ORG  1
+0001                 127         tc_B400?241:   DS   1
+0002                 128             ORG  2
+0002                 129         tw_addr?242:   DS   2
+                     130     
+----                 131             RSEG  ?XD?_SPI_Load_Code_To_DRAM?L51_BANKINGLOADER
+0000                 132     ?_SPI_Load_Code_To_DRAM?BYTE:
+0000                 133        u_Seccnt?343:   DS   1
+                     134     
+----                 135             RSEG  ?BI?_SPI_Load_Code_To_DRAM?L51_BANKINGLOADER
+0000                 136     ?_SPI_Load_Code_To_DRAM?BIT:
+0000                 137        tc_Retry?345:   DBIT   1
+                     138     
+----                 139             RSEG  ?DT?_SPI_Load_Code_To_DRAM?L51_BANKINGLOADER
+0000                 140               i?344:   DS   1
+                     141     ; #include <stdio.h>
+                     142     ; #include "..\header\SPDA2K.h"
+                     143     ; #include "..\header\variables.h"
+                     144     ; 
+                     145     ; 
+                     146     ; //! Entry of the banking loader.
+                     147     
+----                 148             RSEG  ?PR?L51_BANKINGLOADER
+0000                 149     Com0019:
+0000                 150     L?0026:
+                     151             USING   3
+0000 90B400          152             MOV     DPTR,#0B400H
+0003 E0              153             MOVX    A,@DPTR
+0004 4420            154             ORL     A,#020H
+0006 F0              155             MOVX    @DPTR,A
+0007 7404            156             MOV     A,#04H
+0009 F0              157             MOVX    @DPTR,A
+000A 22              158             RET     
+                     159     ; END OF Com0019
+                     160     
+                     161     ; void perform_nand_bank_call(void)
+                     162     
+----                 163             RSEG  ?PR?perform_nand_bank_call?L51_BANKINGLOADER
+0000                 164     perform_nand_bank_call:
+                     165             USING   0
+                     166                             ; SOURCE LINE # 7
+                     167     ; {
+                     168                             ; SOURCE LINE # 8
+                     169     ; #pragma asm
+                     170     ;       cjne A, gc_bank_number, ?_need_to_load_nand_bank
+0000 B50005   F      171               cjne A, gc_bank_number, ?_need_to_load_nand_bank
+                     172     ;       push DPL
+0003 C082            173               push DPL
+                     174     ;       push DPH
+0005 C083            175               push DPH
+                     176     ;       ret
+0007 22              177               ret
+                     178     ; 
+                     179               
+                     180     ; ?_need_to_load_nand_bank:
+0008                 181               ?_need_to_load_nand_bank:
+                     182     ;       //Target Bank Number is in register A
+                     183               
+                     184     ;       push gc_bank_number
+0008 C000     F      185               push gc_bank_number
+                     186     ;       mov  gc_bank_number, A
+000A F500     F      187               mov  gc_bank_number, A
+                     188     ; 
+A51 MACRO ASSEMBLER  L51_BANKINGLOADER                                                    07/09/2012 21:16:44 PAGE     4
+
+                     189               
+                     190     ;       //push the bank recover function for returning use
+                     191               
+                     192     ;       mov  A, #LOW return_from_nand_bank
+000C 7400     F      193               mov  A, #LOW return_from_nand_bank
+                     194     ;       push ACC
+000E C0E0            195               push ACC
+                     196     ;       mov  A, #HIGH return_from_nand_bank
+0010 7400     F      197               mov  A, #HIGH return_from_nand_bank
+                     198     ;       push ACC
+0012 C0E0            199               push ACC
+                     200     ;       //push target address
+                     201               
+                     202     ;       push DPL
+0014 C082            203               push DPL
+                     204     ;       push DPH
+0016 C083            205               push DPH
+                     206     ;       //push PSW and IE
+                     207               
+                     208     ;       push PSW
+0018 C0D0            209               push PSW
+                     210     ;       mov  PSW, #18   //use register bank3
+001A 75D012          211               mov  PSW, #18  
+                     212     ;       push IE
+001D C0A8            213               push IE
+                     214     ;       clr  EA                 //disable IRQ
+001F C2AF            215               clr  EA                        
+                     216     ; 
+                     217               
+                     218     ;       call load_nand_bank
+0021 120000   F      219               call load_nand_bank
+                     220     ; 
+                     221               
+                     222     ;       //recover IE and PSW
+                     223               
+                     224     ;       pop  IE
+0024 D0A8            225               pop  IE
+                     226     ;       pop  PSW
+0026 D0D0            227               pop  PSW
+                     228     ;       ret
+0028 22              229               ret
+                     230     ; #pragma endasm
+                     231     ; }
+                     232                             ; SOURCE LINE # 41
+0029 22              233             RET     
+                     234     ; END OF perform_nand_bank_call
+                     235     
+                     236     ; 
+                     237     ; //! Exit of the banking loader.
+                     238     ; void return_from_nand_bank(void)
+                     239     
+----                 240             RSEG  ?PR?return_from_nand_bank?L51_BANKINGLOADER
+0000                 241     return_from_nand_bank:
+                     242             USING   0
+                     243                             ; SOURCE LINE # 44
+                     244     ; {
+                     245                             ; SOURCE LINE # 45
+                     246     ; #pragma asm
+                     247     ;       mov  A, gc_bank_number  //A is current bank
+0000 E500     F      248               mov  A, gc_bank_number         
+                     249     ;       pop  gc_bank_number             //gc_bank_number is return bank
+0002 D000     F      250               pop  gc_bank_number            
+                     251     ;       push PSW
+0004 C0D0            252               push PSW
+                     253     ;       cjne A, gc_bank_number, ?_recover_need_load_nand
+0006 B50003   F      254               cjne A, gc_bank_number, ?_recover_need_load_nand
+A51 MACRO ASSEMBLER  L51_BANKINGLOADER                                                    07/09/2012 21:16:44 PAGE     5
+
+                     255     ;       pop PSW
+0009 D0D0            256               pop PSW
+                     257     ;       ret
+000B 22              258               ret
+                     259     ; ?_recover_need_load_nand:
+000C                 260               ?_recover_need_load_nand:
+                     261     ;       mov  PSW, #18                   //use register bank3
+000C 75D012          262               mov  PSW, #18                          
+                     263     ;       push IE
+000F C0A8            264               push IE
+                     265     ;       clr  EA                                 //disable IRQ
+0011 C2AF            266               clr  EA                                        
+                     267     ; 
+                     268               
+                     269     ;       call load_nand_bank
+0013 120000   F      270               call load_nand_bank
+                     271     ; 
+                     272               
+                     273     ;       //pop PSW and IE
+                     274               
+                     275     ;       pop  IE
+0016 D0A8            276               pop  IE
+                     277     ;       pop  PSW
+0018 D0D0            278               pop  PSW
+                     279     ;       ret
+001A 22              280               ret
+                     281     ; #pragma endasm
+                     282     ; }
+                     283                             ; SOURCE LINE # 65
+001B 22              284             RET     
+                     285     ; END OF return_from_nand_bank
+                     286     
+                     287     ; 
+                     288     ; //! NAND banking loader.
+                     289     ; #define SECTORS_PER_BANK      24              // 12K
+                     290     ; #define       BANK0_START_ADDR        0x60    // 24K
+                     291     ; #define       BANK1_START_ADDR        0xC0    // 48K
+                     292     ; #define       BANK_SIZE                       0x30    // 12K
+                     293     ; 
+                     294     ; 
+                     295     ; void load_nand_bank(void) using 3
+                     296     
+----                 297             RSEG  ?PR?load_nand_bank?L51_BANKINGLOADER
+0000                 298     load_nand_bank:
+                     299             USING   3
+0000 C0D0            300             PUSH    PSW
+0002 75D018          301             MOV     PSW,#018H
+                     302                             ; SOURCE LINE # 74
+                     303     ; {
+                     304     ;       xdata   U8      tc_clock;
+                     305     ;       xdata   U8      tc_B400;
+                     306     ;       xdata   U16     tw_addr;
+                     307     ;  
+                     308     ;       tc_clock=gc_clock_mode;
+                     309                             ; SOURCE LINE # 80
+0005 900000   F      310             MOV     DPTR,#tc_clock?240
+0008 E500     F      311             MOV     A,gc_clock_mode
+000A F0              312             MOVX    @DPTR,A
+                     313     ;       set_clock_mode(CLOCK_MODE_SPI);
+                     314                             ; SOURCE LINE # 81
+000B 7F05            315             MOV     R7,#05H
+000D 120000   F      316             LCALL   _set_clock_mode
+                     317     ;       tc_B400=XBYTE[0xB400]; 
+                     318                             ; SOURCE LINE # 82
+0010 90B400          319             MOV     DPTR,#0B400H
+0013 E0              320             MOVX    A,@DPTR
+A51 MACRO ASSEMBLER  L51_BANKINGLOADER                                                    07/09/2012 21:16:44 PAGE     6
+
+0014 900000   F      321             MOV     DPTR,#tc_B400?241
+0017 F0              322             MOVX    @DPTR,A
+                     323     ;          
+                     324     ;       if (gc_bank_number == 0)
+                     325                             ; SOURCE LINE # 84
+0018 E500     F      326             MOV     A,gc_bank_number
+001A 7008            327             JNZ     ?C0003
+                     328     ;       {
+                     329                             ; SOURCE LINE # 85
+                     330     ;               tw_addr=BANK0_START_ADDR;
+                     331                             ; SOURCE LINE # 86
+001C A3              332             INC     DPTR
+001D F0              333             MOVX    @DPTR,A
+001E A3              334             INC     DPTR
+001F 7460            335             MOV     A,#060H
+0021 F0              336             MOVX    @DPTR,A
+                     337     ;       }
+                     338                             ; SOURCE LINE # 87
+0022 8018            339             SJMP    ?C0004
+0024                 340     ?C0003:
+                     341     ;       else
+                     342     ;       {
+                     343                             ; SOURCE LINE # 89
+                     344     ;               tw_addr=BANK1_START_ADDR+(gc_bank_number-1)*BANK_SIZE;
+                     345                             ; SOURCE LINE # 90
+0024 AF00     F      346             MOV     R7,gc_bank_number
+0026 7E00            347             MOV     R6,#00H
+0028 7C00            348             MOV     R4,#00H
+002A 7D30            349             MOV     R5,#030H
+002C 120000   F      350             LCALL   ?C?IMUL
+002F EF              351             MOV     A,R7
+0030 2490            352             ADD     A,#090H
+0032 FF              353             MOV     R7,A
+0033 E4              354             CLR     A
+0034 3E              355             ADDC    A,R6
+0035 900000   F      356             MOV     DPTR,#tw_addr?242
+0038 F0              357             MOVX    @DPTR,A
+0039 A3              358             INC     DPTR
+003A EF              359             MOV     A,R7
+003B F0              360             MOVX    @DPTR,A
+                     361     ;       }
+                     362                             ; SOURCE LINE # 91
+003C                 363     ?C0004:
+                     364     ; 
+                     365     ;       //dbprintf("%bx ",gc_bank_number); 
+                     366     ; 
+                     367     ;       //reset spi interface 
+                     368     ;       XBYTE[0xB400]|=0x20;
+                     369                             ; SOURCE LINE # 96
+                     370     ;       XBYTE[0xB400]=0x04; 
+                     371                             ; SOURCE LINE # 97
+003C 120000   F      372             LCALL   L?0026
+003F                 373     ?C0005:
+                     374     ;       while(1)
+                     375                             ; SOURCE LINE # 98
+                     376     ;       {
+                     377                             ; SOURCE LINE # 99
+                     378     ;               gc_SPI_Addr1=(U8)(tw_addr);
+                     379                             ; SOURCE LINE # 100
+003F 900000   F      380             MOV     DPTR,#tw_addr?242
+0042 E0              381             MOVX    A,@DPTR
+0043 FE              382             MOV     R6,A
+0044 A3              383             INC     DPTR
+0045 E0              384             MOVX    A,@DPTR
+0046 900000   F      385             MOV     DPTR,#gc_SPI_Addr1
+0049 F0              386             MOVX    @DPTR,A
+A51 MACRO ASSEMBLER  L51_BANKINGLOADER                                                    07/09/2012 21:16:44 PAGE     7
+
+                     387     ;               gc_SPI_Addr2=(U8)(tw_addr>>8);
+                     388                             ; SOURCE LINE # 101
+004A EE              389             MOV     A,R6
+004B 900000   F      390             MOV     DPTR,#gc_SPI_Addr2
+004E F0              391             MOVX    @DPTR,A
+                     392     ;               SPI_Load_Code_To_DRAM(SECTORS_PER_BANK);
+                     393                             ; SOURCE LINE # 102
+004F 7F18            394             MOV     R7,#018H
+0051 120000   F      395             LCALL   _SPI_Load_Code_To_DRAM
+                     396     ; 
+                     397     ;               if(gb_ReloadProgram==0)
+                     398                             ; SOURCE LINE # 104
+0054 200002   F      399             JB      gb_ReloadProgram,?C0007
+                     400     ;               {
+                     401                             ; SOURCE LINE # 105
+                     402     ;                       break;
+                     403                             ; SOURCE LINE # 106
+0057 8007            404             SJMP    ?C0006
+                     405     ;               }
+                     406                             ; SOURCE LINE # 107
+0059                 407     ?C0007:
+                     408     ;               else
+                     409     ;               {
+                     410                             ; SOURCE LINE # 109
+                     411     ;                       //reset spi interface 
+                     412     ;                       XBYTE[0xB400]|=0x20;
+                     413                             ; SOURCE LINE # 111
+                     414     ;                       XBYTE[0xB400]=0x04; 
+                     415                             ; SOURCE LINE # 112
+0059 120000   F      416             LCALL   L?0026
+                     417     ;                       gb_ReloadProgram=0;
+                     418                             ; SOURCE LINE # 113
+005C C200     F      419             CLR     gb_ReloadProgram
+                     420     ;               }
+                     421                             ; SOURCE LINE # 114
+                     422     ;       }
+                     423                             ; SOURCE LINE # 115
+005E 80DF            424             SJMP    ?C0005
+0060                 425     ?C0006:
+                     426     ;       set_clock_mode(tc_clock); 
+                     427                             ; SOURCE LINE # 116
+0060 900000   F      428             MOV     DPTR,#tc_clock?240
+0063 E0              429             MOVX    A,@DPTR
+0064 FF              430             MOV     R7,A
+0065 120000   F      431             LCALL   _set_clock_mode
+                     432     ;       XBYTE[0xB400]=tc_B400;
+                     433                             ; SOURCE LINE # 117
+0068 900000   F      434             MOV     DPTR,#tc_B400?241
+006B E0              435             MOVX    A,@DPTR
+006C 90B400          436             MOV     DPTR,#0B400H
+006F F0              437             MOVX    @DPTR,A
+                     438     ; }
+                     439                             ; SOURCE LINE # 118
+0070 D0D0            440             POP     PSW
+0072 22              441             RET     
+                     442     ; END OF load_nand_bank
+                     443     
+                     444     ; 
+                     445     ; 
+                     446     ; void SPI_Load_Code_To_DRAM(U8 u_Seccnt)
+                     447     
+----                 448             RSEG  ?PR?_SPI_Load_Code_To_DRAM?L51_BANKINGLOADER
+0000                 449     _SPI_Load_Code_To_DRAM:
+                     450             USING   0
+                     451                             ; SOURCE LINE # 121
+0000 900000   F      452             MOV     DPTR,#u_Seccnt?343
+A51 MACRO ASSEMBLER  L51_BANKINGLOADER                                                    07/09/2012 21:16:44 PAGE     8
+
+0003 EF              453             MOV     A,R7
+0004 F0              454             MOVX    @DPTR,A
+                     455     ; {
+                     456                             ; SOURCE LINE # 122
+                     457     ;       data    U8      i;
+                     458     ;       data    bit     tc_Retry=0;
+                     459                             ; SOURCE LINE # 124
+0005 C200     F      460             CLR     tc_Retry?345
+                     461     ;   
+                     462     ;       gc_ProgRAM_Index=BANK0_START_ADDR;
+                     463                             ; SOURCE LINE # 126
+0007 900000   F      464             MOV     DPTR,#gc_ProgRAM_Index
+000A 7460            465             MOV     A,#060H
+000C F0              466             MOVX    @DPTR,A
+000D                 467     ?C0010:
+                     468     ; 
+                     469     ;     while(u_Seccnt)
+                     470                             ; SOURCE LINE # 128
+000D 900000   F      471             MOV     DPTR,#u_Seccnt?343
+0010 E0              472             MOVX    A,@DPTR
+0011 606E            473             JZ      ?C0024
+                     474     ;       {
+                     475                             ; SOURCE LINE # 129
+                     476     ;         SPI_ENABLE(); 
+                     477                             ; SOURCE LINE # 130
+0013 90BB18          478             MOV     DPTR,#0BB18H
+0016 E0              479             MOVX    A,@DPTR
+0017 54FE            480             ANL     A,#0FEH
+0019 F0              481             MOVX    @DPTR,A
+                     482     ;         SPI_Send_Byte(0x03);  //CMD
+                     483                             ; SOURCE LINE # 131
+001A 7F03            484             MOV     R7,#03H
+001C 120000   F      485             LCALL   _SPI_Send_Byte
+                     486     ;         SPI_Send_Byte(gc_SPI_Addr2);  
+                     487                             ; SOURCE LINE # 132
+001F 900000   F      488             MOV     DPTR,#gc_SPI_Addr2
+0022 E0              489             MOVX    A,@DPTR
+0023 FF              490             MOV     R7,A
+0024 120000   F      491             LCALL   _SPI_Send_Byte
+                     492     ;         SPI_Send_Byte(gc_SPI_Addr1);  
+                     493                             ; SOURCE LINE # 133
+0027 900000   F      494             MOV     DPTR,#gc_SPI_Addr1
+002A E0              495             MOVX    A,@DPTR
+002B FF              496             MOV     R7,A
+002C 120000   F      497             LCALL   _SPI_Send_Byte
+                     498     ;         SPI_Send_Byte(0x00);  
+                     499                             ; SOURCE LINE # 134
+002F E4              500             CLR     A
+0030 FF              501             MOV     R7,A
+0031 120000   F      502             LCALL   _SPI_Send_Byte
+                     503     ; 
+                     504     ;               XBYTE[0xB304]=0x09;             //Reset DMA
+                     505                             ; SOURCE LINE # 136
+0034 90B304          506             MOV     DPTR,#0B304H
+0037 7409            507             MOV     A,#09H
+0039 F0              508             MOVX    @DPTR,A
+                     509     ;               XBYTE[0xB304]=0x08;             //Normal DMA
+                     510                             ; SOURCE LINE # 137
+003A 14              511             DEC     A
+003B F0              512             MOVX    @DPTR,A
+                     513     ;           SET_DEVICE_READ_TO_DRAM();
+                     514                             ; SOURCE LINE # 138
+003C 120000   F      515             LCALL   SET_DEVICE_READ_TO_DRAM
+                     516     ; 
+                     517     ;           SPI_REG[0x10] = 0x0F;                                               // after DM
+                             A, SPI FIFO has to be cleared
+A51 MACRO ASSEMBLER  L51_BANKINGLOADER                                                    07/09/2012 21:16:44 PAGE     9
+
+                     518                             ; SOURCE LINE # 140
+003F 90BB10          519             MOV     DPTR,#0BB10H
+0042 740F            520             MOV     A,#0FH
+0044 F0              521             MOVX    @DPTR,A
+                     522     ;               Trigger_Data_Transfer_Done();
+                     523                             ; SOURCE LINE # 141
+0045 120000   F      524             LCALL   Trigger_Data_Transfer_Done
+                     525     ; 
+                     526     ;               if(tc_Retry==0)
+                     527                             ; SOURCE LINE # 143
+0048 200004   F      528             JB      tc_Retry?345,?C0015
+                     529     ;               {
+                     530                             ; SOURCE LINE # 144
+                     531     ;                       tc_Retry=1;
+                     532                             ; SOURCE LINE # 145
+004B D200     F      533             SETB    tc_Retry?345
+                     534     ;               }
+                     535                             ; SOURCE LINE # 146
+004D 801D            536             SJMP    ?C0020
+004F                 537     ?C0015:
+                     538     ;               else
+                     539     ;               {
+                     540                             ; SOURCE LINE # 148
+                     541     ;                   gc_SPI_Addr1+=0x02;
+                     542                             ; SOURCE LINE # 149
+004F 900000   F      543             MOV     DPTR,#gc_SPI_Addr1
+0052 E0              544             MOVX    A,@DPTR
+0053 2402            545             ADD     A,#02H
+0055 F0              546             MOVX    @DPTR,A
+                     547     ;                       if(gc_SPI_Addr1==0x00)
+                     548                             ; SOURCE LINE # 150
+0056 E0              549             MOVX    A,@DPTR
+0057 7006            550             JNZ     ?C0017
+                     551     ;                       {
+                     552                             ; SOURCE LINE # 151
+                     553     ;                               gc_SPI_Addr2++;
+                     554                             ; SOURCE LINE # 152
+0059 900000   F      555             MOV     DPTR,#gc_SPI_Addr2
+005C E0              556             MOVX    A,@DPTR
+005D 04              557             INC     A
+005E F0              558             MOVX    @DPTR,A
+                     559     ;                       }
+                     560                             ; SOURCE LINE # 153
+005F                 561     ?C0017:
+                     562     ;                   gc_ProgRAM_Index+=0x02;     // ProgRAM Index
+                     563                             ; SOURCE LINE # 154
+005F 900000   F      564             MOV     DPTR,#gc_ProgRAM_Index
+0062 E0              565             MOVX    A,@DPTR
+0063 2402            566             ADD     A,#02H
+0065 F0              567             MOVX    @DPTR,A
+                     568     ;                       u_Seccnt--;  
+                     569                             ; SOURCE LINE # 155
+0066 900000   F      570             MOV     DPTR,#u_Seccnt?343
+0069 E0              571             MOVX    A,@DPTR
+006A 14              572             DEC     A
+006B F0              573             MOVX    @DPTR,A
+                     574     ;               }
+                     575                             ; SOURCE LINE # 156
+006C                 576     ?C0020:
+                     577     ;           SPI_DISABLE();
+                     578                             ; SOURCE LINE # 157
+006C 90BB18          579             MOV     DPTR,#0BB18H
+006F E0              580             MOVX    A,@DPTR
+0070 4401            581             ORL     A,#01H
+0072 F0              582             MOVX    @DPTR,A
+                     583     ;               for(i=0;i<20;i++);
+A51 MACRO ASSEMBLER  L51_BANKINGLOADER                                                    07/09/2012 21:16:44 PAGE    10
+
+                     584                             ; SOURCE LINE # 158
+0073 E4              585             CLR     A
+0074 F500     F      586             MOV     i?344,A
+0076                 587     ?C0021:
+0076 E500     F      588             MOV     A,i?344
+0078 C3              589             CLR     C
+0079 9414            590             SUBB    A,#014H
+007B 5090            591             JNC     ?C0010
+007D 0500     F      592             INC     i?344
+007F 80F5            593             SJMP    ?C0021
+                     594     ;     }
+                     595                             ; SOURCE LINE # 159
+                     596     ; } 
+                     597                             ; SOURCE LINE # 160
+0081                 598     ?C0024:
+0081 22              599             RET     
+                     600     ; END OF _SPI_Load_Code_To_DRAM
+                     601     
+                     602             END
+A51 MACRO ASSEMBLER  L51_BANKINGLOADER                                                    07/09/2012 21:16:44 PAGE    11
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E                                    T Y P E  V A L U E   ATTRIBUTES
+
+?BI?_SPI_LOAD_CODE_TO_DRAM?L51_BANKINGLOADEB SEG    0001H       REL=UNIT
+?C0003. . . . . . . . . . . . . . . . .    C ADDR   0024H   R   SEG=?PR?LOAD_NAND_BANK?L51_BANKINGLOADER
+?C0004. . . . . . . . . . . . . . . . .    C ADDR   003CH   R   SEG=?PR?LOAD_NAND_BANK?L51_BANKINGLOADER
+?C0005. . . . . . . . . . . . . . . . .    C ADDR   003FH   R   SEG=?PR?LOAD_NAND_BANK?L51_BANKINGLOADER
+?C0006. . . . . . . . . . . . . . . . .    C ADDR   0060H   R   SEG=?PR?LOAD_NAND_BANK?L51_BANKINGLOADER
+?C0007. . . . . . . . . . . . . . . . .    C ADDR   0059H   R   SEG=?PR?LOAD_NAND_BANK?L51_BANKINGLOADER
+?C0010. . . . . . . . . . . . . . . . .    C ADDR   000DH   R   SEG=?PR?_SPI_LOAD_CODE_TO_DRAM?L51_BANKINGLOADER
+?C0015. . . . . . . . . . . . . . . . .    C ADDR   004FH   R   SEG=?PR?_SPI_LOAD_CODE_TO_DRAM?L51_BANKINGLOADER
+?C0017. . . . . . . . . . . . . . . . .    C ADDR   005FH   R   SEG=?PR?_SPI_LOAD_CODE_TO_DRAM?L51_BANKINGLOADER
+?C0020. . . . . . . . . . . . . . . . .    C ADDR   006CH   R   SEG=?PR?_SPI_LOAD_CODE_TO_DRAM?L51_BANKINGLOADER
+?C0021. . . . . . . . . . . . . . . . .    C ADDR   0076H   R   SEG=?PR?_SPI_LOAD_CODE_TO_DRAM?L51_BANKINGLOADER
+?C0024. . . . . . . . . . . . . . . . .    C ADDR   0081H   R   SEG=?PR?_SPI_LOAD_CODE_TO_DRAM?L51_BANKINGLOADER
+?C?IMUL . . . . . . . . . . . . . . . .    C ADDR   -----       EXT
+?DT?_SPI_LOAD_CODE_TO_DRAM?L51_BANKINGLOADED SEG    0001H       REL=UNIT
+?LOAD_NAND_BANK?BYTE. . . . . . . . . .    X ADDR   0000H   R   SEG=?XD?LOAD_NAND_BANK?L51_BANKINGLOADER
+?PR?L51_BANKINGLOADER . . . . . . . . .    C SEG    000BH       REL=UNIT
+?PR?LOAD_NAND_BANK?L51_BANKINGLOADER. .    C SEG    0073H       REL=UNIT
+?PR?PERFORM_NAND_BANK_CALL?L51_BANKINGLOADEC SEG    002AH       REL=UNIT
+?PR?RETURN_FROM_NAND_BANK?L51_BANKINGLOADERC SEG    001CH       REL=UNIT
+?PR?_SPI_LOAD_CODE_TO_DRAM?L51_BANKINGLOADEC SEG    0082H       REL=UNIT
+?XD?LOAD_NAND_BANK?L51_BANKINGLOADER. .    X SEG    0004H       REL=UNIT
+?XD?_SPI_LOAD_CODE_TO_DRAM?L51_BANKINGLOADEX SEG    0001H       REL=UNIT
+?_NEED_TO_LOAD_NAND_BANK. . . . . . . .    C ADDR   0008H   R   SEG=?PR?PERFORM_NAND_BANK_CALL?L51_BANKINGLOADER
+?_RECOVER_NEED_LOAD_NAND. . . . . . . .    C ADDR   000CH   R   SEG=?PR?RETURN_FROM_NAND_BANK?L51_BANKINGLOADER
+?_SPI_LOAD_CODE_TO_DRAM?BIT . . . . . .    B ADDR   0000H.0 R   SEG=?BI?_SPI_LOAD_CODE_TO_DRAM?L51_BANKINGLOADER
+?_SPI_LOAD_CODE_TO_DRAM?BYTE. . . . . .    X ADDR   0000H   R   SEG=?XD?_SPI_LOAD_CODE_TO_DRAM?L51_BANKINGLOADER
+AC. . . . . . . . . . . . . . . . . . .    B ADDR   00D0H.6 A   
+ACC . . . . . . . . . . . . . . . . . .    D ADDR   00E0H   A   
+ACC0. . . . . . . . . . . . . . . . . .    B ADDR   00E0H.0 A   
+ACC1. . . . . . . . . . . . . . . . . .    B ADDR   00E0H.1 A   
+ACC2. . . . . . . . . . . . . . . . . .    B ADDR   00E0H.2 A   
+ACC3. . . . . . . . . . . . . . . . . .    B ADDR   00E0H.3 A   
+ACC4. . . . . . . . . . . . . . . . . .    B ADDR   00E0H.4 A   
+ACC5. . . . . . . . . . . . . . . . . .    B ADDR   00E0H.5 A   
+ACC6. . . . . . . . . . . . . . . . . .    B ADDR   00E0H.6 A   
+ACC7. . . . . . . . . . . . . . . . . .    B ADDR   00E0H.7 A   
+B . . . . . . . . . . . . . . . . . . .    D ADDR   00F0H   A   
+CKCON . . . . . . . . . . . . . . . . .    D ADDR   008EH   A   
+COM0019 . . . . . . . . . . . . . . . .    C ADDR   0000H   R   SEG=?PR?L51_BANKINGLOADER
+CP_RL2. . . . . . . . . . . . . . . . .    B ADDR   00C8H.0 A   
+CY. . . . . . . . . . . . . . . . . . .    B ADDR   00D0H.7 A   
+C_T2. . . . . . . . . . . . . . . . . .    B ADDR   00C8H.1 A   
+DPH . . . . . . . . . . . . . . . . . .    D ADDR   0083H   A   
+DPL . . . . . . . . . . . . . . . . . .    D ADDR   0082H   A   
+EA. . . . . . . . . . . . . . . . . . .    B ADDR   00A8H.7 A   
+ES. . . . . . . . . . . . . . . . . . .    B ADDR   00A8H.4 A   
+ET0 . . . . . . . . . . . . . . . . . .    B ADDR   00A8H.1 A   
+ET1 . . . . . . . . . . . . . . . . . .    B ADDR   00A8H.3 A   
+ET2 . . . . . . . . . . . . . . . . . .    B ADDR   00A8H.5 A   
+EX0 . . . . . . . . . . . . . . . . . .    B ADDR   00A8H.0 A   
+EX1 . . . . . . . . . . . . . . . . . .    B ADDR   00A8H.2 A   
+EXEN2 . . . . . . . . . . . . . . . . .    B ADDR   00C8H.3 A   
+EXF2. . . . . . . . . . . . . . . . . .    B ADDR   00C8H.6 A   
+F0. . . . . . . . . . . . . . . . . . .    B ADDR   00D0H.5 A   
+GB_RELOADPROGRAM. . . . . . . . . . . .    B ADDR   -----       EXT
+GC_BANK_NUMBER. . . . . . . . . . . . .    D ADDR   -----       EXT
+GC_CLOCK_MODE . . . . . . . . . . . . .    D ADDR   -----       EXT
+GC_PROGRAM_INDEX. . . . . . . . . . . .    X ADDR   -----       EXT
+GC_SPI_ADDR1. . . . . . . . . . . . . .    X ADDR   -----       EXT
+GC_SPI_ADDR2. . . . . . . . . . . . . .    X ADDR   -----       EXT
+A51 MACRO ASSEMBLER  L51_BANKINGLOADER                                                    07/09/2012 21:16:44 PAGE    12
+
+I?344 . . . . . . . . . . . . . . . . .    D ADDR   0000H   R   SEG=?DT?_SPI_LOAD_CODE_TO_DRAM?L51_BANKINGLOADER
+IE. . . . . . . . . . . . . . . . . . .    D ADDR   00A8H   A   
+IE0 . . . . . . . . . . . . . . . . . .    B ADDR   0088H.1 A   
+IE1 . . . . . . . . . . . . . . . . . .    B ADDR   0088H.3 A   
+INT0. . . . . . . . . . . . . . . . . .    B ADDR   00B0H.2 A   
+INT1. . . . . . . . . . . . . . . . . .    B ADDR   00B0H.3 A   
+IP. . . . . . . . . . . . . . . . . . .    D ADDR   00B8H   A   
+IT0 . . . . . . . . . . . . . . . . . .    B ADDR   0088H.0 A   
+IT1 . . . . . . . . . . . . . . . . . .    B ADDR   0088H.2 A   
+L51_BANKINGLOADER . . . . . . . . . . .    N NUMB   -----       
+L?0026. . . . . . . . . . . . . . . . .    C ADDR   0000H   R   SEG=?PR?L51_BANKINGLOADER
+LOAD_NAND_BANK. . . . . . . . . . . . .    C ADDR   0000H   R   SEG=?PR?LOAD_NAND_BANK?L51_BANKINGLOADER
+OV. . . . . . . . . . . . . . . . . . .    B ADDR   00D0H.2 A   
+P . . . . . . . . . . . . . . . . . . .    B ADDR   00D0H.0 A   
+P0. . . . . . . . . . . . . . . . . . .    D ADDR   0080H   A   
+P1. . . . . . . . . . . . . . . . . . .    D ADDR   0090H   A   
+P2. . . . . . . . . . . . . . . . . . .    D ADDR   00A0H   A   
+P3. . . . . . . . . . . . . . . . . . .    D ADDR   00B0H   A   
+PCON. . . . . . . . . . . . . . . . . .    D ADDR   0087H   A   
+PERFORM_NAND_BANK_CALL. . . . . . . . .    C ADDR   0000H   R   SEG=?PR?PERFORM_NAND_BANK_CALL?L51_BANKINGLOADER
+PS. . . . . . . . . . . . . . . . . . .    B ADDR   00B8H.4 A   
+PSW . . . . . . . . . . . . . . . . . .    D ADDR   00D0H   A   
+PT0 . . . . . . . . . . . . . . . . . .    B ADDR   00B8H.1 A   
+PT1 . . . . . . . . . . . . . . . . . .    B ADDR   00B8H.3 A   
+PT2 . . . . . . . . . . . . . . . . . .    B ADDR   00B8H.5 A   
+PX0 . . . . . . . . . . . . . . . . . .    B ADDR   00B8H.0 A   
+PX1 . . . . . . . . . . . . . . . . . .    B ADDR   00B8H.2 A   
+RAMPAGE . . . . . . . . . . . . . . . .    D ADDR   009BH   A   
+RB8 . . . . . . . . . . . . . . . . . .    B ADDR   0098H.2 A   
+RCAP2H. . . . . . . . . . . . . . . . .    D ADDR   00CBH   A   
+RCAP2L. . . . . . . . . . . . . . . . .    D ADDR   00CAH   A   
+RCLK. . . . . . . . . . . . . . . . . .    B ADDR   00C8H.5 A   
+RD. . . . . . . . . . . . . . . . . . .    B ADDR   00B0H.7 A   
+REN . . . . . . . . . . . . . . . . . .    B ADDR   0098H.4 A   
+RETURN_FROM_NAND_BANK . . . . . . . . .    C ADDR   0000H   R   SEG=?PR?RETURN_FROM_NAND_BANK?L51_BANKINGLOADER
+RI. . . . . . . . . . . . . . . . . . .    B ADDR   0098H.0 A   
+RS0 . . . . . . . . . . . . . . . . . .    B ADDR   00D0H.3 A   
+RS1 . . . . . . . . . . . . . . . . . .    B ADDR   00D0H.4 A   
+RXD . . . . . . . . . . . . . . . . . .    B ADDR   00B0H.0 A   
+SBUF. . . . . . . . . . . . . . . . . .    D ADDR   0099H   A   
+SCON. . . . . . . . . . . . . . . . . .    D ADDR   0098H   A   
+SD_DETECT . . . . . . . . . . . . . . .    B ADDR   0090H.1 A   
+SET_DEVICE_READ_TO_DRAM . . . . . . . .    C ADDR   -----       EXT
+SM0 . . . . . . . . . . . . . . . . . .    B ADDR   0098H.7 A   
+SM1 . . . . . . . . . . . . . . . . . .    B ADDR   0098H.6 A   
+SM2 . . . . . . . . . . . . . . . . . .    B ADDR   0098H.5 A   
+SP. . . . . . . . . . . . . . . . . . .    D ADDR   0081H   A   
+T0. . . . . . . . . . . . . . . . . . .    B ADDR   00B0H.4 A   
+T1. . . . . . . . . . . . . . . . . . .    B ADDR   00B0H.5 A   
+T2CON . . . . . . . . . . . . . . . . .    D ADDR   00C8H   A   
+TB8 . . . . . . . . . . . . . . . . . .    B ADDR   0098H.3 A   
+TCLK. . . . . . . . . . . . . . . . . .    B ADDR   00C8H.4 A   
+TCON. . . . . . . . . . . . . . . . . .    D ADDR   0088H   A   
+TC_B400?241 . . . . . . . . . . . . . .    X ADDR   0001H   R   SEG=?XD?LOAD_NAND_BANK?L51_BANKINGLOADER
+TC_CLOCK?240. . . . . . . . . . . . . .    X ADDR   0000H   R   SEG=?XD?LOAD_NAND_BANK?L51_BANKINGLOADER
+TC_RETRY?345. . . . . . . . . . . . . .    B ADDR   0000H.0 R   SEG=?BI?_SPI_LOAD_CODE_TO_DRAM?L51_BANKINGLOADER
+TF0 . . . . . . . . . . . . . . . . . .    B ADDR   0088H.5 A   
+TF1 . . . . . . . . . . . . . . . . . .    B ADDR   0088H.7 A   
+TF2 . . . . . . . . . . . . . . . . . .    B ADDR   00C8H.7 A   
+TH0 . . . . . . . . . . . . . . . . . .    D ADDR   008CH   A   
+TH1 . . . . . . . . . . . . . . . . . .    D ADDR   008DH   A   
+TH2 . . . . . . . . . . . . . . . . . .    D ADDR   00CDH   A   
+TI. . . . . . . . . . . . . . . . . . .    B ADDR   0098H.1 A   
+TL0 . . . . . . . . . . . . . . . . . .    D ADDR   008AH   A   
+TL1 . . . . . . . . . . . . . . . . . .    D ADDR   008BH   A   
+TL2 . . . . . . . . . . . . . . . . . .    D ADDR   00CCH   A   
+A51 MACRO ASSEMBLER  L51_BANKINGLOADER                                                    07/09/2012 21:16:44 PAGE    13
+
+TMOD. . . . . . . . . . . . . . . . . .    D ADDR   0089H   A   
+TR0 . . . . . . . . . . . . . . . . . .    B ADDR   0088H.4 A   
+TR1 . . . . . . . . . . . . . . . . . .    B ADDR   0088H.6 A   
+TR2 . . . . . . . . . . . . . . . . . .    B ADDR   00C8H.2 A   
+TRIGGER_DATA_TRANSFER_DONE. . . . . . .    C ADDR   -----       EXT
+TW_ADDR?242 . . . . . . . . . . . . . .    X ADDR   0002H   R   SEG=?XD?LOAD_NAND_BANK?L51_BANKINGLOADER
+TXD . . . . . . . . . . . . . . . . . .    B ADDR   00B0H.1 A   
+U_SECCNT?343. . . . . . . . . . . . . .    X ADDR   0000H   R   SEG=?XD?_SPI_LOAD_CODE_TO_DRAM?L51_BANKINGLOADER
+WR. . . . . . . . . . . . . . . . . . .    B ADDR   00B0H.6 A   
+_SET_CLOCK_MODE . . . . . . . . . . . .    C ADDR   -----       EXT
+_SPI_LOAD_CODE_TO_DRAM. . . . . . . . .    C ADDR   0000H   R   SEG=?PR?_SPI_LOAD_CODE_TO_DRAM?L51_BANKINGLOADER
+_SPI_SEND_BYTE. . . . . . . . . . . . .    C ADDR   -----       EXT
+
+
+REGISTER BANK(S) USED: 0 3 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

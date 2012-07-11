@@ -1,0 +1,1 @@
+"..\LIBSOURCE\ASM\L51_BankingLoader.c" LARGE OPTIMIZE (9,SIZE) BROWSE NOAREGS INCDIR(..\libsource\header) DEFINE (K_ICTYPE="0x03") DEBUG OBJECTEXTEND PRINT(.\lst\L51_BankingLoader.lst) SRC (.\obj\L51_BankingLoader.SRC)

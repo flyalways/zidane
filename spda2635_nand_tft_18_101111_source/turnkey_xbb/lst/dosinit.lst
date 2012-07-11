@@ -1,0 +1,316 @@
+C51 COMPILER V9.00   DOSINIT                                                               07/10/2012 15:51:52 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE DOSINIT
+OBJECT MODULE PLACED IN .\obj\dosinit.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE ..\LIBSOURCE\DOS\dosinit.c LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDIR(..\
+                    -libsource\header) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\dosinit.lst) OBJECT(.\obj\dosinit.obj)
+
+line level    source
+
+   1          #include "SPDA2K.h"
+   2          #include "dos\fs_struct.h"
+   3          #include "Memalloc.h"
+   4          
+   5          extern  xdata   U8      gc_HostSectorUnit;
+   6          
+   7          U8 JudgeBootSector(void)
+   8          {
+   9   1              U32 tdw_DiskSize;
+  10   1              U32     tdw_PBRAddr;
+  11   1              U32     tdw_PBRAddr1;
+  12   1      
+  13   1              if(gc_CurrentCard==0)
+  14   1              {
+  15   2                      if(gbt_Support_Dummy_Capacity==1)
+  16   2                      {
+  17   3                              gdw_CARD_TotalSizeMB = Dummy_Capacity.LW;       
+  18   3                      }
+  19   2                      else
+  20   2                      {
+  21   3                              gdw_CARD_TotalSizeMB = Capacity.LW; 
+  22   3                      }
+  23   2              }
+  24   1      
+  25   1              ((UBYTE *)(&tdw_PBRAddr))[0]=gc_PlayRecordDataBuf[0x1C9];
+  26   1              ((UBYTE *)(&tdw_PBRAddr))[1]=gc_PlayRecordDataBuf[0x1C8];
+  27   1              ((UBYTE *)(&tdw_PBRAddr))[2]=gc_PlayRecordDataBuf[0x1C7];
+  28   1              ((UBYTE *)(&tdw_PBRAddr))[3]=gc_PlayRecordDataBuf[0x1C6];
+  29   1      
+  30   1              ((UBYTE *)(&tdw_DiskSize))[0]=gc_PlayRecordDataBuf[0x1CD];
+  31   1              ((UBYTE *)(&tdw_DiskSize))[1]=gc_PlayRecordDataBuf[0x1CC];
+  32   1              ((UBYTE *)(&tdw_DiskSize))[2]=gc_PlayRecordDataBuf[0x1CB];
+  33   1              ((UBYTE *)(&tdw_DiskSize))[3]=gc_PlayRecordDataBuf[0x1CA];
+  34   1      
+  35   1              ((UBYTE *)(&tdw_PBRAddr1))[0]=gc_PlayRecordDataBuf[0x1D9];
+  36   1              ((UBYTE *)(&tdw_PBRAddr1))[1]=gc_PlayRecordDataBuf[0x1D8];
+  37   1              ((UBYTE *)(&tdw_PBRAddr1))[2]=gc_PlayRecordDataBuf[0x1D7];
+  38   1              ((UBYTE *)(&tdw_PBRAddr1))[3]=gc_PlayRecordDataBuf[0x1D6];
+  39   1      
+  40   1              if((tdw_DiskSize+tdw_PBRAddr-1)==gdw_CARD_TotalSizeMB)
+  41   1              {
+  42   2                      return  1;      // MBR
+  43   2              }
+  44   1              if((tdw_DiskSize+tdw_PBRAddr)==gdw_CARD_TotalSizeMB)
+  45   1              {
+  46   2                      return  1;      // MBR
+  47   2              }
+  48   1      
+  49   1              if((tdw_DiskSize+tdw_PBRAddr)<gdw_CARD_TotalSizeMB)
+  50   1              {
+  51   2                      if(((tdw_DiskSize+tdw_PBRAddr)*100/98)>gdw_CARD_TotalSizeMB)
+  52   2                      {
+  53   3                              return  1;      // MBR
+  54   3                      }
+C51 COMPILER V9.00   DOSINIT                                                               07/10/2012 15:51:52 PAGE 2   
+
+  55   2              }
+  56   1      
+  57   1              if((tdw_DiskSize+tdw_PBRAddr+gc_PlayRecordDataBuf[0x1D0]-1)==tdw_PBRAddr1)
+  58   1              {
+  59   2      //              dbprintf(">>>iPod\n");
+  60   2                      return 1;
+  61   2              }       
+  62   1      
+  63   1              if((gc_PlayRecordDataBuf[54]=='F')&&(gc_PlayRecordDataBuf[55]=='A')&&(gc_PlayRecordDataBuf[56]=='T'))
+  64   1              {
+  65   2                      return 0;
+  66   2              }
+  67   1      
+  68   1              if((gc_PlayRecordDataBuf[82]=='F')&&(gc_PlayRecordDataBuf[83]=='A')&&(gc_PlayRecordDataBuf[84]=='T'))
+  69   1              {
+  70   2                      return 0;
+  71   2              }
+  72   1              return 2;
+  73   1      }       
+  74          
+  75          
+  76          U8 DOS_Initialize(void)
+  77          {
+  78   1              U8      tc_Status;
+  79   1              U16     tw_RootDirSectors=0;
+  80   1              U32     tdw_PBRAddr;
+  81   1              U16     tw_DOS_ReserveSector;
+  82   1              U32     tdw_PartitionSectorSize;
+  83   1              U8      tc_FATperDisc;
+  84   1      
+  85   1              tdw_PBRAddr=0;
+  86   1              gb_ReadWriteDataArea = 0;
+  87   1              gw_FileIndex[0]=0;
+  88   1              gw_FileIndex[1]=0;
+  89   1              gw_FileIndex[2]=0;
+  90   1              
+  91   1              gw_FileTotalNumber[0]=0;
+  92   1              gw_FileTotalNumber[1]=0;
+  93   1      
+  94   1              gdw_TotalFreeClusNumber=0;
+  95   1              gdw_FreeClusterNum[0]=0; 
+  96   1              gdw_FreeClusterNum[1]=0;    //lizhn for search free cluster
+  97   1              gc_ClusBufValidPoint = 0;
+  98   1              gc_ClusBufValidSize = 0;
+  99   1              
+ 100   1              gs_File_FCB[0].dw_FDB_LogAdd = 0;
+ 101   1              gs_File_FCB[1].dw_FDB_LogAdd = 0;
+ 102   1              gs_File_FCB[2].dw_FDB_LogAdd = 0;
+ 103   1      
+ 104   1              gs_File_FCB[0].dw_File_StartCluster = 0xffffffff;
+ 105   1              gs_File_FCB[1].dw_File_StartCluster = 0xffffffff;
+ 106   1              gs_File_FCB[2].dw_File_StartCluster = 0xffffffff;
+ 107   1      
+ 108   1              gc_NeedNewBlock=1;
+ 109   1              gb_NeedEraseUpdateBlock=0;
+ 110   1      
+ 111   1              if(!DOS_Read_LogicSector(0x00000000, 1))//(JC)Read sector 0
+ 112   1              { 
+ 113   2                      tc_Status=JudgeBootSector();
+ 114   2                      if(tc_Status==2)//(JC)neither PBR nor MBR 
+ 115   2                      {
+ 116   3                              return 1;
+C51 COMPILER V9.00   DOSINIT                                                               07/10/2012 15:51:52 PAGE 3   
+
+ 117   3                      }
+ 118   2                      else if(tc_Status==1)//(JC)MBR
+ 119   2                      {
+ 120   3                              if(gc_PlayRecordDataBuf[0x1C2]!=0)
+ 121   3                              {
+ 122   4                                      ((UBYTE *)(&tdw_PBRAddr))[0] = gc_PlayRecordDataBuf[0x1c9];
+ 123   4                                      ((UBYTE *)(&tdw_PBRAddr))[1] = gc_PlayRecordDataBuf[0x1c8];
+ 124   4                                      ((UBYTE *)(&tdw_PBRAddr))[2] = gc_PlayRecordDataBuf[0x1c7];
+ 125   4                                      ((UBYTE *)(&tdw_PBRAddr))[3] = gc_PlayRecordDataBuf[0x1c6];
+ 126   4                              }
+ 127   3                              else
+ 128   3                              {
+ 129   4                                      ((UBYTE *)(&tdw_PBRAddr))[0] = gc_PlayRecordDataBuf[0x1D9];
+ 130   4                                      ((UBYTE *)(&tdw_PBRAddr))[1] = gc_PlayRecordDataBuf[0x1D8];
+ 131   4                                      ((UBYTE *)(&tdw_PBRAddr))[2] = gc_PlayRecordDataBuf[0x1D7];
+ 132   4                                      ((UBYTE *)(&tdw_PBRAddr))[3] = gc_PlayRecordDataBuf[0x1D6];
+ 133   4                              }
+ 134   3      
+ 135   3                              if(DOS_Read_LogicSector(tdw_PBRAddr*gc_HostSectorUnit, 1))
+ 136   3                              {//read PBR sector error.
+ 137   4                                      return DOS_READ_PBS_ERR;
+ 138   4                              } 
+ 139   3                      } 
+ 140   2      
+ 141   2                      if(((gc_PlayRecordDataBuf[54]=='F')&&(gc_PlayRecordDataBuf[55]=='A')&&(gc_PlayRecordDataBuf[56]=='T'))
+ 142   2                       ||((gc_PlayRecordDataBuf[82]=='F')&&(gc_PlayRecordDataBuf[83]=='A')&&(gc_PlayRecordDataBuf[84]=='T')))
+ 143   2                      {
+ 144   3                              gc_DOS_SectorPerCluster = gc_PlayRecordDataBuf[0x0d];
+ 145   3                              tc_FATperDisc = gc_PlayRecordDataBuf[0x10];
+ 146   3                              ((UBYTE *)(&tw_DOS_ReserveSector))[0] = gc_PlayRecordDataBuf[0x0f];
+ 147   3                              ((UBYTE *)(&tw_DOS_ReserveSector))[1] = gc_PlayRecordDataBuf[0x0e];
+ 148   3                              gdw_DOS_Fat1Addr = tdw_PBRAddr + tw_DOS_ReserveSector;
+ 149   3                              ((UBYTE *)(&gdw_DOS_SectorPerFAT))[0] = 0;
+ 150   3                              ((UBYTE *)(&gdw_DOS_SectorPerFAT))[1] = 0;
+ 151   3                              ((UBYTE *)(&gdw_DOS_SectorPerFAT))[2] = gc_PlayRecordDataBuf[0x17];
+ 152   3                              ((UBYTE *)(&gdw_DOS_SectorPerFAT))[3] = gc_PlayRecordDataBuf[0x16];
+ 153   3                              if(gdw_DOS_SectorPerFAT)                //(JC)check FATSize16/12
+ 154   3                      {
+ 155   4                              ((UBYTE *)(&tw_RootDirSectors))[0] = gc_PlayRecordDataBuf[0x12];
+ 156   4                                      ((UBYTE *)(&tw_RootDirSectors))[1] = gc_PlayRecordDataBuf[0x11];
+ 157   4                                      tw_RootDirSectors = tw_RootDirSectors >>4;              //(JC)*32/512
+ 158   4                      }
+ 159   3                      else//FAT32
+ 160   3                      {
+ 161   4                              ((UBYTE *)(&gdw_DOS_SectorPerFAT))[0] = gc_PlayRecordDataBuf[0x27];
+ 162   4                                      ((UBYTE *)(&gdw_DOS_SectorPerFAT))[1] = gc_PlayRecordDataBuf[0x26];
+ 163   4                                      ((UBYTE *)(&gdw_DOS_SectorPerFAT))[2] = gc_PlayRecordDataBuf[0x25];
+ 164   4                                      ((UBYTE *)(&gdw_DOS_SectorPerFAT))[3] = gc_PlayRecordDataBuf[0x24];
+ 165   4                      }
+ 166   3                      gdw_DOS_Fat2Addr=gdw_DOS_Fat1Addr;
+ 167   3                      if(tc_FATperDisc==2)
+ 168   3                              {
+ 169   4                      gdw_DOS_Fat2Addr+=gdw_DOS_SectorPerFAT;
+ 170   4                              }
+ 171   3                      
+ 172   3                      ((UBYTE *)(&tdw_PartitionSectorSize))[0] = 0;
+ 173   3                              ((UBYTE *)(&tdw_PartitionSectorSize))[1] = 0;
+ 174   3                              ((UBYTE *)(&tdw_PartitionSectorSize))[2] = gc_PlayRecordDataBuf[0x014];
+ 175   3                              ((UBYTE *)(&tdw_PartitionSectorSize))[3] = gc_PlayRecordDataBuf[0x013];
+ 176   3                      if(tdw_PartitionSectorSize==0)
+ 177   3                      {//(JC)FAT32 or FAT12/16 size more than 32M
+ 178   4                              ((UBYTE *)(&tdw_PartitionSectorSize))[0] = gc_PlayRecordDataBuf[0x23];
+C51 COMPILER V9.00   DOSINIT                                                               07/10/2012 15:51:52 PAGE 4   
+
+ 179   4                                      ((UBYTE *)(&tdw_PartitionSectorSize))[1] = gc_PlayRecordDataBuf[0x22];
+ 180   4                                      ((UBYTE *)(&tdw_PartitionSectorSize))[2] = gc_PlayRecordDataBuf[0x21];
+ 181   4                                      ((UBYTE *)(&tdw_PartitionSectorSize))[3] = gc_PlayRecordDataBuf[0x20];
+ 182   4                      }       
+ 183   3      
+ 184   3                      if (tdw_PartitionSectorSize != 0)
+ 185   3                              {                               
+ 186   4                                      gdw_DOS_FatMaxCluster=tdw_PartitionSectorSize-tw_DOS_ReserveSector-tw_RootDirSectors-(gdw_DOS_SectorPe
+             -rFAT<<(tc_FATperDisc-1));
+ 187   4                                      gdw_DOS_FatMaxCluster = gdw_DOS_FatMaxCluster / gc_DOS_SectorPerCluster;
+ 188   4                                              
+ 189   4                              if(gdw_DOS_FatMaxCluster<65525)
+ 190   4                              {
+ 191   5                                              gc_DOS_FileSystemType=1;
+ 192   5                                              //dbprintf("FAT16\n");
+ 193   5                                      }
+ 194   4                              else
+ 195   4                              {
+ 196   5                                      gc_DOS_FileSystemType=2;
+ 197   5                                      //dbprintf("FAT32\n");
+ 198   5                                      }
+ 199   4      
+ 200   4                              gdw_DOS_FatMaxCluster+=2;       //(JC)the maximum cluster no
+ 201   4                              if (gdw_DOS_FatMaxCluster == 0 || gdw_DOS_FatMaxCluster > 0x0fffffff)
+ 202   4                                      {//0x0fffffff means last cluster in chain in FAT32.
+ 203   5                                              gdw_DOS_FatMaxCluster = 0x0fffffff;
+ 204   5                                      }
+ 205   4                                      if(gc_DOS_FileSystemType == 1)
+ 206   4                                      {// FAT 16
+ 207   5                                              gdw_DOS_RootDirAddr = gdw_DOS_Fat2Addr + gdw_DOS_SectorPerFAT;
+ 208   5                                              gdw_DOS_DataAddr = gdw_DOS_RootDirAddr + tw_RootDirSectors/gc_HostSectorUnit;
+ 209   5                                              //FAT12/16 have no root dir cluster. starting cluster '2' is in the beginning of data area
+ 210   5                                              gdw_DOS_RootDirClus = 0;
+ 211   5                                      }
+ 212   4                                      else if(gc_DOS_FileSystemType == 2)                                     
+ 213   4                                      {// FAT 32
+ 214   5                                              gdw_DOS_DataAddr = gdw_DOS_Fat2Addr + gdw_DOS_SectorPerFAT;
+ 215   5                                              //(JC)BPB_RootClus[3:0]                         
+ 216   5                                              ((UBYTE *)(&gdw_DOS_RootDirClus))[0] = gc_PlayRecordDataBuf[0x2f];
+ 217   5                                              ((UBYTE *)(&gdw_DOS_RootDirClus))[1] = gc_PlayRecordDataBuf[0x2e];
+ 218   5                                              ((UBYTE *)(&gdw_DOS_RootDirClus))[2] = gc_PlayRecordDataBuf[0x2d];
+ 219   5                                              ((UBYTE *)(&gdw_DOS_RootDirClus))[3] = gc_PlayRecordDataBuf[0x2c];
+ 220   5                                              gdw_DOS_RootDirAddr = gdw_DOS_DataAddr + ((gdw_DOS_RootDirClus-2) * (LWORD)gc_DOS_SectorPerCluster);/
+             -/start from cluster 2
+ 221   5                                      }
+ 222   4                                      gdw_DOS_Fat1Addr=gdw_DOS_Fat1Addr*gc_HostSectorUnit;
+ 223   4                                      gdw_DOS_Fat2Addr=gdw_DOS_Fat2Addr*gc_HostSectorUnit;
+ 224   4                                      gdw_DOS_DataAddr=gdw_DOS_DataAddr*gc_HostSectorUnit;
+ 225   4                                      gdw_DOS_RootDirAddr=gdw_DOS_RootDirAddr*gc_HostSectorUnit;
+ 226   4                                                              
+ 227   4                                      if(gc_CurrentCard<2)
+ 228   4                                      {
+ 229   5                                              if(!DOS_Read_LogicSector(gdw_DOS_Fat1Addr, 1))
+ 230   5                                              {//check FAT1
+ 231   6                                                      if (gc_PlayRecordDataBuf[0] != 0xf8 || gc_PlayRecordDataBuf[1] != 0xff)
+ 232   6                                                      {
+ 233   7                                                              if(!DOS_Read_LogicSector(gdw_DOS_Fat2Addr,1))
+ 234   7                                                              {
+ 235   8                                                                      if(gc_PlayRecordDataBuf[0] !=   0xf8 || gc_PlayRecordDataBuf[1] != 0xff)
+ 236   8                                                                      {//(JC)Both FAT1 and FAT2 r error
+ 237   9                                                                              return DOS_FAT_ERR;
+ 238   9                                                                      }
+C51 COMPILER V9.00   DOSINIT                                                               07/10/2012 15:51:52 PAGE 5   
+
+ 239   8                                                                      else
+ 240   8                                                                      {// copy fat2 to fat1
+ 241   9                                                                              DOS_CopyFATtoFAT(0x02, 0x0fffffff, 0);
+ 242   9                                                                      }
+ 243   8                                                              }
+ 244   7                                                      }
+ 245   6                                                      else
+ 246   6                                                      {// check FAT2
+ 247   7                                                              if(!DOS_Read_LogicSector(gdw_DOS_Fat2Addr,1))
+ 248   7                                                              {
+ 249   8                                                                      if (gc_PlayRecordDataBuf[0] !=  0xf8 || gc_PlayRecordDataBuf[1] != 0xff)
+ 250   8                                                                      {// copy fat1 to fat2
+ 251   9                                                                              DOS_CopyFATtoFAT(0x02, 0x0fffffff, 1);
+ 252   9                                                                      }
+ 253   8                                                              }
+ 254   7                                                              else
+ 255   7                                                              {
+ 256   8                                                                      //dbprintf("read fat2 err!!!\n");
+ 257   8                                                                      return DOS_READ_FAT2_ERR;
+ 258   8                                                              }
+ 259   7                                                      }
+ 260   6                                              }
+ 261   5                                              else
+ 262   5                                              {
+ 263   6                                                      //dbprintf("read fat1 read func err!!!\n");
+ 264   6                                                      return DOS_READ_FAT1_ERR;
+ 265   6                                              }
+ 266   5                                      }
+ 267   4                              }
+ 268   3                              else
+ 269   3                              {//tdw_PartitionSectorSize == 0, not FAT12/16/32
+ 270   4                                      return DOS_PARTITIONSIZE_ERR;
+ 271   4                              }
+ 272   3                      }
+ 273   2              }
+ 274   1              else
+ 275   1              {
+ 276   2                      return DOS_READ_MBS_ERR;        
+ 277   2              }
+ 278   1              return DOS_SUCCESS;  
+ 279   1      }
+ 280          
+ 281          
+ 282          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1532    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----      25
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

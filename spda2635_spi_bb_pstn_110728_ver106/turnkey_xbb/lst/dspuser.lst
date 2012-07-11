@@ -1,0 +1,287 @@
+C51 COMPILER V9.00   DSPUSER                                                               07/09/2012 21:16:47 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE DSPUSER
+OBJECT MODULE PLACED IN .\obj\dspuser.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE DSP\dspuser.c LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDIR(..\libsource\hea
+                    -der) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\dspuser.lst) OBJECT(.\obj\dspuser.obj)
+
+line level    source
+
+   1          #include "..\header\SPDA2K.h"
+   2          #include "..\header\DSP.h"
+   3          #include "dspphysic.h"
+   4          #include "dspuser.h"
+   5          #include "..\header\variables.h"
+   6          
+   7          
+   8          void DSP_WakeUp(void)
+   9          {
+  10   1              XBYTE[0xB010]|=0x04;    // wake up DSP
+  11   1              // 2T-SRAM Enable
+  12   1              XBYTE[0xB0F6] &= 0xF8;
+  13   1              XBYTE[0xB0F7] |= 0x07;
+  14   1              XBYTE[0xB0F8] |= 0x07;
+  15   1              XBYTE[0xB0F9] |= 0x07;
+  16   1      }
+  17          
+  18          void DSP_ClearReady(void)
+  19          {
+  20   1              xdata   U16 tw_Data;
+  21   1      
+  22   1              tw_Data = L2_DSP_Read_DMem16(DSP_CMDExeStatus);
+  23   1              L2_DSP_Write_DMem16(DSP_CMDExeStatus, tw_Data&0xFFFE); //clear DSP 0x3F0B.0 ready status
+  24   1      }
+  25          
+  26          U8 DSP_SearchSunplusKey(void)
+  27          {
+  28   1              code U8 SunplusKey[8] = {'S','u','n','p','l','u','s',0x00} ;
+  29   1              data    U8      ta_GetString[8];
+  30   1              data    U8      tc_Cnt;
+  31   1              data    U16     tw_AddressIndex = DSP_SunplusKeyAddr;   // 0x3F11
+  32   1              data    U8      *tpc_String = ta_GetString;
+  33   1      
+  34   1      
+  35   1              // Read "SunplusKey" from DSP DM and put them into GetString[8].
+  36   1              for(tc_Cnt=0; tc_Cnt<4; ++tc_Cnt)
+  37   1              {
+  38   2                      U16     tc_Data = L2_DSP_Read_DMem16(tw_AddressIndex++);
+  39   2      
+  40   2                      *(tpc_String+2*tc_Cnt)  = HIBYTE(tc_Data);
+  41   2                      *(tpc_String+2*tc_Cnt+1)= LOBYTE(tc_Data);
+  42   2              }
+  43   1              for(tc_Cnt=0; tc_Cnt<8; tc_Cnt++)
+  44   1              {
+  45   2                      if(*(tpc_String+tc_Cnt)==SunplusKey[tc_Cnt])
+  46   2                      {
+  47   3                              return 0;
+  48   3                      }
+  49   2              }
+  50   1              return 1;
+  51   1      }
+  52          
+  53          
+  54          U8 DSP_Download(U8 tc_CurrentIMID,U8 tc_CurrentPMID)
+C51 COMPILER V9.00   DSPUSER                                                               07/09/2012 21:16:47 PAGE 2   
+
+  55          {
+  56   1              data    U8      tc_TotalIDNum;
+  57   1              data    U8      tc_TempLoop;
+  58   1              data    U8      tc_Loop;
+  59   1              data    U16     tw_DSPCodeIMphyadr;
+  60   1              data    U16     tw_DSPCodePMphyadr;
+  61   1              data    U16     tw_IDIndexOffset;
+  62   1              xdata   U8      tc_buf_idx_start;
+  63   1      
+  64   1              //1. Turn off DSP CLK
+  65   1              XBYTE[0xB010]&=~0x01;
+  66   1              //2. Download DSP IMPM
+  67   1              {
+  68   2                      //initial IM and PM phyadr value is 0xffff
+  69   2                      tw_DSPCodeIMphyadr=0xFFFF;
+  70   2                      tw_DSPCodePMphyadr=0xFFFF;
+  71   2                      SPI_DSPHZK_Block_Read(0,1,gc_PlayRecordDataBufHB);
+  72   2                      tc_TotalIDNum=gc_PlayRecordDataBuf[0];
+  73   2      
+  74   2                      for(tc_TempLoop=0;tc_TempLoop<tc_TotalIDNum;tc_TempLoop++)
+  75   2                      {//Scan the IMIP ID in the all ID index
+  76   3                              tw_IDIndexOffset=((U16)tc_TempLoop*9);
+  77   3                              if ((gc_PlayRecordDataBuf[tw_IDIndexOffset+1])==tc_CurrentIMID)
+  78   3                              {//if it is IM,move IM to DSP
+  79   4                                      ((U8 *)(&tw_DSPCodeIMphyadr))[0]=gc_PlayRecordDataBuf[tw_IDIndexOffset+2];
+  80   4                                      ((U8 *)(&tw_DSPCodeIMphyadr))[1]=gc_PlayRecordDataBuf[tw_IDIndexOffset+3]; 
+  81   4                                      for(tc_Loop=0;tc_Loop<96;tc_Loop++)
+  82   4                                      {
+  83   5                                              SPI_DSPHZK_Block_Read(0,tw_DSPCodeIMphyadr+1,gc_PlayRecordDataBufHB);
+  84   5                                              L2_DSP_MCU_IM_DMA(tc_Loop,(U16)gc_PlayRecordDataBuf);
+  85   5                                              tw_DSPCodeIMphyadr++;
+  86   5                                      }
+  87   4                                      SPI_DSPHZK_Block_Read(0,1,gc_PlayRecordDataBufHB);
+  88   4                              }
+  89   3                              else if ((gc_PlayRecordDataBuf[tw_IDIndexOffset+1])==tc_CurrentPMID)
+  90   3                              {//if it is PM,move PM to DSP
+  91   4                                      tc_buf_idx_start=0;
+  92   4      
+  93   4                                      ((U8 *)(&tw_DSPCodePMphyadr))[0] = gc_PlayRecordDataBuf[tw_IDIndexOffset + 2];
+  94   4                                      ((U8 *)(&tw_DSPCodePMphyadr))[1] = gc_PlayRecordDataBuf[tw_IDIndexOffset + 3]; 
+  95   4      
+  96   4                                      if((tc_CurrentPMID==0x23)||(tc_CurrentPMID==0x24)||(tc_CurrentPMID==0x25))//(Jimi 091028)to save spi
+  97   4                                      {
+  98   5                                              tc_buf_idx_start=24;
+  99   5                                      }
+ 100   4      
+ 101   4                                      for(tc_Loop=tc_buf_idx_start;tc_Loop<48;tc_Loop++)
+ 102   4                                      {
+ 103   5                                              SPI_DSPHZK_Block_Read(0,tw_DSPCodePMphyadr+1,gc_PlayRecordDataBufHB);
+ 104   5                                              L2_DSP_MCU_PM_DMA(tc_Loop,(U16)gc_PlayRecordDataBuf);
+ 105   5      
+ 106   5                                              tw_DSPCodePMphyadr++;
+ 107   5                                      }
+ 108   4                                      SPI_DSPHZK_Block_Read(0,0+1,gc_PlayRecordDataBufHB);
+ 109   4                              }
+ 110   3                      }
+ 111   2                      if((tw_DSPCodePMphyadr==0xffff)&&(tw_DSPCodeIMphyadr==0xffff))
+ 112   2                      {//the IM and PM is no exist
+ 113   3                              return DSP_IMPM_INEXISTENCE_ERROR;
+ 114   3                      }
+ 115   2              }
+ 116   1      
+C51 COMPILER V9.00   DSPUSER                                                               07/09/2012 21:16:47 PAGE 3   
+
+ 117   1              //5. Enable DSP CLK
+ 118   1              XBYTE[0xB010]|=0x01;
+ 119   1      
+ 120   1              //6. Release DSP reset
+ 121   1              XBYTE[0xB002]&=0xFE;                             // Enable DSP Run Normal Mode                  
+ 122   1              XBYTE[0xB216]=0x00;  //Enable DM,IM,PM
+ 123   1      
+ 124   1              return 0;
+ 125   1      }
+ 126          
+ 127          
+ 128          U8 DSP_PlayInit(void)
+ 129          {
+ 130   1              xdata   U16 dbgTmp;
+ 131   1              data    U16 TimeOUT;
+ 132   1      
+ 133   1              // Jimi 091104 for EQ mode pop noise as next/prev
+ 134   1              if(gb_Play_firstPlay==1)
+ 135   1              {
+ 136   2                      L2_DSP_Write_DMem16(DSP_PostProcessSelect,0x8003);
+ 137   2                      gb_Play_firstPlay=0;
+ 138   2              }
+ 139   1              else
+ 140   1              {
+ 141   2                      L2_DSP_Write_DMem16(DSP_PostProcessSelect,0x0003);
+ 142   2              }
+ 143   1      
+ 144   1              L2_DSP_SendCommandSet(DCMD_Restart); // ycc081031,force DSP jump 0 without hardware reset
+ 145   1              L2_DSP_Write_DMem16(DSP_RestartFlag,0x1235); // ycc081031
+ 146   1      
+ 147   1              if(DSP_SearchSunplusKey()!=DSP_SUCCESS)
+ 148   1              {
+ 149   2                      return DSP_CHECK_SUNPLUSKEY_ERROR;
+ 150   2              }       
+ 151   1      
+ 152   1              // Clear all buffers in DSP
+ 153   1              DSP_ClearReady();
+ 154   1              L2_DSP_Write_DMem16(DSP_GoControl,0x1235);            
+ 155   1              {
+ 156   2                  TimeOUT = 0xFFFF;
+ 157   2                      do{
+ 158   3                      dbgTmp = L2_DSP_Read_DMem16(DSP_CMDExeStatus)&0x0001;  //read DSP 0x3F0B.0 ready status
+ 159   3                      TimeOUT --;
+ 160   3                      if(TimeOUT==0)
+ 161   3                      {
+ 162   4                              return DSP_CMD_EXE_STATUS0_ERROR;
+ 163   4                      } 
+ 164   3                      }while(dbgTmp!=1);
+ 165   2              }
+ 166   1      
+ 167   1              return DSP_SUCCESS;
+ 168   1      }
+ 169          
+ 170          
+ 171          void DSP_SurroundDisable(void)
+ 172          {
+ 173   1          data        U16 tc_Data;
+ 174   1      
+ 175   1              tc_Data=L2_DSP_Read_DMem16(DSP_EffectControl);
+ 176   1          L2_DSP_Write_DMem16(DSP_EffectControl, tc_Data&0xF7FF);
+ 177   1              tc_Data=L2_DSP_Read_DMem16(DSP_SurroundDPCFLAG);
+ 178   1              L2_DSP_Write_DMem16(DSP_SurroundDPCFLAG,tc_Data&0xFFFD);
+C51 COMPILER V9.00   DSPUSER                                                               07/09/2012 21:16:47 PAGE 4   
+
+ 179   1      }
+ 180          
+ 181          
+ 182          U8 DSP_PauseCmd(void)
+ 183          {
+ 184   1              if(L2_DSP_SendCommandSet(DCMD_Pause)!=DCMD_Pause)
+ 185   1              {
+ 186   2                      return DSP_PAUSE_COMMAND_ERROR;
+ 187   2              }
+ 188   1      
+ 189   1              return 0;
+ 190   1      }
+ 191          
+ 192          
+ 193          U8  DSP_StopCmd(void)
+ 194          {
+ 195   1          if(L2_DSP_SendCommandSet(DCMD_Stop)!=DCMD_Stop)
+ 196   1              {
+ 197   2                      return DSP_STOP_COMMAND_ERROR;
+ 198   2              }
+ 199   1      
+ 200   1              return 0;
+ 201   1      }
+ 202          
+ 203          void DSP_EQ_Cmd(U8 tc_EQType)
+ 204          {
+ 205   1              data    U16     tw_TmpData;
+ 206   1              xdata   U8      *tpc_EQPoint;
+ 207   1              code U8  EQ_TABLE[][7]=
+ 208   1              {
+ 209   1                      24,24,20,20,14,9,5,      //DBB
+ 210   1                      18,16,14,1,16,18,17, //JAZZ
+ 211   1                      20,20,15,10,2,8,22,      //ROCK
+ 212   1                      12,18,4,12,18,12,8,      //POP
+ 213   1                      7,10,14,17,18,10,7,      //LIVE(CLASSIC)
+ 214   1              };
+ 215   1      
+ 216   1              tw_TmpData=L2_DSP_Read_DMem16(DSP_EffectControl); 
+ 217   1      
+ 218   1              DSP_SurroundDisable();
+ 219   1              if(!tc_EQType) 
+ 220   1              {       //EQ disable == NORMAL MODE
+ 221   2                      L2_DSP_Write_DMem16(DSP_EffectControl,tw_TmpData&0xFDFF);////EQ disable trigger
+ 222   2              }
+ 223   1              else 
+ 224   1              {                               // EQ enable
+ 225   2                      tc_EQType--;
+ 226   2                      tpc_EQPoint = &EQ_TABLE[tc_EQType][0];
+ 227   2                      L2_DSP_Write_DMem16(DSP_EQBand0,(U16)(tpc_EQPoint[0]));
+ 228   2                      L2_DSP_Write_DMem16(DSP_EQBand1,(U16)(tpc_EQPoint[1]));
+ 229   2                      L2_DSP_Write_DMem16(DSP_EQBand2,(U16)(tpc_EQPoint[2]));
+ 230   2                      L2_DSP_Write_DMem16(DSP_EQBand3,(U16)(tpc_EQPoint[3]));
+ 231   2                      L2_DSP_Write_DMem16(DSP_EQBand4,(U16)(tpc_EQPoint[4]));
+ 232   2                      L2_DSP_Write_DMem16(DSP_EQBand5,(U16)(tpc_EQPoint[5]));
+ 233   2                      L2_DSP_Write_DMem16(DSP_EQBand6,(U16)(tpc_EQPoint[6]));
+ 234   2                      tw_TmpData &= 0xFF7F;////'Spectrum Only' disable trigger
+ 235   2                      L2_DSP_Write_DMem16(DSP_EffectControl,tw_TmpData|0x0300);//EQ enable trigger
+ 236   2              }
+ 237   1      }
+ 238          
+ 239          void DSP_SpectrumOn(void)
+ 240          {
+C51 COMPILER V9.00   DSPUSER                                                               07/09/2012 21:16:47 PAGE 5   
+
+ 241   1              data    U16     tw_TmpData;
+ 242   1      
+ 243   1              tw_TmpData=L2_DSP_Read_DMem16(DSP_EffectControl); 
+ 244   1              L2_DSP_Write_DMem16(DSP_EffectControl,tw_TmpData|0x0400);       //Open Spectrum
+ 245   1      }
+ 246          
+ 247          U8  DSP_ResetCmd(void)  //Jimi 080522
+ 248          {
+ 249   1          if(L2_DSP_SendCommandSet(DCMD_Reset)!=DCMD_Reset)
+ 250   1              {
+ 251   2                      return DSP_STOP_COMMAND_ERROR;
+ 252   2              }
+ 253   1      
+ 254   1              return 0;
+ 255   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    927    ----
+   CONSTANT SIZE    =     43    ----
+   XDATA SIZE       =   ----       8
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      31
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

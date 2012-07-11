@@ -1,0 +1,284 @@
+A51 MACRO ASSEMBLER  RAM_CLEAR                                                            07/09/2012 21:16:51 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.01
+OBJECT MODULE PLACED IN .\obj\RAM_clear.OBJ
+ASSEMBLER INVOKED BY: C:\Keil\C51\BIN\A51.EXE .\obj\RAM_clear.src PR(.\lst\RAM_clear.ls1) EP DEBUG
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     ; .\obj\RAM_clear.SRC generated from: MAIN\RAM_clear.c
+                       2     ; COMPILER INVOKED BY:
+                       3     ;        C:\Keil\C51\BIN\C51.EXE MAIN\RAM_clear.c LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INC
+                             DIR(..\libsource\header) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\RAM_clear.lst) SRC(.\obj\RAM_clear.SRC)
+                       4     
+                       5     $nomod51 
+                       6     
+                       7     NAME    RAM_CLEAR
+                       8     
+  00E7                 9     ACC7    BIT     0E0H.7
+  0080                10     P0      DATA    080H
+  0090                11     P1      DATA    090H
+  00A0                12     P2      DATA    0A0H
+  00B0                13     P3      DATA    0B0H
+  00B4                14     T0      BIT     0B0H.4
+  00D6                15     AC      BIT     0D0H.6
+  00B5                16     T1      BIT     0B0H.5
+  00AF                17     EA      BIT     0A8H.7
+  00A8                18     IE      DATA    0A8H
+  00CE                19     EXF2    BIT     0C8H.6
+  00B7                20     RD      BIT     0B0H.7
+  00AC                21     ES      BIT     0A8H.4
+  00B8                22     IP      DATA    0B8H
+  0098                23     RI      BIT     098H.0
+  00B2                24     INT0    BIT     0B0H.2
+  00D7                25     CY      BIT     0D0H.7
+  0099                26     TI      BIT     098H.1
+  00B3                27     INT1    BIT     0B0H.3
+  009B                28     RamPage DATA    09BH
+  00CB                29     RCAP2H  DATA    0CBH
+  00BC                30     PS      BIT     0B8H.4
+  0081                31     SP      DATA    081H
+  00D2                32     OV      BIT     0D0H.2
+  00CA                33     RCAP2L  DATA    0CAH
+  00C9                34     C_T2    BIT     0C8H.1
+  00B6                35     WR      BIT     0B0H.6
+  00CD                36     RCLK    BIT     0C8H.5
+  00CC                37     TCLK    BIT     0C8H.4
+  0099                38     SBUF    DATA    099H
+  0087                39     PCON    DATA    087H
+  0098                40     SCON    DATA    098H
+  0089                41     TMOD    DATA    089H
+  0088                42     TCON    DATA    088H
+  0089                43     IE0     BIT     088H.1
+  008B                44     IE1     BIT     088H.3
+  00F0                45     B       DATA    0F0H
+  00C8                46     CP_RL2  BIT     0C8H.0
+  00E0                47     ACC     DATA    0E0H
+  00A9                48     ET0     BIT     0A8H.1
+  00AB                49     ET1     BIT     0A8H.3
+  008D                50     TF0     BIT     088H.5
+  00AD                51     ET2     BIT     0A8H.5
+  008F                52     TF1     BIT     088H.7
+  00CF                53     TF2     BIT     0C8H.7
+  009A                54     RB8     BIT     098H.2
+  008C                55     TH0     DATA    08CH
+  00A8                56     EX0     BIT     0A8H.0
+  0088                57     IT0     BIT     088H.0
+A51 MACRO ASSEMBLER  RAM_CLEAR                                                            07/09/2012 21:16:51 PAGE     2
+
+  008D                58     TH1     DATA    08DH
+  009B                59     TB8     BIT     098H.3
+  00AA                60     EX1     BIT     0A8H.2
+  008A                61     IT1     BIT     088H.2
+  00CD                62     TH2     DATA    0CDH
+  00D0                63     P       BIT     0D0H.0
+  009F                64     SM0     BIT     098H.7
+  008A                65     TL0     DATA    08AH
+  009E                66     SM1     BIT     098H.6
+  008B                67     TL1     DATA    08BH
+  009D                68     SM2     BIT     098H.5
+  00CC                69     TL2     DATA    0CCH
+  0091                70     SD_Detect       BIT     090H.1
+  00B9                71     PT0     BIT     0B8H.1
+  00BB                72     PT1     BIT     0B8H.3
+  00D3                73     RS0     BIT     0D0H.3
+  00BD                74     PT2     BIT     0B8H.5
+  008C                75     TR0     BIT     088H.4
+  00D4                76     RS1     BIT     0D0H.4
+  008E                77     TR1     BIT     088H.6
+  00CA                78     TR2     BIT     0C8H.2
+  00B8                79     PX0     BIT     0B8H.0
+  00BA                80     PX1     BIT     0B8H.2
+  0083                81     DPH     DATA    083H
+  0082                82     DPL     DATA    082H
+  00CB                83     EXEN2   BIT     0C8H.3
+  009C                84     REN     BIT     098H.4
+  00C8                85     T2CON   DATA    0C8H
+  00B0                86     RXD     BIT     0B0H.0
+  008E                87     CKCON   DATA    08EH
+  00B1                88     TXD     BIT     0B0H.1
+  00D5                89     F0      BIT     0D0H.5
+  00E0                90     ACC0    BIT     0E0H.0
+  00E1                91     ACC1    BIT     0E0H.1
+  00E2                92     ACC2    BIT     0E0H.2
+  00E3                93     ACC3    BIT     0E0H.3
+  00D0                94     PSW     DATA    0D0H
+  00E4                95     ACC4    BIT     0E0H.4
+  00E5                96     ACC5    BIT     0E0H.5
+  00E6                97     ACC6    BIT     0E0H.6
+                      98     ?PR?InitSystemRAM?RAM_CLEAR              SEGMENT CODE 
+                      99     ?PR?InitCPURAM?RAM_CLEAR                 SEGMENT CODE 
+                     100             PUBLIC  InitCPURAM
+                     101             PUBLIC  InitSystemRAM
+                     102     ; #include "..\header\SPDA2K.h"
+                     103     ; 
+                     104     ; 
+                     105     ; void InitSystemRAM(void)
+                     106     
+----                 107             RSEG  ?PR?InitSystemRAM?RAM_CLEAR
+0000                 108     InitSystemRAM:
+                     109             USING   0
+                     110                             ; SOURCE LINE # 4
+                     111     ; {
+                     112                             ; SOURCE LINE # 5
+                     113     ;       // Clear System RAM(0x7000~0x7FFF)
+                     114     ; #pragma asm
+                     115     ;               mov             dptr,#7000h
+0000 907000          116               mov           dptr,#7000h
+                     117     ; ?loop:        movx    @dptr,a
+0003 F0              118               ?loop:        movx    @dptr,a
+                     119     ;               inc             dptr
+0004 A3              120               inc           dptr
+                     121     ;               mov             r0,dph
+0005 A883            122               mov           r0,dph
+                     123     ;               cjne    r0,#80h,?loop
+A51 MACRO ASSEMBLER  RAM_CLEAR                                                            07/09/2012 21:16:51 PAGE     3
+
+0007 B880F9          124               cjne  r0,#80h,?loop
+                     125     ; #pragma endasm
+                     126     ; }
+                     127                             ; SOURCE LINE # 14
+000A 22              128             RET     
+                     129     ; END OF InitSystemRAM
+                     130     
+                     131     ; 
+                     132     ; void InitCPURAM(void)
+                     133     
+----                 134             RSEG  ?PR?InitCPURAM?RAM_CLEAR
+0000                 135     InitCPURAM:
+                     136             USING   0
+                     137                             ; SOURCE LINE # 16
+                     138     ; {
+                     139                             ; SOURCE LINE # 17
+                     140     ;       // Clear 8051 RAM(20h~8Fh)
+                     141     ; #pragma asm
+                     142     ;               clr             a
+0000 E4              143               clr           a
+                     144     ;               mov             r0,#20h
+0001 7820            145               mov           r0,#20h
+                     146     ; ?loop1:       mov             @r0,a
+0003 F6              147               ?loop1:       mov             @r0,a
+                     148     ;               inc             r0
+0004 08              149               inc           r0
+                     150     ;               cjne    r0,#90h,?loop1
+0005 B890FB          151               cjne  r0,#90h,?loop1
+                     152     ; #pragma endasm
+                     153     ; }
+                     154                             ; SOURCE LINE # 26
+0008 22              155             RET     
+                     156     ; END OF InitCPURAM
+                     157     
+                     158             END
+A51 MACRO ASSEMBLER  RAM_CLEAR                                                            07/09/2012 21:16:51 PAGE     4
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E                      T Y P E  V A L U E   ATTRIBUTES
+
+?LOOP . . . . . . . . . . .  C ADDR   0003H   R   SEG=?PR?INITSYSTEMRAM?RAM_CLEAR
+?LOOP1. . . . . . . . . . .  C ADDR   0003H   R   SEG=?PR?INITCPURAM?RAM_CLEAR
+?PR?INITCPURAM?RAM_CLEAR. .  C SEG    0009H       REL=UNIT
+?PR?INITSYSTEMRAM?RAM_CLEAR  C SEG    000BH       REL=UNIT
+AC. . . . . . . . . . . . .  B ADDR   00D0H.6 A   
+ACC . . . . . . . . . . . .  D ADDR   00E0H   A   
+ACC0. . . . . . . . . . . .  B ADDR   00E0H.0 A   
+ACC1. . . . . . . . . . . .  B ADDR   00E0H.1 A   
+ACC2. . . . . . . . . . . .  B ADDR   00E0H.2 A   
+ACC3. . . . . . . . . . . .  B ADDR   00E0H.3 A   
+ACC4. . . . . . . . . . . .  B ADDR   00E0H.4 A   
+ACC5. . . . . . . . . . . .  B ADDR   00E0H.5 A   
+ACC6. . . . . . . . . . . .  B ADDR   00E0H.6 A   
+ACC7. . . . . . . . . . . .  B ADDR   00E0H.7 A   
+B . . . . . . . . . . . . .  D ADDR   00F0H   A   
+CKCON . . . . . . . . . . .  D ADDR   008EH   A   
+CP_RL2. . . . . . . . . . .  B ADDR   00C8H.0 A   
+CY. . . . . . . . . . . . .  B ADDR   00D0H.7 A   
+C_T2. . . . . . . . . . . .  B ADDR   00C8H.1 A   
+DPH . . . . . . . . . . . .  D ADDR   0083H   A   
+DPL . . . . . . . . . . . .  D ADDR   0082H   A   
+EA. . . . . . . . . . . . .  B ADDR   00A8H.7 A   
+ES. . . . . . . . . . . . .  B ADDR   00A8H.4 A   
+ET0 . . . . . . . . . . . .  B ADDR   00A8H.1 A   
+ET1 . . . . . . . . . . . .  B ADDR   00A8H.3 A   
+ET2 . . . . . . . . . . . .  B ADDR   00A8H.5 A   
+EX0 . . . . . . . . . . . .  B ADDR   00A8H.0 A   
+EX1 . . . . . . . . . . . .  B ADDR   00A8H.2 A   
+EXEN2 . . . . . . . . . . .  B ADDR   00C8H.3 A   
+EXF2. . . . . . . . . . . .  B ADDR   00C8H.6 A   
+F0. . . . . . . . . . . . .  B ADDR   00D0H.5 A   
+IE. . . . . . . . . . . . .  D ADDR   00A8H   A   
+IE0 . . . . . . . . . . . .  B ADDR   0088H.1 A   
+IE1 . . . . . . . . . . . .  B ADDR   0088H.3 A   
+INITCPURAM. . . . . . . . .  C ADDR   0000H   R   SEG=?PR?INITCPURAM?RAM_CLEAR
+INITSYSTEMRAM . . . . . . .  C ADDR   0000H   R   SEG=?PR?INITSYSTEMRAM?RAM_CLEAR
+INT0. . . . . . . . . . . .  B ADDR   00B0H.2 A   
+INT1. . . . . . . . . . . .  B ADDR   00B0H.3 A   
+IP. . . . . . . . . . . . .  D ADDR   00B8H   A   
+IT0 . . . . . . . . . . . .  B ADDR   0088H.0 A   
+IT1 . . . . . . . . . . . .  B ADDR   0088H.2 A   
+OV. . . . . . . . . . . . .  B ADDR   00D0H.2 A   
+P . . . . . . . . . . . . .  B ADDR   00D0H.0 A   
+P0. . . . . . . . . . . . .  D ADDR   0080H   A   
+P1. . . . . . . . . . . . .  D ADDR   0090H   A   
+P2. . . . . . . . . . . . .  D ADDR   00A0H   A   
+P3. . . . . . . . . . . . .  D ADDR   00B0H   A   
+PCON. . . . . . . . . . . .  D ADDR   0087H   A   
+PS. . . . . . . . . . . . .  B ADDR   00B8H.4 A   
+PSW . . . . . . . . . . . .  D ADDR   00D0H   A   
+PT0 . . . . . . . . . . . .  B ADDR   00B8H.1 A   
+PT1 . . . . . . . . . . . .  B ADDR   00B8H.3 A   
+PT2 . . . . . . . . . . . .  B ADDR   00B8H.5 A   
+PX0 . . . . . . . . . . . .  B ADDR   00B8H.0 A   
+PX1 . . . . . . . . . . . .  B ADDR   00B8H.2 A   
+RAMPAGE . . . . . . . . . .  D ADDR   009BH   A   
+RAM_CLEAR . . . . . . . . .  N NUMB   -----       
+RB8 . . . . . . . . . . . .  B ADDR   0098H.2 A   
+RCAP2H. . . . . . . . . . .  D ADDR   00CBH   A   
+RCAP2L. . . . . . . . . . .  D ADDR   00CAH   A   
+A51 MACRO ASSEMBLER  RAM_CLEAR                                                            07/09/2012 21:16:51 PAGE     5
+
+RCLK. . . . . . . . . . . .  B ADDR   00C8H.5 A   
+RD. . . . . . . . . . . . .  B ADDR   00B0H.7 A   
+REN . . . . . . . . . . . .  B ADDR   0098H.4 A   
+RI. . . . . . . . . . . . .  B ADDR   0098H.0 A   
+RS0 . . . . . . . . . . . .  B ADDR   00D0H.3 A   
+RS1 . . . . . . . . . . . .  B ADDR   00D0H.4 A   
+RXD . . . . . . . . . . . .  B ADDR   00B0H.0 A   
+SBUF. . . . . . . . . . . .  D ADDR   0099H   A   
+SCON. . . . . . . . . . . .  D ADDR   0098H   A   
+SD_DETECT . . . . . . . . .  B ADDR   0090H.1 A   
+SM0 . . . . . . . . . . . .  B ADDR   0098H.7 A   
+SM1 . . . . . . . . . . . .  B ADDR   0098H.6 A   
+SM2 . . . . . . . . . . . .  B ADDR   0098H.5 A   
+SP. . . . . . . . . . . . .  D ADDR   0081H   A   
+T0. . . . . . . . . . . . .  B ADDR   00B0H.4 A   
+T1. . . . . . . . . . . . .  B ADDR   00B0H.5 A   
+T2CON . . . . . . . . . . .  D ADDR   00C8H   A   
+TB8 . . . . . . . . . . . .  B ADDR   0098H.3 A   
+TCLK. . . . . . . . . . . .  B ADDR   00C8H.4 A   
+TCON. . . . . . . . . . . .  D ADDR   0088H   A   
+TF0 . . . . . . . . . . . .  B ADDR   0088H.5 A   
+TF1 . . . . . . . . . . . .  B ADDR   0088H.7 A   
+TF2 . . . . . . . . . . . .  B ADDR   00C8H.7 A   
+TH0 . . . . . . . . . . . .  D ADDR   008CH   A   
+TH1 . . . . . . . . . . . .  D ADDR   008DH   A   
+TH2 . . . . . . . . . . . .  D ADDR   00CDH   A   
+TI. . . . . . . . . . . . .  B ADDR   0098H.1 A   
+TL0 . . . . . . . . . . . .  D ADDR   008AH   A   
+TL1 . . . . . . . . . . . .  D ADDR   008BH   A   
+TL2 . . . . . . . . . . . .  D ADDR   00CCH   A   
+TMOD. . . . . . . . . . . .  D ADDR   0089H   A   
+TR0 . . . . . . . . . . . .  B ADDR   0088H.4 A   
+TR1 . . . . . . . . . . . .  B ADDR   0088H.6 A   
+TR2 . . . . . . . . . . . .  B ADDR   00C8H.2 A   
+TXD . . . . . . . . . . . .  B ADDR   00B0H.1 A   
+WR. . . . . . . . . . . . .  B ADDR   00B0H.6 A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

@@ -1,0 +1,129 @@
+C51 COMPILER V9.00   ST_CMDS                                                               07/10/2012 15:51:50 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE ST_CMDS
+OBJECT MODULE PLACED IN .\obj\St_cmds.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE MAIN\St_cmds.c LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDIR(..\libsource\he
+                    -ader) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\St_cmds.lst) OBJECT(.\obj\St_cmds.obj)
+
+line level    source
+
+   1          
+   2          #include "SPDA2K.h"
+   3          /***************************************************************************
+   4          * NAME:         void SelfTestCmd (void) - 0xFE
+   5          * DESCRIPTION:
+   6          *       This routine is to Execute the LAA006's Self-Test Command.
+   7          *
+   8          ***************************************************************************/
+   9          void SelfTestCmd(void) {
+  10   1              gc_bCSWStatus = 0x00;
+  11   1              gc_ST_ErrorCode = 0;
+  12   1              switch (COMD_IN[7]) {
+  13   2                      case    ASK_PARA:   //0x02                         
+  14   2                              USB_BUF_Bank0[0x00] = 'L';
+  15   2                              USB_BUF_Bank0[0x01] = 'A';
+  16   2                              USB_BUF_Bank0[0x02] = 'A';
+  17   2                              USB_BUF_Bank0[0x03] = '0';
+  18   2                              USB_BUF_Bank0[0x04] = '2';
+  19   2                              USB_BUF_Bank0[0x05] = '6';
+  20   2                              USB_BUF_Bank0[0x06] = '-';
+  21   2                              USB_BUF_Bank0[0x07] = ' ';
+  22   2                              USB_BUF_Bank0[0x08] = 'B';
+  23   2                              USB_BUF_Bank0[0x09] = 'a';
+  24   2                              USB_BUF_Bank0[0x0A] = 'n';
+  25   2                              USB_BUF_Bank0[0x0B] = 'k';
+  26   2                              USB_BUF_Bank0[0x0C] = ' ';
+  27   2                              USB_BUF_Bank0[0x0D] = '1';
+  28   2                              USB_BUF_Bank0[0x0E] = '0';
+  29   2                              USB_BUF_Bank0[0x0F] = '0';
+  30   2                              USB_BUF_Bank0[0x10] = '5';
+  31   2                              USB_BUF_Bank0[0x11] = '1';
+  32   2                              USB_BUF_Bank0[0x12] = '6';
+  33   2                              USB_BUF_Bank0[0x13] = ' ';
+  34   2                              USB_BUF_Bank0[0x14] = NAND_INFO.cDEVICE_NUM;
+  35   2                              USB_BUF_Bank0[0x15] = (UBYTE)NAND_INFO.wPAGE_NUM;
+  36   2                              USB_BUF_Bank0[0x16] = (UBYTE)(NAND_INFO.wBLOCK_NUM>> 8);
+  37   2                              USB_BUF_Bank0[0x17] = (UBYTE)(NAND_INFO.wBLOCK_NUM);
+  38   2                              USB_BUF_Bank0[0x18] = NAND_INFO.cPLANE_NUM;
+  39   2                              USB_BUF_Bank0[0x19] = NAND_INFO.cINADDRMAX;                     
+  40   2                              FlashReset();
+  41   2                              DEVICE_REG[0x0F] =0x00;
+  42   2                              CHK_Flash_Ready();
+  43   2                              FLASH_REG [0x00]    = 0x00;    //強迫進IO Mode                  
+  44   2                              DEVICE_REG[0x23]    = 0x0A;     //CLE = '1', ALE = '0', nWP = '1', nCE = '0'
+  45   2                              DEVICE_REG[0x20]    = 0x90;
+  46   2                              DEVICE_REG[0x23]    = 0x06;     //CLE = '0', ALE = '1', nWP = '1', nCE = '0'
+  47   2                              DEVICE_REG[0x20]    = 0x00;
+  48   2                              DEVICE_REG[0x23]    = 0x02;     //CLE = '0', ALE = '0', nWP = '1', nCE = '0'
+  49   2                              USB_BUF_Bank0[0x1A] = DEVICE_REG[0x20]; //Maker Code
+  50   2                              gc_Global_I = 0;
+  51   2                              USB_BUF_Bank0[0x1B] = DEVICE_REG[0x20]; //Device Code
+  52   2                              gc_Global_I = 0;
+  53   2                              USB_BUF_Bank0[0x1C] = DEVICE_REG[0x20]; //多取一些預防新的Flash
+  54   2                              gc_Global_I = 0;
+C51 COMPILER V9.00   ST_CMDS                                                               07/10/2012 15:51:50 PAGE 2   
+
+  55   2                              USB_BUF_Bank0[0x1D] = DEVICE_REG[0x20];
+  56   2                              gc_Global_I = 0;
+  57   2                              USB_BUF_Bank0[0x1E] = DEVICE_REG[0x20];
+  58   2                              FLASH_REG [0x00]    = 0x01;    //進ACC Mode 
+  59   2                              USB_BUF_Bank0[0x20] = 1;
+  60   2                              USB_BUF_Bank0[0X21] = (UBYTE)(SYS_ZONE.wZONE_SIZE>>8);
+  61   2                              USB_BUF_Bank0[0x22] = (UBYTE)(SYS_ZONE.wZONE_SIZE);
+  62   2                              USB_BUF_Bank0[0x23] = NAND_INFO.cFMAP;  //Bit 4~7 表示HW不支持需要使用SW方式轉換                
+  63   2                      USB_BUF_Bank0[0x24]     = 0;
+  64   2                      USB_BUF_Bank0[0x25] = NAND_INFO.cSUPPORT_MULT_PLANE;
+  65   2                      USB_BUF_Bank0[0x26] = NAND_INFO.cFLASH_TYPE;//0:SLC 1:MLC, 2:TLC
+  66   2                      //-------------------------------------//  081212 Jay for flash capacity         
+  67   2                  USB_BUF_Bank0[0x30] = Capacity.BY[0];
+  68   2                  USB_BUF_Bank0[0x31] = Capacity.BY[1];
+  69   2                  USB_BUF_Bank0[0x32] = Capacity.BY[2];
+  70   2                  USB_BUF_Bank0[0x33] = Capacity.BY[3];               
+  71   2                              //-- 2010 03 new LDZ039  parameter  --//
+  72   2                              USB_BUF_Bank0[0x40] = (UBYTE)(NAND_INFO.wPAGE_NUM>>8);
+  73   2                              USB_BUF_Bank0[0X41] = NAND_INFO.cECC_MODE;// 0-->24 1-->16
+  74   2                              USB_BUF_Bank0[0x42] = NAND_INFO.cECC_NUM;
+  75   2                              USB_BUF_Bank0[0x43] = 0xFF;//temp                       
+  76   2                      USB_BUF_Bank0[0x44]     = 0xFF;//temp
+  77   2                      USB_BUF_Bank0[0x45] = 0xFF;//temp
+  78   2                      USB_BUF_Bank0[0x46] = 0xFF;//temp
+  79   2                              USB_BUF_Bank0[0x47] = 0xFF;//temp               
+  80   2                              
+  81   2                      //-------------------------------------//
+  82   2                              USB_REG[0x10]       = 0x01;     //BulkInEn auto turn-on(dma over)
+  83   2                              USB_REG[0x16]       = 0x02;
+  84   2                              USB_REG[0x15]       = 0x00;
+  85   2                              USB_REG[0xA1]       = 0x01;
+  86   2                              while (USB_REG[0xA1] & 0x01);
+  87   2                              USB_REG[0x10]       = 0x00;     //BulkInEn auto turn-off(dma over)
+  88   2                              USB_REG[0xE9]       = 0x01;
+  89   2                              break;
+  90   2      
+  91   2                      default:
+  92   2                              gc_bCSWStatus = 0x01;
+  93   2                              gc_RequestSenseCode = 0x03;             //參數不支援
+  94   2                              break;
+  95   2              }
+  96   1              if (gc_ST_ErrorCode) {
+  97   2                      gc_bCSWStatus = 0x01;
+  98   2                      gc_RequestSenseCode = 0x88;
+  99   2              }
+ 100   1      }
+ 101          
+ 102          
+ 103          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    422    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

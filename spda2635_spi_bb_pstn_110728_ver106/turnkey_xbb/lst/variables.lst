@@ -1,0 +1,327 @@
+C51 COMPILER V9.00   VARIABLES                                                             07/09/2012 21:16:51 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE VARIABLES
+OBJECT MODULE PLACED IN .\obj\variables.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE MAIN\variables.c LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDIR(..\libsource\
+                    -header) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\variables.lst) OBJECT(.\obj\variables.obj)
+
+line level    source
+
+   1          #include "..\header\define.h"
+   2          #include "..\header\UI_CONFIG.h"
+   3          #include "..\header\dos\fs_struct.h"
+   4          
+   5          data    bit     gb_RTC_wakeup;
+   6          data    bit     gb_IR_wakeup;
+   7          data    bit     gb_FindFile;
+   8          data    bit     gb_TriggerFileSkip;
+   9          data    bit     gb_ReadWriteDataArea;
+  10          data    bit     gb_LrcGetTimeOrNot;
+  11          data    bit     gb_CountDirFlag;
+  12          data    bit     gb_FDBLastFlag;
+  13          data    bit     gb_SDHC_Type;
+  14          data    bit     gb_MMC_Type;
+  15          data    bit     gb_FM_initial_flag;     
+  16          data    bit     gb_FM_Mute;//标志FM mute与否-sunzk add 
+  17          data    bit     gb_FreqSaveChannel;
+  18          data    bit     gb_linein_mute;
+  19          data    bit     gb_ReloadProgram;
+  20          data    bit     gb_DirNoFile_Flag;
+  21          data    bit     gb_LastFolder;
+  22          data    bit gb_USB_Plugin;
+  23          data    bit     gb_Play_firstPlay;
+  24          data    bit     gb_SD_pin;
+  25          data    bit     gb_LRCtimerflag;
+  26          data    bit     gb_Mp3FileEnd;
+  27          data    bit     gb_SDNoFileflag; 
+  28          data    bit     gb_SD_Exist;
+  29          data    bit     gb_SD_Exist_pre;
+  30          data    bit     gb_HostNoFileflag;
+  31          data    bit     gb_Host_Exist;
+  32          data    bit     gb_Host_Exist_pre;
+  33          data    bit     gb_FindFlag;
+  34          data    bit     gb_HostInitial;
+  35          data    bit     gb_HostError;
+  36          data    bit     gb_dtg_in;
+  37          data    bit     gb_dtg_out;
+  38          data    bit     gb_HostConnect;
+  39          data    bit     gb_Dosinitfail;
+  40          data    bit     gb_HostShortPack;
+  41          data    bit     gb_MediaMask;
+  42          data    bit     gb_LrcFileName_Exist;
+  43          data    bit     gb_HostInitAgain;
+  44          data    bit gb_HostRetry;
+  45          data    bit     gb_HostStallFlag;
+  46          data    bit     gb_ClearBigIcon;
+  47          data    bit     gb_LogDataFlag;
+  48          data    bit     gb_SelectVol;
+  49          data    bit     gb_DirPlay_Flag;  // 0:PlayAll  1:Play in Dir
+  50          data    bit     gb_USB_CMD_IN;
+  51          data    bit     gb_USBRST_int_flag;
+  52          data    bit     gb_USBRST_ISR_Detected;
+  53          data    bit     gb_USB_Connect_Flag;
+  54          data    bit     gb_USER_Remove_Flag;
+C51 COMPILER V9.00   VARIABLES                                                             07/09/2012 21:16:51 PAGE 2   
+
+  55          data    bit     gb_XferNormalResponseData_ModeSense;
+  56          data    bit     gb_bmCBWFlag;
+  57          data    bit     gb_MediaChanged;
+  58          data    bit     gb_CardExist;
+  59          data    bit     gb_CardDetect;
+  60          data    bit     gb_Start_Stop_Flag;
+  61          data    bit     gb_CardChangeStage;
+  62          data    bit     gb_StallWhichEndPoint;
+  63          data    bit     gb_OddTemp;
+  64          data    bit     gb_USBHostIsHighSpeed;
+  65          data    bit     gb_IRNumberFlag;
+  66          data    bit     gb_LCM_InverseDisp;
+  67          data    bit     gb_LCM_ForceShow;
+  68          data    bit     gb_ADJ;
+  69          data    bit     gb_AdjOver;
+  70          data    bit     gb_LeapMonth;
+  71          data    bit     gb_ShowBattIcon;
+  72          data    bit     gb_SetVol;
+  73          data    bit     gb_SARStable;
+  74          data    bit     gb_ZeroFileSize_Or_FormatError;
+  75          data    bit     gb_PlayOtherWAV;
+  76          data    bit     gb_ChangeMedia;
+  77          data    bit     gb_PlayNewWave;
+  78          data    bit     gb_LCMRefreshAll;
+  79          data    bit     gb_FMRecord;
+  80          data    bit     gb_ShowBatt;
+  81          data    bit     gb_FlashRepeatIcon;
+  82          data    bit     gb_OrderRecord;
+  83          data    bit     gb_OrderRecordConfirm;
+  84          data    bit     gb_OrderRecordTrigger;
+  85          data    bit     gb_Suspend_OrderRecord;
+  86          data    bit     gb_AlarmON;
+  87          data    bit     gb_AlarmRepeatON;
+  88          data    bit     gb_AlarmTrigger;
+  89          data    bit     gb_SuspendKeyRelease;
+  90          
+  91          data    U8      gc_clock_mode;
+  92          data    U8      gc_bank_number;
+  93          data    U8      gc_Play_FileType;
+  94          data    U8      gc_IRCmdStatus;
+  95          data    U8      gc_RepPlayMode;
+  96          data    U8      gc_HostSectorUnit;
+  97          data    U8      gc_CurrentCard;
+  98          data    U8      gc_LCM_line;
+  99          data    U8      gc_ShowTimer;
+ 100          data    U8      gc_KeyEvent;
+ 101          data    U8      gc_Task_Current;
+ 102          data    U8      gc_Task_Last;
+ 103          data    U8      gc_USBStage;
+ 104          data    U8      gc_bCSWStatus;
+ 105          data    U8      gc_RequestSenseCode;
+ 106          data    U16     gw_FileSkipNumber;
+ 107          data    U32     gdw_RTC_Second;
+ 108          
+ 109          idata   U8      gc_SW_RESET                             _at_    0x80;
+ 110          idata   U8      gc_AlarmDaysSelect              _at_    0x81;
+ 111          idata   U16     gw_OrderRecDuration             _at_    0x82;
+ 112          idata   U16     gc_AlarmSoundTimer              _at_    0x84;
+ 113          idata   U32     gdw_OrderRecordTime             _at_    0x86;
+ 114          idata   U32     gdw_AlarmTime                   _at_    0x8A;
+ 115          idata   U32     gdw_AlarmTime_Bak;
+ 116          
+C51 COMPILER V9.00   VARIABLES                                                             07/09/2012 21:16:51 PAGE 3   
+
+ 117          xdata   U8      gc_FileLongName[256];
+ 118          xdata   U8      gc_DIRLongName[256];
+ 119          xdata   U8      gc_COMD_IN[10];
+ 120          xdata   U8      gc_dCBW_Tag[4];
+ 121          xdata   U8      gc_SDRespBuff[17];
+ 122          xdata   U8      gc_SD_CSD[16];
+ 123          xdata   U8      gc_NUMBER[4];
+ 124          //xdata U8      CL6017ControlData[24];
+ 125          xdata   U8      gc_LrcDisplayBuf[100];
+ 126          xdata   U8      gc_SPI_ID;   
+ 127          xdata   U8      gc_XTimeBase;
+ 128          xdata   U8      gc_key_Pressed;
+ 129          xdata   U8      gc_key_PrevPressed;
+ 130          xdata   U8      gc_LogData_Timer;
+ 131          xdata   U8      gc_IR_Timer;
+ 132          xdata   U8      gc_UIblock0_index;
+ 133          xdata   U8      gc_HostUnitNum;
+ 134          xdata   U8      gc_ErrorCode;
+ 135          xdata   U8      gc_ShowFMRVolTimer;
+ 136          xdata   U8      gc_IR_press_timer;
+ 137          xdata   U8      gc_Host_remove_detect_counter;
+ 138          xdata   U8      gc_LCMScrollTimer;
+ 139          xdata   U8      gc_PlayMenu_Timer;
+ 140          xdata   U8      gc_IRLongKeyCount;
+ 141          xdata   U8      gc_CL6017Cont;
+ 142          xdata   U8      gc_ProgRAM_Index;
+ 143          xdata   U8      gc_SPI_Addr1;
+ 144          xdata   U8      gc_SPI_Addr2;
+ 145          xdata   U8      gc_Host_StallCmd_Timeout;
+ 146          xdata   U8      gc_HostMaxLUN;
+ 147          xdata   U8      gc_Host_EPIN;
+ 148          xdata   U8      gc_Host_EPOUT;
+ 149          xdata   U8      gc_Host_CFGValue;
+ 150          xdata   U8      gc_HostDeviceAddress;
+ 151          xdata   U8      gc_HostMaxTransLength;
+ 152          xdata   U8      gc_Host_ConfigDescLength;
+ 153          xdata   U8      gc_MenuEndTimer;
+ 154          xdata   U8      gc_MenuUpDownCnt;
+ 155          xdata   U8      gc_MenuLevel;
+ 156          xdata   U8      gc_MenuLevelFirst;
+ 157          xdata   U8      gc_MenuMaxValue;
+ 158          xdata   U8      gc_PrevFlag;
+ 159          xdata   U8      gc_KeyValue;
+ 160          xdata   U8      gc_LastCard;
+ 161          xdata   U8      gc_LongKeyCount;
+ 162          xdata   U8      gc_FM_CH_COUNT; //目前是保存电台中的第几个电台
+ 163          xdata   U8      gc_FM_CHAmount;//保存电台的总数
+ 164          xdata   U8      gc_FM_Vol;
+ 165          xdata   U8      gc_T0IntervalLSB;
+ 166          xdata   U8      gc_T0IntervalMSB;
+ 167          xdata   U8      gc_CurrentHZK;
+ 168          xdata   U8      gc_DOS_SectorPerCluster;
+ 169          xdata   U8      gc_DOS_FileSystemType;
+ 170          xdata   U8      gc_LrcCurrentLen;
+ 171          xdata   U8      gc_bCBWLUN;
+ 172          xdata   U8      gc_CX_Status_flag;
+ 173          xdata   U8      gc_USB_ADDR;
+ 174          xdata   U8      gc_IRNumberCnt;
+ 175          xdata   U8      gc_ComColumn;
+ 176          xdata   U8      gc_LCMBacklightTimer;
+ 177          xdata   U8      gc_LCMBacklightTime;
+ 178          xdata   U8      gc_MainMenuNum;
+C51 COMPILER V9.00   VARIABLES                                                             07/09/2012 21:16:51 PAGE 4   
+
+ 179          xdata   U8      gc_SetupMenuNum;
+ 180          xdata   U8      gc_MenuTimer;
+ 181          xdata   U8      gc_Sec;
+ 182          xdata   U8      gc_Min;
+ 183          xdata   U8      gc_Hour;
+ 184          xdata   U8      gc_Day;
+ 185          xdata   U8      gc_Month;
+ 186          xdata   U8      gc_Year;
+ 187          xdata   U8      gc_Week;
+ 188          xdata   U8      gc_Month_Lunar;
+ 189          xdata   U8      gc_Day_Lunar;
+ 190          xdata   U8      gc_Tiangan;
+ 191          xdata   U8      gc_Dizhi;
+ 192          xdata   U8      gc_BatteryLevel;
+ 193          xdata   U8      gc_PinPuCount;
+ 194          xdata   U8      gc_PinPuTimer;
+ 195          xdata   U8      gc_PlayMenuNum;
+ 196          xdata   U8      gc_WAVPlayMenuNum;
+ 197          xdata   U8      gc_RepeatMenuNum;
+ 198          xdata   U8      gc_EQMenuNum;
+ 199          xdata   U8      gc_FMMenuNum;
+ 200          xdata   U8      gc_PlayMenuItem;        // 1=Play-Menu  2=Repeat-Mode  3=EQ-Option
+ 201          xdata   U8      gc_WAVMenuItem;
+ 202          xdata   U8      gc_FMMenuItem;
+ 203          xdata   U8      gc_RepPlayMode_Bak;
+ 204          xdata   U8      gc_CBWTag;
+ 205          xdata   U8      gc_RecordQuality;
+ 206          xdata   U8      gc_ShowRepeatTimer;
+ 207          xdata   U8      gc_WaveChannelNumber;
+ 208          xdata   U8      gc_OrderRecordTimerStep;
+ 209          xdata   U8      gc_SetAlarmStep;
+ 210          xdata   U8      gc_AlarmRepeat_DaySelect;
+ 211          xdata   U8      gc_GetSPIdataSectorNumber;
+ 212          xdata   U8      gc_Idle2Suspend;
+ 213          
+ 214          xdata   U16     gw_DirIndex[2];
+ 215          xdata   U16     gw_FM_CH[50];
+ 216          xdata   U16     gw_FileIndex[3];
+ 217          xdata   U16     gw_FileTotalNumber[3];
+ 218          xdata   U16     gw_HostVID;
+ 219          xdata   U16     gw_Disp_CurrentSec;
+ 220          xdata   U16     gw_Random_Timer;
+ 221          xdata   U16     gw_TotalSec;
+ 222          xdata   U16     gw_CurrentSec;
+ 223          xdata   U16     gw_CurrentFolderNum;
+ 224          xdata   U16 gw_DispFileName_ByteOffset;
+ 225          xdata   U16     gw_SDDIRFileIndex;
+ 226          xdata   U16     gw_SDDIRFileTotalNumber; 
+ 227          xdata   U16     gw_HostDIRFileIndex;
+ 228          xdata   U16     gw_HostDIRFileTotalNumber;
+ 229          xdata   U16     gw_SDFolderIndex;
+ 230          xdata   U16     gw_HostFolderIndex;
+ 231          xdata   U16     gw_LrcOffset;
+ 232          xdata   U16     gw_Year_Lunar;
+ 233          xdata   U16     gw_DirTotalNumber;
+ 234          xdata   U16 gw_FM_frequency;
+ 235          xdata   U16     gw_DOS_CreateDate;
+ 236          xdata   U16     gw_DOS_CreateTime;
+ 237          xdata   U16     gw_ClusBufValidSize;
+ 238          xdata   U16     gw_ClusBufValidPoint;
+ 239          xdata   U16     gw_MinuteTimer;
+ 240          xdata   U16     gw_AFrameCnt;
+C51 COMPILER V9.00   VARIABLES                                                             07/09/2012 21:16:51 PAGE 5   
+
+ 241          xdata   U16     gw_APointSec;
+ 242          xdata   U16     gw_AlarmClockTimer;
+ 243          
+ 244          xdata   U32     gdw_FreeClusterNum[2];
+ 245          xdata   U32     gdw_TotalFreeClusNumber;
+ 246          xdata   U32     gdw_ID3_v2_sz;
+ 247          xdata   U32     gdw_USB_CountDown;
+ 248          xdata   U32     gdw_HOSTStartSectorRead;
+ 249          xdata   U32     gdw_DOS_DataAddr;
+ 250          xdata   U32     gdw_CARD_TotalSizeMB;
+ 251          xdata   U32     gdw_pollingtime;
+ 252          xdata   U32     gdw_CurrFlag;
+ 253          xdata   U32     gdw_StartCluster2;
+ 254          xdata   U32     gdw_SDDIRFDB_StartCluster;
+ 255          xdata   U32     gdw_HostDIRFDB_StartCluster;
+ 256          xdata   U32     gdw_DOS_RootDirClus;
+ 257          xdata   U32     gdw_DOS_PBRAddr;
+ 258          xdata   U32     gdw_DOS_FatMaxCluster;
+ 259          xdata   U32     gdw_DOS_RootDirAddr;
+ 260          xdata   U32     gdw_DOS_SectorPerFAT;
+ 261          xdata   U32     gdw_DOS_Fat1Addr;
+ 262          xdata   U32     gdw_DOS_Fat2Addr;
+ 263          xdata   U32     gdw_LrcFilePointer;
+ 264          xdata   U32     gdw_LrcFileSize;
+ 265          xdata   U32     gdw_LrcFileStartCluster;
+ 266          xdata   U32     gdw_LrcFileCurrentCluster;
+ 267          //xdata U32     gdw_RTC_Second;
+ 268          xdata   U32     gdw_ClusterBuffer[512];
+ 269          xdata   U32     gdw_REC_IndexNum;
+ 270          xdata   U32     gdw_NextRecordNumber;
+ 271          xdata   U32     gdw_RecSpareTime;
+ 272          xdata   U32     gdw_LogicSectorAddr;
+ 273          xdata   U32     gdw_RecRemaintime;
+ 274          xdata   U32     gdw_FATBufferSectorNum;
+ 275          
+ 276          data    System_Struct   gs_System_State;
+ 277          xdata   File_FCB                gs_File_FCB[3];
+ 278          xdata   DIR_FCB                 gs_DIR_FCB[3];
+ 279          xdata   DSP_GLOBAL              gs_DSP_GLOBAL_RAM;
+ 280          
+ 281          xdata   unionU16        SDMMC_SDRCA;
+ 282          xdata   unionU16        Device_Read_SRAM_Index;
+ 283          xdata   unionU16        Device_Write_SRAM_Index;
+ 284          xdata   unionU16        Device_Xfer_DataLength;
+ 285          xdata   unionU16        TotalXferPageNum;
+ 286          xdata   unionU32        gdw_dCBW_DataXferLength;
+ 287          xdata   unionU32        SD_Capacity;
+ 288          xdata   unionU32        LBA;
+ 289          
+ 290          U8  code EXT_NameA[]={2,'M','P','3','W','M','A'};
+ 291          U8  code EXT_NameB[]={1,'W','A','V'};
+ 292          U8  xdata EXT_NameC[10];
+ 293          U8  *code EXT_Name[]={EXT_NameA,EXT_NameB,EXT_NameC,EXT_NameC,EXT_NameC};
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   ----    ----
+   CONSTANT SIZE    =     26    ----
+   XDATA SIZE       =   3341    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     26    ----
+   IDATA SIZE       =      4    ----
+C51 COMPILER V9.00   VARIABLES                                                             07/09/2012 21:16:51 PAGE 6   
+
+   BIT SIZE         =     85    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

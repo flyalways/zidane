@@ -1,0 +1,300 @@
+C51 COMPILER V9.00   USB_EP0                                                               07/09/2012 21:16:55 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE USB_EP0
+OBJECT MODULE PLACED IN .\obj\USB_EP0.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE USB\USB_EP0.c LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDIR(..\libsource\hea
+                    -der) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\USB_EP0.lst) OBJECT(.\obj\USB_EP0.obj)
+
+line level    source
+
+   1          #include "..\header\SPDA2K.h"
+   2          #include "..\header\variables.h"
+   3          
+   4          
+   5          struct 
+   6          {
+   7                  U8 RequestType;
+   8                  U8 Direction;                   //      1       Data transfer direction: IN, OUT
+   9                  U8 Type;                                //              Request Type: Standard, Class, Vendor
+  10                  U8 Object;                      //              Recipient: Device, Interface, Endpoint,other
+  11                  U8 Request;                     //      2       Refer to Table 9-3
+  12                  U8 Value_L;                     //      3
+  13                  U8 Value_H;                     //      4
+  14                  U8 Index_L;                     //      5
+  15                  U8 Index_H;                     //      6
+  16                  unionU16 Length;                //              .BY[0]  Hi  byte
+  17          } ControlCmd;
+  18          
+  19          void Read_Setup_Packet(void) 
+  20          {
+  21   1              //Read(Get) 8-byte setup packet from FIFO
+  22   1              //Endpoint 0 Data Port Register = 0x0C
+  23   1              ControlCmd.RequestType=XBYTE[0xB5F0];
+  24   1              ControlCmd.Type=ControlCmd.RequestType&0x60;
+  25   1              ControlCmd.Object=ControlCmd.RequestType&0x03;
+  26   1              ControlCmd.Request=XBYTE[0xB5F1];
+  27   1              ControlCmd.Value_L=XBYTE[0xB5F2];
+  28   1              ControlCmd.Value_H=XBYTE[0xB5F3];
+  29   1              ControlCmd.Index_L=XBYTE[0xB5F4];
+  30   1      //      ControlCmd.Index_H=XBYTE[0xB5F5];
+  31   1              ControlCmd.Length.BY[1]=XBYTE[0xB5F6];
+  32   1              ControlCmd.Length.BY[0]=XBYTE[0xB5F7];
+  33   1              if(ControlCmd.Type==0x00) 
+  34   1              {                                       // standard command
+  35   2                      XBYTE[0xB5EA]=0x01;
+  36   2                      StandardCommand();
+  37   2              }       
+  38   1              else if(ControlCmd.Type==0x20)
+  39   1              {                         // vendor command
+  40   2                      XBYTE[0xB5EA]=0x01; 
+  41   2                      if(ControlCmd.Request==0xFE)
+  42   2                      {
+  43   3                              XBYTE[0xB500]=0;                                                              
+  44   3                              gc_CX_Status_flag|=CX_DONE;       // EP0_Done
+  45   3                      }    
+  46   2              }
+  47   1              else
+  48   1              {
+  49   2                      gc_CX_Status_flag|=CX_STL;                       // Invalid(bad) command, Return EP0_STALL flag 
+  50   2              }
+  51   1      }
+  52          
+  53          
+  54          void StandardCommand(void) 
+C51 COMPILER V9.00   USB_EP0                                                               07/09/2012 21:16:55 PAGE 2   
+
+  55          {
+  56   1              switch(ControlCmd.Request) 
+  57   1              {                      // by Standard Request codes     
+  58   2                      case 1:             
+  59   2                              clear_feature();
+  60   2                              gc_CX_Status_flag|=CX_DONE;
+  61   2                      break;
+  62   2                              
+  63   2                      case 6:                 
+  64   2                              get_descriptor();
+  65   2                              gc_CX_Status_flag|=CX_DONE;
+  66   2                      break;
+  67   2      
+  68   2                      default :
+  69   2                              gc_CX_Status_flag|=CX_DONE;
+  70   2                      break;
+  71   2              }
+  72   1      }
+  73          
+  74          
+  75          void clear_feature(void)
+  76          {
+  77   1          switch (ControlCmd.Value_L)
+  78   1              {    
+  79   2              case 0 :                
+  80   2                              switch(ControlCmd.Index_L)
+  81   2                              {
+  82   3                              case 0x81:      //IN
+  83   3                                      XBYTE[0xB5E9] |= 0x01;     // Reset Toggle Seeting
+  84   3                                      XBYTE[0xB5EB] &= 0xFB;     // Clear Stall Bit
+  85   3                                      XBYTE[0xB5E9] &= 0xFE;     // Disable Toggle Seeting
+  86   3                              break;
+  87   3                                              
+  88   3                                      case 0x02:      //OUT
+  89   3                                              XBYTE[0xB5E9] |= 0x02;     // Reset Toggle Seeting
+  90   3                                              XBYTE[0xB5EB] &= 0xF7;     // Clear Stall Bit
+  91   3                                              XBYTE[0xB5E9] &= 0xFD;     // Reset Toggle Seeting
+  92   3                                      break;
+  93   3      
+  94   3                              case 0x83:
+  95   3                                      XBYTE[0xB5E9]|=0x04;     // Reset Toggle Seeting
+  96   3                                      XBYTE[0xB5EB]&=0xEF;     // Clear Stall Bit
+  97   3                                      XBYTE[0xB5E9]&=0xFB;     // Disable Toggle Seeting                              
+  98   3                              break;
+  99   3      
+ 100   3                                      default:
+ 101   3                                              gc_CX_Status_flag|=CX_STL;
+ 102   3                                      break;
+ 103   3                      }
+ 104   2                      break;
+ 105   2                              
+ 106   2                      case 1 :// Device Remote Wakeup
+ 107   2                              XBYTE[0xB5C0]&=0xBF; 
+ 108   2                              gc_CX_Status_flag|=CX_DONE;
+ 109   2                      break;
+ 110   2                                      
+ 111   2                      default :
+ 112   2                              gc_CX_Status_flag|=CX_STL;
+ 113   2                      break;
+ 114   2              }
+ 115   1      }
+ 116          
+C51 COMPILER V9.00   USB_EP0                                                               07/09/2012 21:16:55 PAGE 3   
+
+ 117          void get_descriptor(void) 
+ 118          {
+ 119   1              data    U8      i;
+ 120   1      
+ 121   1              gb_USBHostIsHighSpeed=(bit)(XBYTE[0xB502]&0x01);  
+ 122   1          switch (ControlCmd.Value_H) 
+ 123   1              {
+ 124   2                      case 1:         //Device descriptor
+ 125   2                              for(i=0;i<18;i++) 
+ 126   2                              {                       
+ 127   3                                      if(gb_USBHostIsHighSpeed)
+ 128   3                                      {
+ 129   4                                              if(i==2)
+ 130   4                                              {
+ 131   5                                                      XBYTE[0xB500]=0x00;
+ 132   5                                              }
+ 133   4                                              else if(i==3)
+ 134   4                                              {
+ 135   5                                                      XBYTE[0xB500]=0x02;
+ 136   5                                              }
+ 137   4                                              else
+ 138   4                                              {
+ 139   5                                                      XBYTE[0xB500]=Device_DescriptorTable[i];
+ 140   5                                              }
+ 141   4                                      }
+ 142   3                                      else
+ 143   3                                      {
+ 144   4                                              XBYTE[0xB500]=Device_DescriptorTable[i];
+ 145   4                                      }
+ 146   3                                      ControlCmd.Length.WD--;
+ 147   3                                      if (ControlCmd.Length.WD==0) 
+ 148   3                                      {
+ 149   4                                              break;
+ 150   4                                      }
+ 151   3                              }                       
+ 152   2                      break;
+ 153   2      
+ 154   2                      case 2:         //Configuration descriptor
+ 155   2                              for(i=0;i<39;i++) 
+ 156   2                              {
+ 157   3                                      if(gb_USBHostIsHighSpeed)
+ 158   3                                      {
+ 159   4                                              if((i==22)||(i==29))
+ 160   4                                              {
+ 161   5                                                      XBYTE[0xB500]=0x00;
+ 162   5                                              }
+ 163   4                                              else if((i==23)||(i==30))
+ 164   4                                              {
+ 165   5                                                      XBYTE[0xB500]=0x02;
+ 166   5                                              }
+ 167   4                                              else
+ 168   4                                              {
+ 169   5                                                      XBYTE[0xB500]=Configuration_DescriptorTable[i];
+ 170   5                                              }
+ 171   4                                      }
+ 172   3                                      else
+ 173   3                                      {
+ 174   4                                              XBYTE[0xB500]=Configuration_DescriptorTable[i];
+ 175   4                                      }
+ 176   3                                      ControlCmd.Length.WD--;
+ 177   3                                      if (ControlCmd.Length.WD==0) 
+ 178   3                                      {
+C51 COMPILER V9.00   USB_EP0                                                               07/09/2012 21:16:55 PAGE 4   
+
+ 179   4                                              break;
+ 180   4                                      }
+ 181   3                              }
+ 182   2                      break;
+ 183   2              
+ 184   2                      case 3:         //String descriptor
+ 185   2                              switch(ControlCmd.Value_L) 
+ 186   2                              {                       
+ 187   3                                      case 0x00:
+ 188   3                                              for(i=0;i<4;i++) 
+ 189   3                                              {                                        
+ 190   4                                                      XBYTE[0xB500]=iLANGID_DescriptorTable[i];
+ 191   4                                                      ControlCmd.Length.WD--;
+ 192   4                                                      if (ControlCmd.Length.WD==0)
+ 193   4                                                      {  
+ 194   5                                                              return;
+ 195   5                                                      }                                               
+ 196   4                                              }
+ 197   3                                      break;
+ 198   3      
+ 199   3                                      case 0x10:
+ 200   3                                              for(i=0;i<26;i++) 
+ 201   3                                              {                                        
+ 202   4                                                      XBYTE[0xB500]=iManufacturer_DescriptorTable[i];
+ 203   4                                                      ControlCmd.Length.WD--;
+ 204   4                                                      if (ControlCmd.Length.WD== 0)
+ 205   4                                                      {  
+ 206   5                                                              break;
+ 207   5                                                      }
+ 208   4                                              }
+ 209   3                                      break;
+ 210   3                                      
+ 211   3                                      case 0x20:
+ 212   3                                              for(i=0;i<48;i++) 
+ 213   3                                              {                                        
+ 214   4                                                      XBYTE[0xB500]=iProduct_DescriptorTable[i];
+ 215   4                                                      ControlCmd.Length.WD--;
+ 216   4                                                      if (ControlCmd.Length.WD== 0)
+ 217   4                                                      {  
+ 218   5                                                              return;
+ 219   5                                                      }
+ 220   4                                              }
+ 221   3                                      break;
+ 222   3                                      
+ 223   3                                      case 0x30:
+ 224   3                                              gc_USB_ADDR =(gc_USB_ADDR&0x7F);
+ 225   3                                              for(i=0;i<25;i++)
+ 226   3                                              {                                        
+ 227   4                                  XBYTE[0xB500]=iSerialNumber_DescriptorTable[i];
+ 228   4                                                      ControlCmd.Length.WD--;
+ 229   4                                                      if ( ControlCmd.Length.WD == 0)
+ 230   4                                                      {
+ 231   5                                                              return;
+ 232   5                                      }
+ 233   4                                              }
+ 234   3                                              //SN »Ý¤¶©ó 0x30~0x39 / 0x41 ~ 0x49 
+ 235   3                                              XBYTE[0xB500]=0x30;
+ 236   3                                              if((gc_USB_ADDR&0x7F)<=0x09)
+ 237   3                                              {
+ 238   4                                                      XBYTE[0xB500]=0x30;
+ 239   4                                              }
+ 240   3                                              else
+C51 COMPILER V9.00   USB_EP0                                                               07/09/2012 21:16:55 PAGE 5   
+
+ 241   3                                              {                               
+ 242   4                                                      XBYTE[0xB500]=((gc_USB_ADDR%100)/10)+0x40;
+ 243   4                                              }
+ 244   3                              XBYTE[0xB500]=(gc_USB_ADDR%10)+0x30;     
+ 245   3                                      break;
+ 246   3                              }
+ 247   2                      break;  
+ 248   2      
+ 249   2                      case 6:         // Device_Qualifier descritor
+ 250   2                              for(i=0;i<10;i++) 
+ 251   2                              {                        
+ 252   3                                      XBYTE[0xB500]=DeviceQualifier_DescriptorTable[i];
+ 253   3                              ControlCmd.Length.WD--;
+ 254   3                      if ( ControlCmd.Length.WD == 0)
+ 255   3                                      {
+ 256   4                                              break;
+ 257   4                                      }
+ 258   3                              }
+ 259   2                      break;
+ 260   2                      
+ 261   2                      default:
+ 262   2                              gc_CX_Status_flag |= CX_STL;
+ 263   2                      break;
+ 264   2              }
+ 265   1      }
+ 266          
+ 267          
+ 268           
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    686    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     11    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       1
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

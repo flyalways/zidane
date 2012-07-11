@@ -1,0 +1,483 @@
+C51 COMPILER V9.00   SYSTEM_COMM                                                           07/09/2012 21:16:50 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE SYSTEM_COMM
+OBJECT MODULE PLACED IN .\obj\System_Comm.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE MAIN\System_Comm.c LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDIR(..\libsourc
+                    -e\header) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\System_Comm.lst) OBJECT(.\obj\System_Comm.obj)
+
+line level    source
+
+   1          #include <intrins.h>
+   2          #include "..\header\SPDA2K.h"
+   3          #include "..\header\variables.h"
+   4          
+   5          
+   6          U8 code gac_clock_table[][6] =
+   7          {       //(Jimi 091109)add 0xB023 as secondary config
+   8            // B006, B024, B026, TH1  TH0            TL0            
+   9            {  0,    0,    0,    243, C_T0_12MhzMSB, C_T0_12MhzLSB}, // 0=XTL  XTL=12M, MCU_PERI=12M, DSP=12M CLOCK_
+             -MODE_XTL
+  10            {      8|64, 1,    0,    243, C_T0_12MhzMSB, C_T0_12MhzLSB}, // 1=MP3  PLL=24M, MCU_PERI=12M, DSP=24M CLOCK_
+             -MODE_MP3
+  11            {  8|64, 0,    0,    230, C_T0_24MhzMSB, C_T0_24MhzLSB}, // 2=MP3L PLL=24M, MCU_PERI=24M, DSP=24M CLOCK_
+             -MODE_MP3L
+  12            { 16|64, 3,    0,    243, C_T0_12MhzMSB, C_T0_12MhzLSB}, // 3=WMA  PLL=48M, MCU_PERI=12M, DSP=48M CLOCK_
+             -MODE_WMA
+  13            {     24|64, 0,    5,    178, C_T0_72MhzMSB, C_T0_72MhzLSB}, // 4=DOS  PLL=72M, MCU_PERI=72M, DSP=72M CLOCK_
+             -MODE_DOS
+  14            {     16|64, 0,    0,    204, C_T0_48MhzMSB, C_T0_48MhzLSB}, // 5=SPI  PLL=48M, MCU_PERI=48M, DSP=48M CLOCK_
+             -MODE_SPI
+  15            {     16|64, 1,    0,    230, C_T0_24MhzMSB, C_T0_24MhzLSB}, // 6=REC  PLL=48M, MCU_PERI=24M, DSP=48M CLOCK_
+             -MODE_REC
+  16          };
+  17          
+  18          void set_clock_mode(U8 mode)
+  19          {
+  20   1              if(gc_clock_mode==mode)
+  21   1              {
+  22   2                      return;
+  23   2              }
+  24   1      
+  25   1              if(gac_clock_table[gc_clock_mode][0]!=gac_clock_table[mode][0])
+  26   1              {
+  27   2                      if(gc_clock_mode!=CLOCK_MODE_XTL)
+  28   2                      {
+  29   3                              change_clock_ratio(CLOCK_MODE_XTL);
+  30   3                              XBYTE[0xB008]=0x00;     // PLLS_SWRSTN = 1, PLLS_MODE = 0(PLL clock output)
+  31   3                      }
+  32   2          
+  33   2                      if(mode!=CLOCK_MODE_XTL)
+  34   2                      {
+  35   3                              XBYTE[0xB006]=gac_clock_table[mode][0];
+  36   3                              XBYTE[0xB006]=gac_clock_table[mode][0]|(1<<5);
+  37   3                          USER_Delay(2);
+  38   3                              XBYTE[0xB008]=0;        // PLLS_SWRSTN = 1
+  39   3                              XBYTE[0xB008]=1;        // PLLS_MODE = 1(PLL clock output)
+  40   3                          change_clock_ratio(mode);
+  41   3              }
+  42   2              }
+  43   1          else
+  44   1          {
+  45   2              change_clock_ratio(CLOCK_MODE_XTL);
+  46   2              change_clock_ratio(mode);
+  47   2          }
+C51 COMPILER V9.00   SYSTEM_COMM                                                           07/09/2012 21:16:50 PAGE 2   
+
+  48   1          TH1=gac_clock_table[mode][3];
+  49   1          gc_T0IntervalMSB=gac_clock_table[mode][4];
+  50   1          gc_T0IntervalLSB=gac_clock_table[mode][5];
+  51   1          gc_clock_mode=mode;
+  52   1      }
+  53          
+  54          void change_clock_ratio(U8 r)
+  55          {
+  56   1          // disable auto wait
+  57   1              XBYTE[0xB021]=0;
+  58   1              XBYTE[0xB022]=1;
+  59   1          // set new divide ratio
+  60   1              XBYTE[0xB009]=0;        // cpu_mask_sel, per_mask_sel, dsp_mask_sel & n_mask
+  61   1              XBYTE[0xB024]=gac_clock_table[r][1];    // CPUfreq
+  62   1              XBYTE[0xB025]=gac_clock_table[r][1];    // PERfreq
+  63   1              XBYTE[0xB026]=gac_clock_table[r][2];    // DSPfreq
+  64   1          // Trigger the switch
+  65   1              XBYTE[0xB020]=0;        // cpu_protect = dsp_protect = per_protect = 0
+  66   1              XBYTE[0xB020]=1;        // freqchange = 1
+  67   1      }
+  68          
+  69          void Key_Detect(void)
+  70          {
+  71   1              EA=0;
+  72   1              gc_KeyEvent=gc_KeyValue;
+  73   1              gc_KeyValue=0;
+  74   1              if(gc_KeyEvent!=0)
+  75   1              {
+  76   2                      gc_LCMBacklightTimer=gc_LCMBacklightTime;
+  77   2              }
+  78   1              EA=1;
+  79   1      }
+  80          
+  81          
+  82          bit SD_Card_Detect(void)
+  83          {
+  84   1              if(SD_Detect==0)
+  85   1              {
+  86   2                      gb_CardDetect=1;
+  87   2                      return 1;
+  88   2              }
+  89   1          else
+  90   1              {
+  91   2                      gb_CardDetect=0; 
+  92   2      //              XBYTE[0xB002]=0x08;
+  93   2      //              XBYTE[0xB002]=0x00;
+  94   2              return 0;
+  95   2          }   
+  96   1      }
+  97          
+  98          
+  99          bit CheckUSBPlugIN(void)
+ 100          {
+ 101   1              XBYTE[0xB016]=0x04;             // power on default is 0x04
+ 102   1              XBYTE[0xB0E9]&=~0x01;   // Enable USB PLL CLK 
+ 103   1              XBYTE[0xB01D]=0x00;
+ 104   1              XBYTE[0xB002]|=0x06;
+ 105   1              XBYTE[0xB002]&=~0x06;
+ 106   1              XBYTE[0xB5E6]=0x00;             // bulksram gated clock
+ 107   1              XBYTE[0xB522]=0x01;             // USB2.0 UTMI clock mode set   
+ 108   1              XBYTE[0xB017]=0x01;             // USB2.0 UTMI op mode set
+ 109   1              XBYTE[0xB018]=0x01;             // USB clock select
+C51 COMPILER V9.00   SYSTEM_COMM                                                           07/09/2012 21:16:50 PAGE 3   
+
+ 110   1              XBYTE[0xB019]=0x01;             // Host mode
+ 111   1              
+ 112   1              if(XBYTE[0xB615]==0x01)
+ 113   1              {
+ 114   2                      return 1;
+ 115   2              }
+ 116   1              return 0;
+ 117   1      }
+ 118          
+ 119          
+ 120          bit Host_DetectDevice(void)
+ 121          {
+ 122   1          bit sts;
+ 123   1      
+ 124   1          if(gc_CurrentCard==5)
+ 125   1          {
+ 126   2              if(gb_HostConnect==0)
+ 127   2              {
+ 128   3                  return 1;
+ 129   3              }
+ 130   2              else
+ 131   2              {
+ 132   3                  return 0;
+ 133   3              }
+ 134   2          }
+ 135   1          else
+ 136   1          {
+ 137   2              sts=CheckUSBPlugIN();
+ 138   2          }
+ 139   1      
+ 140   1          if(sts) 
+ 141   1          {
+ 142   2              return 0;
+ 143   2          }
+ 144   1          else
+ 145   1          {
+ 146   2                      gb_HostConnect=0;
+ 147   2              return 1;
+ 148   2          }
+ 149   1      }
+ 150          
+ 151          
+ 152          bit HOST_Check(void)
+ 153          {
+ 154   1              if(!Host_DetectDevice())
+ 155   1              {
+ 156   2                      gb_Host_Exist=1;
+ 157   2                      if(!Host_Initial())
+ 158   2                      {
+ 159   3                              gc_CurrentCard=5;
+ 160   3                              gb_FindFlag=0;
+ 161   3                              return 0;
+ 162   3                      }
+ 163   2              }
+ 164   1              gb_Host_Exist=0;
+ 165   1              return 1; //Error
+ 166   1      }
+ 167          
+ 168          
+ 169          bit SD_Check(void)       
+ 170          {
+ 171   1              if(SD_Card_Detect())
+C51 COMPILER V9.00   SYSTEM_COMM                                                           07/09/2012 21:16:50 PAGE 4   
+
+ 172   1              {
+ 173   2                      gb_SD_Exist=1;
+ 174   2                      if(SD_Identification_Flow())
+ 175   2                      {
+ 176   3                              gc_CurrentCard=2;
+ 177   3                              gb_FindFlag=0;
+ 178   3                              return 0; //Success
+ 179   3                      }
+ 180   2              }
+ 181   1              gb_SD_Exist=0;
+ 182   1              return 1; //Error
+ 183   1      }
+ 184          
+ 185          
+ 186          U8 READ_SARADC(U8 tc_ADCChannel)
+ 187          {
+ 188   1              xdata   U8      tc_ADCValue;
+ 189   1              xdata   U8      tc_BattLevelTemp;
+ 190   1              
+ 191   1              if(tc_ADCChannel==2)
+ 192   1              {
+ 193   2                      XBYTE[0xB094]=0x01;
+ 194   2              }
+ 195   1              //=========SAR ADC init s===========   
+ 196   1              XBYTE[0xB060]=(tc_ADCChannel<<2)|0x01;
+ 197   1              //=========SAR ADC init f===========
+ 198   1              XBYTE[0xB05E]=1;// enable SAR FS clock
+ 199   1              for(tc_ADCValue=0;tc_ADCValue<150;tc_ADCValue++); 
+ 200   1              while(XBYTE[0xB061]&0x01==0);
+ 201   1              tc_ADCValue=XBYTE[0xB062];
+ 202   1              XBYTE[0xB05E]=0; // disable SAR FS clock
+ 203   1              if(tc_ADCChannel==2)
+ 204   1              {
+ 205   2                      XBYTE[0xB094]=0x00;
+ 206   2                      tc_BattLevelTemp=gc_BatteryLevel;
+ 207   2                      if(tc_ADCValue>0x75)    // 3.7V
+ 208   2                      {
+ 209   3                              gc_BatteryLevel=9;
+ 210   3                      }
+ 211   2                      else if(tc_ADCValue>0x73)       // 3.6V
+ 212   2                      {
+ 213   3                              gc_BatteryLevel=7;
+ 214   3                      }
+ 215   2                      else if(tc_ADCValue>0x70)       // 3.5V
+ 216   2                      {
+ 217   3                              gc_BatteryLevel=5;
+ 218   3                      }
+ 219   2                      else if(tc_ADCValue>0x6C)       // 3.4V
+ 220   2                      {
+ 221   3                              gc_BatteryLevel=3;
+ 222   3                      }
+ 223   2                      else if(tc_ADCValue>0x69)       // 3.3V
+ 224   2                      {
+ 225   3                              gc_BatteryLevel=1;
+ 226   3                      }
+ 227   2                      else
+ 228   2                      {
+ 229   3                              gc_BatteryLevel=0;
+ 230   3                      }
+ 231   2                      if(tc_BattLevelTemp!=gc_BatteryLevel)
+ 232   2                      {
+ 233   3                              gb_ShowBatt=1;
+C51 COMPILER V9.00   SYSTEM_COMM                                                           07/09/2012 21:16:50 PAGE 5   
+
+ 234   3                      }
+ 235   2              }
+ 236   1              return tc_ADCValue;
+ 237   1      }
+ 238          
+ 239          
+ 240          void ScanKey(void)
+ 241          {
+ 242   1              if(gc_KeyValue==0)
+ 243   1              {
+ 244   2                      #ifdef EVB_128
+                              if(P1&0x08==0x00)
+                              {
+                                      gc_key_Pressed=C_Key_Play;
+                              }
+                              else
+                              #endif
+ 251   2                      {
+ 252   3                              Get_KeyValue(READ_SARADC(0));
+ 253   3                      }
+ 254   2      
+ 255   2                      if(gc_key_PrevPressed==0)
+ 256   2                      {
+ 257   3                              if(gc_key_Pressed!=0)   // 穝龄
+ 258   3                              {
+ 259   4                                      gc_key_PrevPressed=gc_key_Pressed;
+ 260   4                                      gc_LongKeyCount=1;
+ 261   4                                      return;
+ 262   4                              }
+ 263   3                              else    // 礚龄
+ 264   3                              {
+ 265   4                                      gc_LongKeyCount=0;
+ 266   4                                      return;
+ 267   4                              }
+ 268   3                      }
+ 269   2                      else
+ 270   2                      {
+ 271   3                              // 30*30mS=900mS  ->  Long key confirm
+ 272   3                              // 3*30mS=90mS    ->  1-Long Key
+ 273   3                              if(gc_key_Pressed==gc_key_PrevPressed)
+ 274   3                              {
+ 275   4                                      if(gc_LongKeyCount<34)
+ 276   4                                      {
+ 277   5                                              gc_LongKeyCount++;
+ 278   5                                              if(gc_LongKeyCount==34)
+ 279   5                                              {
+ 280   6                                                      gc_KeyValue=0x10|gc_key_PrevPressed;    // Long Key pressed
+ 281   6                                              }
+ 282   5                                      }
+ 283   4                              }
+ 284   3                              else if(gc_key_Pressed==0)
+ 285   3                              {
+ 286   4                                      if(gc_LongKeyCount>19)
+ 287   4                                      {
+ 288   5                                              gc_KeyValue=0x20|gc_key_PrevPressed;    // Long Key released
+ 289   5                                      }
+ 290   4                                      else
+ 291   4                                      {
+ 292   5                                              gc_KeyValue=gc_key_PrevPressed;                 // Short Key pressed
+ 293   5                                      }
+ 294   4                                      gc_key_PrevPressed=0;
+ 295   4                              }
+C51 COMPILER V9.00   SYSTEM_COMM                                                           07/09/2012 21:16:50 PAGE 6   
+
+ 296   3                      }
+ 297   2              }
+ 298   1      }
+ 299          
+ 300          
+ 301          void Get_KeyValue(U8 ADCValue)
+ 302          {
+ 303   1              if(ADCValue>246)
+ 304   1              {               
+ 305   2                      gc_key_Pressed=0;
+ 306   2              }       
+ 307   1              else if(ADCValue>220)
+ 308   1              {       
+ 309   2                      gc_key_Pressed=8;       
+ 310   2              }
+ 311   1              else if(ADCValue>183)
+ 312   1              {       
+ 313   2                      gc_key_Pressed=7;       
+ 314   2              }
+ 315   1              else if(ADCValue>140)
+ 316   1              {       
+ 317   2                      gc_key_Pressed=6;       
+ 318   2              }
+ 319   1              else if(ADCValue>103)
+ 320   1              {
+ 321   2                      gc_key_Pressed=5;       
+ 322   2              }
+ 323   1              else if(ADCValue>74)
+ 324   1              {
+ 325   2                      gc_key_Pressed=3;               
+ 326   2              }
+ 327   1              else if(ADCValue>30)
+ 328   1              {
+ 329   2                      gc_key_Pressed=4;                               
+ 330   2              }
+ 331   1              else
+ 332   1              {
+ 333   2                      gc_key_Pressed=2;
+ 334   2              }
+ 335   1      }
+ 336          
+ 337          bit CheckAlarmSetting(void)
+ 338          {
+ 339   1              if(gb_AlarmRepeatON==0)
+ 340   1              {
+ 341   2                      gb_AlarmON=0;
+ 342   2                      return 0;
+ 343   2              }
+ 344   1              else
+ 345   1              {
+ 346   2                      if(gc_AlarmDaysSelect==0)
+ 347   2                      {
+ 348   3                              gb_AlarmRepeatON=0;
+ 349   3                              gb_AlarmON=0;
+ 350   3                              return 0;
+ 351   3                      }
+ 352   2                      else
+ 353   2                      {
+ 354   3                              RTC_Calendar();
+ 355   3                              if(gc_Week==0&&gc_AlarmDaysSelect&0x01)
+ 356   3                              {
+ 357   4                                      return 0;
+C51 COMPILER V9.00   SYSTEM_COMM                                                           07/09/2012 21:16:50 PAGE 7   
+
+ 358   4                              }
+ 359   3                              else if(gc_Week==1&&gc_AlarmDaysSelect&0x02)
+ 360   3                              {
+ 361   4                                      return 0;
+ 362   4                              }
+ 363   3                              else if(gc_Week==2&&gc_AlarmDaysSelect&0x04)
+ 364   3                              {
+ 365   4                                      return 0;
+ 366   4                              }
+ 367   3                              else if(gc_Week==3&&gc_AlarmDaysSelect&0x08)
+ 368   3                              {
+ 369   4                                      return 0;
+ 370   4                              }
+ 371   3                              else if(gc_Week==4&&gc_AlarmDaysSelect&0x10)
+ 372   3                              {
+ 373   4                                      return 0;
+ 374   4                              }
+ 375   3                              else if(gc_Week==5&&gc_AlarmDaysSelect&0x20)
+ 376   3                              {
+ 377   4                                      return 0;
+ 378   4                              }
+ 379   3                              else if(gc_Week==6&&gc_AlarmDaysSelect&0x40)
+ 380   3                              {
+ 381   4                                      return 0;
+ 382   4                              }
+ 383   3                      }
+ 384   2              }
+ 385   1              gb_AlarmTrigger=0;
+ 386   1              return 1;       // Not Match, Do not Alarm
+ 387   1      }
+ 388          //只做了30（2010～2039）年的日历，所以瑞年的算法是四年一瑞，请注意。
+ 389          void RTC_Calendar(void)
+ 390          {
+ 391   1              data    U8      i;
+ 392   1              data    U16     tw_Days;
+ 393   1              code    U16     K_Year[4]={365,365,366,365};
+ 394   1              code    U8      K_Month[12]={31,28,31,30,31,30,31,31,30,31,30,31};
+ 395   1      
+ 396   1              gc_Sec=gdw_RTC_Second%60;
+ 397   1              gc_Min=(gdw_RTC_Second/60)%60;
+ 398   1              gc_Hour=(gdw_RTC_Second/3600)%24;
+ 399   1              tw_Days=gdw_RTC_Second/86400+1;
+ 400   1              gc_Week=(tw_Days+3)%7;
+ 401   1              gc_Year=0;
+ 402   1              i=0;
+ 403   1              while(1)
+ 404   1              {
+ 405   2                      if(tw_Days<=K_Year[i&0x03])
+ 406   2                      {
+ 407   3                              break;
+ 408   3                      }
+ 409   2                      tw_Days-=K_Year[i&0x03];
+ 410   2                      i++;
+ 411   2                      gc_Year++;
+ 412   2              }
+ 413   1              gc_Month=1;
+ 414   1              i=0;
+ 415   1              while(1)
+ 416   1              {
+ 417   2                      if((i==1)&&((gc_Year+2)&3==0))
+ 418   2                      {
+ 419   3                              if(tw_Days>29)
+C51 COMPILER V9.00   SYSTEM_COMM                                                           07/09/2012 21:16:50 PAGE 8   
+
+ 420   3                              {
+ 421   4                                      tw_Days-=29;
+ 422   4                                      i++;
+ 423   4                                      gc_Month++;
+ 424   4                              }
+ 425   3                      }
+ 426   2                      else if(tw_Days>K_Month[i])
+ 427   2                      {
+ 428   3                              tw_Days-=K_Month[i];
+ 429   3                              i++;
+ 430   3                              gc_Month++;
+ 431   3                      }
+ 432   2                      else
+ 433   2                      {
+ 434   3                              break;
+ 435   3                      }
+ 436   2              }
+ 437   1              gc_Day=(U8)tw_Days;
+ 438   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1081    ----
+   CONSTANT SIZE    =     62    ----
+   XDATA SIZE       =   ----       1
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       3
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

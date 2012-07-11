@@ -1,0 +1,345 @@
+C51 COMPILER V9.00   FM                                                                    07/09/2012 21:16:47 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE FM
+OBJECT MODULE PLACED IN .\obj\FM.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE FM\FM.c LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDIR(..\libsource\header) D
+                    -EFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\FM.lst) OBJECT(.\obj\FM.obj)
+
+line level    source
+
+   1          #include "..\Header\SPDA2K.h"
+   2          #include "..\DSP\dspuser.h"
+   3          #include "..\header\variables.h"
+   4          
+   5          #include "FM_receiveH.h"
+   6          #include "FM_IIC.c"
+   7          ///////////////////
+   8          //d检测FM模组的类型
+   9          //gc_FM_Type=0xff：未检测到FM
+  10          xdata U8 gc_FM_Type;
+  11          
+  12          void FM_Initial();
+  13          void FM_OPEN(void);
+  14          void FM_Powerdown(void);
+  15          
+  16          void FM_Task(void)
+  17          {
+  18   1              gc_Play_FileType=2;
+  19   1              gb_LCM_InverseDisp=0;
+  20   1              set_clock_mode(CLOCK_MODE_REC);
+  21   1              gb_Dosinitfail=0;
+  22   1              gdw_HOSTStartSectorRead=0xFFFFFFF0;
+  23   1              gc_CurrentCard=9;
+  24   1      
+  25   1      
+  26   1              if(gc_LastCard==2)
+  27   1              {
+  28   2                      if(gb_SD_Exist==1)
+  29   2                      {
+  30   3                              if(SD_Identification_Flow())
+  31   3                              {
+  32   4                                      gc_CurrentCard=2;
+  33   4                                      if(DOS_Initialize()!=0)
+  34   4                                      {
+  35   5                                              gc_CurrentCard=9;
+  36   5                                      }
+  37   4                              }
+  38   3                      }
+  39   2              }
+  40   1              else if(gc_LastCard==5)
+  41   1              {
+  42   2                      if(HOST_Check()==0)
+  43   2                      {
+  44   3                              gb_Host_Exist=1;
+  45   3                      }
+  46   2      
+  47   2                      if(gb_Host_Exist==1)
+  48   2                      {
+  49   3                              if(Host_Initial()==0)
+  50   3                              {
+  51   4                                      if(DOS_Initialize()!=0)
+  52   4                                      {
+  53   5                                              gc_CurrentCard=9;
+  54   5                                      }
+C51 COMPILER V9.00   FM                                                                    07/09/2012 21:16:47 PAGE 2   
+
+  55   4                              }
+  56   3                              else
+  57   3                              {
+  58   4                                      gc_CurrentCard=9;
+  59   4                              }
+  60   3                      }
+  61   2              }
+  62   1              else
+  63   1              {
+  64   2                      gb_Host_Exist=0;
+  65   2                      gb_SD_Exist=0;
+  66   2              }
+  67   1              gc_LastCard=gc_CurrentCard;
+  68   1      
+  69   1              set_clock_mode(CLOCK_MODE_MP3);
+  70   1              LCM_ShowFMAllIcon();
+  71   1              LCM_ShowFrequency_L();
+  72   1              gb_SetVol=0;
+  73   1              MP3_Download();
+  74   1              gs_System_State.c_Phase=TASK_PHASE_STOP;
+  75   1      
+  76   1              gc_FM_CH_COUNT=0;
+  77   1              gb_FM_initial_flag=0;
+  78   1              if(gb_FM_initial_flag==0)
+  79   1              {
+  80   2                      gb_FM_initial_flag=1;   
+  81   2                      FM_Initial();
+  82   2              }
+  83   1              else
+  84   1              {
+  85   2      //FM_OPEN();//FM_UnMUTE(); maybe unmute here --sunzhk add 
+  86   2              }
+  87   1              Linein_Set();
+  88   1              gb_LogDataFlag=0;
+  89   1              gs_System_State.c_Phase=TASK_PHASE_STOP;
+  90   1              gc_KeyEvent=0;
+  91   1      
+  92   1              while(1)
+  93   1              {
+  94   2                      Key_Detect();
+  95   2                      if(gc_KeyEvent!=0)
+  96   2                      {
+  97   3                              gc_MenuTimer=6;
+  98   3                              AccessKeyEvent_FM();
+  99   3                              gc_KeyEvent=0;
+ 100   3                              if(gc_Task_Current!=C_Task_FM)
+ 101   3                              {
+ 102   4                                      Linein_Out();
+ 103   4                                      //------Clear IR Variable----------------------------
+ 104   4                                      ClearIRNumberVariable();
+ 105   4                                      gc_IR_Timer=0;
+ 106   4                                      gc_ShowFMRVolTimer=0;
+ 107   4                                      gb_ClearBigIcon=0;
+ 108   4      FM_Powerdown(); //FM_MUTE();  maybe not power off FM,only mute fm is OK         --sunzhk 
+ 109   4                                      return;
+ 110   4                              }
+ 111   3                      }
+ 112   2      
+ 113   2                      if(gb_OrderRecordTrigger==1)
+ 114   2                      {
+ 115   3                              if(gs_System_State.c_Phase==TASK_PHASE_STOP)
+ 116   3                              {
+C51 COMPILER V9.00   FM                                                                    07/09/2012 21:16:47 PAGE 3   
+
+ 117   4                                      // Start Order Record
+ 118   4                                      gc_FMMenuItem=1;
+ 119   4                                      gc_FMMenuNum=0;
+ 120   4                                      gc_KeyEvent=0x06; //    Issue M key
+ 121   4                                      AccessKeyEvent_FM();
+ 122   4                                      gc_KeyEvent=0;
+ 123   4                              }
+ 124   3                              else
+ 125   3                              {
+ 126   4                                      gb_OrderRecordTrigger=0;
+ 127   4                              }
+ 128   3                      }
+ 129   2      
+ 130   2                      if(gdw_RecRemaintime==0&&gs_System_State.c_Phase==TASK_PHASE_REC)
+ 131   2                      {
+ 132   3                              gc_KeyEvent=0x06; //    Issue M key
+ 133   3                              AccessKeyEvent_FM();
+ 134   3                              gc_KeyEvent=0;
+ 135   3                              if(gb_Suspend_OrderRecord==1)
+ 136   3                              {
+ 137   4                                      gb_Suspend_OrderRecord=0;
+ 138   4                                      gc_Task_Current=C_Task_Suspend;
+ 139   4                                      Linein_Out();
+ 140   4                                      return;
+ 141   4                              }
+ 142   3                      }
+ 143   2      
+ 144   2                      // Leave Menu/Vol setting, Refresh All display
+ 145   2                      if((gc_MenuTimer==0)&&(gc_FMMenuItem!=0||gb_SetVol))
+ 146   2                      {
+ 147   3                              gb_SetVol=0;
+ 148   3                              gc_FMMenuItem=0;
+ 149   3                              gb_LogDataFlag=0;
+ 150   3                              // Show LCM icon
+ 151   3                              LCM_ShowFMAllIcon();
+ 152   3                              if(gs_System_State.c_Phase==TASK_PHASE_STOP)
+ 153   3                              {
+ 154   4                                      LCM_ShowFrequency_L();
+ 155   4                                      USER_LogFile_ReadWrite(1);
+ 156   4                              }
+ 157   3                              if(gs_System_State.c_Phase==TASK_PHASE_REC)
+ 158   3                              {
+ 159   4                                      LCM_ShowRECFilename();
+ 160   4                              }
+ 161   3                      }
+ 162   2      
+ 163   2                      if(gb_ShowBatt==1&&gc_FMMenuItem==0)
+ 164   2                      {
+ 165   3                              gb_ShowBatt=0;
+ 166   3                              LCM_ShowBattIcon();
+ 167   3                      }
+ 168   2      
+ 169   2                      if(gb_AlarmTrigger==1)
+ 170   2                      {
+ 171   3                              if(gs_System_State.c_Phase==TASK_PHASE_REC)
+ 172   3                              {
+ 173   4                                      // If Recording, don't care alarm clock
+ 174   4                                      gb_AlarmTrigger=0;
+ 175   4                              }
+ 176   3                              else
+ 177   3                              {
+ 178   4                                      if(CheckAlarmSetting()==0)      // Match Alarm Clock Setting
+C51 COMPILER V9.00   FM                                                                    07/09/2012 21:16:47 PAGE 4   
+
+ 179   4                                      {
+ 180   5                                              gc_Task_Last=C_Task_FM;
+ 181   5                                              gc_Task_Current=C_Task_AlarmON;
+ 182   5                                              Linein_Out();
+ 183   5                                              return;
+ 184   5                                      }
+ 185   4                              }
+ 186   3                      }
+ 187   2      
+ 188   2                      if(gs_System_State.c_Phase==TASK_PHASE_REC)
+ 189   2                      {
+ 190   3                              if(IMA_ADPCM_Rec_DataOut()!=DSP_SUCCESS)
+ 191   3                              {
+ 192   4                                      IMA_ADPCM_Rec_StopCmd();
+ 193   4                                      gs_System_State.c_Phase=TASK_PHASE_STOP;
+ 194   4                                      gc_FMMenuItem=9;
+ 195   4                              }
+ 196   3      
+ 197   3                              if((gc_CurrentCard==2&&gb_SD_pin==1)||(gc_CurrentCard==5&&Host_DetectDevice()==1))
+ 198   3                              {
+ 199   4                                      IMA_ADPCM_Rec_StopCmd();
+ 200   4                                      gs_System_State.c_Phase=TASK_PHASE_STOP;
+ 201   4                                      gc_FMMenuItem=9;
+ 202   4                              }
+ 203   3                      }
+ 204   2                      else if(gs_System_State.c_Phase==TASK_PHASE_STOP)
+ 205   2                      {
+ 206   3                              DetectSDorHOSTState();
+ 207   3                      }
+ 208   2         }
+ 209   1      }
+ 210          
+ 211          void FM_Initial()
+ 212          {
+ 213   1              if(gc_FM_CHAmount==0)
+ 214   1              {
+ 215   2                      gw_FM_frequency= 875;
+ 216   2              }
+ 217   1              else
+ 218   1              {
+ 219   2                      gw_FM_frequency = gw_FM_CH[0]; 
+ 220   2              }
+ 221   1      
+ 222   1      #ifdef Mode_FM_CL6017
+ 223   1              CL6017_FMInit();
+ 224   1              CL6017_FMTune();
+ 225   1      #elif defined Mode_FM_RDA5807P
+                      RDA5807P_FMInit();
+                      RDA5807P_FMTune();//set 进来的频率
+              #elif defined Mode_FM_QN8035
+                      QND_Init();
+                      QND_TuneToCH();
+              #endif
+ 232   1                      
+ 233   1      }
+ 234          
+ 235          void FM_Powerdown(void)//关掉FM
+ 236          {
+ 237   1      #ifdef Mode_FM_CL6017
+ 238   1              CL6017_FMPowerdown();
+ 239   1      #elif defined Mode_FM_RDA5807P
+                      RDA5807P_FMPowerdown(); 
+C51 COMPILER V9.00   FM                                                                    07/09/2012 21:16:47 PAGE 5   
+
+              #elif defined Mode_FM_QN8035
+                      QNF_PowerDown();
+              #endif
+ 244   1      }
+ 245          
+ 246          ///////////////////////以下操作在在按键相应中调用
+ 247          void FM_MUTE(void)
+ 248          {
+ 249   1      #ifdef Mode_FM_CL6017
+ 250   1              CL6017_MUTE();
+ 251   1      #elif defined Mode_FM_RDA5807P
+                      RDA5807P_MUTE();
+              #elif defined Mode_FM_QN8035
+                      QNF_SetMute(1);//mute
+              #endif
+ 256   1      }
+ 257          void FM_UnMUTE(void)
+ 258          {
+ 259   1      #ifdef Mode_FM_CL6017
+ 260   1              CL6017_UnMUTE();
+ 261   1      #elif defined Mode_FM_RDA5807P
+                      RDA5807P_UnMUTE();
+              #elif defined Mode_FM_QN8035
+                      QNF_SetMute(0);//Unmute
+              #endif
+ 266   1      }
+ 267          
+ 268          void FM_FMVolumeSet(U16 vol)
+ 269          {
+ 270   1      #ifdef Mode_FM_CL6017
+ 271   1              CL6017_FMVolumeSet(vol);
+ 272   1      #elif defined Mode_FM_RDA5807P
+                      RDA5807P_FMVolumeSet(vol); 
+              #elif defined Mode_FM_QN8035
+                      QND_RXConfigAudio(vol);
+              #endif
+ 277   1      }
+ 278          //before this func ,please set gw_FM_frequency!!-sunzhk add 
+ 279          void FM_FMTune()//设台，tc_mute=1时设台后无声音（用作搜台时设台）
+ 280          {
+ 281   1      #ifdef Mode_FM_CL6017
+ 282   1              CL6017_FMTune();
+ 283   1      #elif defined Mode_FM_RDA5807P
+                      RDA5807P_FMTune();
+              #elif defined Mode_FM_QN8035
+                      QND_TuneToCH();
+              #endif
+ 288   1      }
+ 289          void FM_FMSeekFromCurrentCh(U8 seekUp)//seekUp=0向上搜台，seekUp=1向下搜台
+ 290          {
+ 291   1      #ifdef Mode_FM_CL6017
+ 292   1              CL6017_FMSeekFromCurrentCh(seekUp);
+ 293   1      #elif defined Mode_FM_RDA5807P
+                      RDA5807P_FMSeekFromCurrentCh(seekUp); 
+              #elif defined Mode_FM_QN8035
+                      QN8035_FMSeekFromCurrentCh(seekUp);
+              #endif
+ 298   1      }
+ 299          
+ 300          
+ 301          void FM_Auto_SearchAllFreq(U16 x_FreqTemp)//全部搜台
+ 302          {
+C51 COMPILER V9.00   FM                                                                    07/09/2012 21:16:47 PAGE 6   
+
+ 303   1      #ifdef Mode_FM_CL6017
+ 304   1              CL6017AutoSearchAllFreq(x_FreqTemp);
+ 305   1      #elif defined Mode_FM_RDA5807P
+                      RDA5807P_FMSeekFromCurrentCh(2); //全部搜台
+              #elif defined Mode_FM_QN8035
+                      QN8035_FMSeekAllCh(x_FreqTemp);  
+              #endif
+ 310   1      }
+ 311          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1039    ----
+   CONSTANT SIZE    =     48    ----
+   XDATA SIZE       =      1      12
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       7
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,370 @@
+C51 COMPILER V9.00   LOGDATA                                                               07/09/2012 21:16:50 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE LOGDATA
+OBJECT MODULE PLACED IN .\obj\logData.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE LogData\logData.c LARGE OPTIMIZE(9,SIZE) BROWSE NOAREGS INCDIR(..\libsource
+                    -\header) DEFINE(K_ICTYPE=0x03) DEBUG OBJECTEXTEND PRINT(.\lst\logData.lst) OBJECT(.\obj\logData.obj)
+
+line level    source
+
+   1          #include "..\Header\SPDA2K.h"
+   2          #include "..\header\variables.h"
+   3          
+   4          
+   5          void Get_LogData_PageIndex(void)  
+   6          {
+   7   1              data    bit     tb_ReadWriteDataArea;
+   8   1              data    U8      tc_i;
+   9   1              data    U8  EmptyPageExists;
+  10   1              
+  11   1              gc_UIblock0_index=0;    //initial
+  12   1              EmptyPageExists=0;              //initial       
+  13   1      
+  14   1              tb_ReadWriteDataArea=gb_ReadWriteDataArea;
+  15   1              gb_ReadWriteDataArea = 0;
+  16   1              for(tc_i=0;tc_i<128;tc_i++)//檢查所有的pages,找出最近一個使用所在的page
+  17   1              {
+  18   2                      SPI_UserData_Block_Read(tc_i,gc_PlayRecordDataBufHB);   
+  19   2      
+  20   2                      //檢查log file的標記,需滿足以下條件
+  21   2      //              gc_PlayRecordDataBuf[508] = 'L' ;
+  22   2      //              gc_PlayRecordDataBuf[509] = 'O' ;
+  23   2      //              gc_PlayRecordDataBuf[510] = 'G' ;       
+  24   2      //              gc_PlayRecordDataBuf[511] = 'F' ;
+  25   2      
+  26   2                      if(gc_PlayRecordDataBuf[508] == 0xFF)
+  27   2                      {//0xFF表示還沒有寫入
+  28   3                              EmptyPageExists=1;
+  29   3                              break;
+  30   3                      }
+  31   2                      if (tc_i==127)
+  32   2                      {
+  33   3                              break;
+  34   3                      }
+  35   2              }
+  36   1              
+  37   1              gb_ReadWriteDataArea=tb_ReadWriteDataArea;              //restore gc_ReadWriteDataArea
+  38   1              if(EmptyPageExists)
+  39   1              {//
+  40   2                      gc_UIblock0_index=tc_i-1;       //紀錄目前最後一筆log所在的page?
+  41   2              }
+  42   1              else
+  43   1              {//都沒有空的page
+  44   2                      gc_UIblock0_index=tc_i;         //最後一筆log所在的page在最後一個page
+  45   2              }
+  46   1      }
+  47          
+  48          
+  49          void Read_LogData(void)  
+  50          {
+  51   1              bit     tb_ReadWriteDataArea;
+  52   1              
+  53   1              tb_ReadWriteDataArea=gb_ReadWriteDataArea;
+  54   1              gb_ReadWriteDataArea = 0;
+C51 COMPILER V9.00   LOGDATA                                                               07/09/2012 21:16:50 PAGE 2   
+
+  55   1              
+  56   1              EA=0;
+  57   1              if (gc_UIblock0_index==0xFF)
+  58   1              {//1st page是空的
+  59   2              }
+  60   1              else
+  61   1              {
+  62   2                      SPI_UserData_Block_Read(gc_UIblock0_index,gc_PlayRecordDataBufHB);      //block 0,sector gc_UIblock0_index*G_
+             -Card_PageSize , 1 sector(s), source address is 0xAA00
+  63   2              }
+  64   1              EA=1;
+  65   1              gb_ReadWriteDataArea=tb_ReadWriteDataArea;      //restore
+  66   1      }       
+  67                  
+  68                  
+  69          void Write_LogData(void)  
+  70          {
+  71   1              bit     tb_ReadWriteDataArea;
+  72   1      
+  73   1              tb_ReadWriteDataArea=gb_ReadWriteDataArea;
+  74   1              gb_ReadWriteDataArea=0;
+  75   1      
+  76   1              if(gc_UIblock0_index==127)//already write last page,gc_UIblock0_index為上一筆資訊
+  77   1              {//如果上一筆已經是最後一個page -> erase 1 block
+  78   2                      SPI_UserData_Block_Erase();     
+  79   2                      gc_UIblock0_index=0;    //從sector 0開始寫
+  80   2              }
+  81   1              else if (gc_UIblock0_index==0xFF)
+  82   1              {//1st page是空的
+  83   2                      gc_UIblock0_index=0;    //從sector 0開始寫
+  84   2              }
+  85   1              else
+  86   1              {
+  87   2                      gc_UIblock0_index=gc_UIblock0_index+1;  //從最後一page有資料的下一page開始寫
+  88   2              }       
+  89   1      
+  90   1              //mark LogDATA valid
+  91   1              gc_PlayRecordDataBuf[508]='L';
+  92   1              gc_PlayRecordDataBuf[509]='O';
+  93   1              gc_PlayRecordDataBuf[510]='G';
+  94   1              gc_PlayRecordDataBuf[511]='D';
+  95   1      
+  96   1              EA=0;
+  97   1              SPI_UserData_Block_Write(gc_UIblock0_index,gc_PlayRecordDataBufHB);
+  98   1              EA=1;
+  99   1              gb_ReadWriteDataArea=tb_ReadWriteDataArea;      //restore buffer assignment
+ 100   1      }
+ 101          
+ 102          
+ 103          void USER_GetSettingInfo(void)
+ 104          {
+ 105   1              xdata   U8 i;
+ 106   1      
+ 107   1              if(gc_PlayRecordDataBuf[249]!='M'||gc_PlayRecordDataBuf[250]!='A'||gc_PlayRecordDataBuf[251]!='X')
+ 108   1              {
+ 109   2                      gs_DSP_GLOBAL_RAM.sc_Volume=C_VolumeDefault;
+ 110   2                      gs_DSP_GLOBAL_RAM.sc_EQ_Type=0;
+ 111   2                      gc_RepPlayMode=0;
+ 112   2                      gc_LCMBacklightTime=0;
+ 113   2                      gc_RecordQuality=2;
+ 114   2                      gc_LastCard=gc_CurrentCard;
+ 115   2                      gb_AlarmON=0;
+C51 COMPILER V9.00   LOGDATA                                                               07/09/2012 21:16:50 PAGE 3   
+
+ 116   2                      gb_AlarmRepeatON=0;
+ 117   2                      gc_AlarmDaysSelect=0x1F;
+ 118   2                      gb_OrderRecordConfirm=0;
+ 119   2                      gc_CurrentHZK=HZK_LANGUAGE;
+ 120   2                      gw_OrderRecDuration=1800;
+ 121   2                      gdw_OrderRecordTime=43200;      // 12:00
+ 122   2                      gdw_AlarmTime=43200;            // 12:00
+ 123   2                      gc_FM_CHAmount=0;
+ 124   2                      gc_FM_CH_COUNT=0;
+ 125   2                      gw_FM_CH[0]=875;
+ 126   2                      gw_FM_frequency=875;
+ 127   2                      gw_FileIndex[0]=1;
+ 128   2                      gw_FileTotalNumber[0]=1;
+ 129   2                      gw_CurrentFolderNum=1;
+ 130   2                      gs_File_FCB[0].dw_FDB_StartCluster=gdw_DOS_RootDirClus;
+ 131   2                      return;
+ 132   2              }
+ 133   1              gs_DSP_GLOBAL_RAM.sc_Volume=gc_PlayRecordDataBuf[0];    // Vol
+ 134   1              gs_DSP_GLOBAL_RAM.sc_EQ_Type=gc_PlayRecordDataBuf[1];   // EQ
+ 135   1              gc_RepPlayMode=gc_PlayRecordDataBuf[2];                                 // Play Mode
+ 136   1              gc_LCMBacklightTime=gc_PlayRecordDataBuf[3];                    // LCM Backlight Time
+ 137   1              gc_RecordQuality=gc_PlayRecordDataBuf[4];                               // Record Quality
+ 138   1              if(gc_LastCard==0)      // Only Power-On is available
+ 139   1              {
+ 140   2                      gc_LastCard=gc_PlayRecordDataBuf[5];                            // Last Card Of Play
+ 141   2              }
+ 142   1              gb_AlarmON=(bit)gc_PlayRecordDataBuf[6];                                // Alarm Clock ON/OFF
+ 143   1              gb_AlarmRepeatON=(bit)gc_PlayRecordDataBuf[7];                  // Alarm Clcok Repeat ON/OFF
+ 144   1              gc_AlarmDaysSelect=gc_PlayRecordDataBuf[8];                             // Alarm Clock Repeat Days Option
+ 145   1              gb_OrderRecordConfirm=(bit)gc_PlayRecordDataBuf[9];             // Order Record ON/OFF
+ 146   1              gc_CurrentHZK=gc_PlayRecordDataBuf[10];
+ 147   1      
+ 148   1              ((U8*)(&gw_FM_frequency))[0]=gc_PlayRecordDataBuf[11];          // FM Frequency
+ 149   1              ((U8*)(&gw_FM_frequency))[1]=gc_PlayRecordDataBuf[12];
+ 150   1              ((U8 *)(&gw_OrderRecDuration))[0]=gc_PlayRecordDataBuf[13];     // Order Record Duration
+ 151   1              ((U8 *)(&gw_OrderRecDuration))[1]=gc_PlayRecordDataBuf[14];
+ 152   1              ((U8 *)(&gdw_OrderRecordTime))[0]=gc_PlayRecordDataBuf[15];     // Order Record Time
+ 153   1              ((U8 *)(&gdw_OrderRecordTime))[1]=gc_PlayRecordDataBuf[16];
+ 154   1              ((U8 *)(&gdw_OrderRecordTime))[2]=gc_PlayRecordDataBuf[17];
+ 155   1              ((U8 *)(&gdw_OrderRecordTime))[3]=gc_PlayRecordDataBuf[18];
+ 156   1              ((U8 *)(&gdw_AlarmTime))[0]=gc_PlayRecordDataBuf[19];           // Alarm Clock Time
+ 157   1              ((U8 *)(&gdw_AlarmTime))[1]=gc_PlayRecordDataBuf[20];
+ 158   1              ((U8 *)(&gdw_AlarmTime))[2]=gc_PlayRecordDataBuf[21];
+ 159   1              ((U8 *)(&gdw_AlarmTime))[3]=gc_PlayRecordDataBuf[22];
+ 160   1      
+ 161   1              gc_FM_CHAmount=gc_PlayRecordDataBuf[23];
+ 162   1              gc_FM_CH_COUNT=gc_PlayRecordDataBuf[24];
+ 163   1      
+ 164   1              ((U8 *)(&gdw_SDDIRFDB_StartCluster))[0]=gc_PlayRecordDataBuf[30];
+ 165   1              ((U8 *)(&gdw_SDDIRFDB_StartCluster))[1]=gc_PlayRecordDataBuf[31];
+ 166   1              ((U8 *)(&gdw_SDDIRFDB_StartCluster))[2]=gc_PlayRecordDataBuf[32];
+ 167   1              ((U8 *)(&gdw_SDDIRFDB_StartCluster))[3]=gc_PlayRecordDataBuf[33];
+ 168   1              ((U8 *)(&gw_SDDIRFileIndex))[0]=gc_PlayRecordDataBuf[34];
+ 169   1              ((U8 *)(&gw_SDDIRFileIndex))[1]=gc_PlayRecordDataBuf[35];
+ 170   1              ((U8 *)(&gw_SDDIRFileTotalNumber))[0]=gc_PlayRecordDataBuf[36];
+ 171   1              ((U8 *)(&gw_SDDIRFileTotalNumber))[1]=gc_PlayRecordDataBuf[37];
+ 172   1              ((U8 *)(&gw_SDFolderIndex))[0]=gc_PlayRecordDataBuf[38];
+ 173   1              ((U8 *)(&gw_SDFolderIndex))[1]=gc_PlayRecordDataBuf[39];
+ 174   1      
+ 175   1              ((U8 *)(&gdw_HostDIRFDB_StartCluster))[0]=gc_PlayRecordDataBuf[40];
+ 176   1              ((U8 *)(&gdw_HostDIRFDB_StartCluster))[1]=gc_PlayRecordDataBuf[41];
+ 177   1              ((U8 *)(&gdw_HostDIRFDB_StartCluster))[2]=gc_PlayRecordDataBuf[42];
+C51 COMPILER V9.00   LOGDATA                                                               07/09/2012 21:16:50 PAGE 4   
+
+ 178   1              ((U8 *)(&gdw_HostDIRFDB_StartCluster))[3]=gc_PlayRecordDataBuf[43];
+ 179   1              ((U8 *)(&gw_HostDIRFileIndex))[0]=gc_PlayRecordDataBuf[44];
+ 180   1              ((U8 *)(&gw_HostDIRFileIndex))[1]=gc_PlayRecordDataBuf[45];
+ 181   1              ((U8 *)(&gw_HostDIRFileTotalNumber))[0]=gc_PlayRecordDataBuf[46];
+ 182   1              ((U8 *)(&gw_HostDIRFileTotalNumber))[1]=gc_PlayRecordDataBuf[47];
+ 183   1              ((U8 *)(&gw_HostFolderIndex))[0]=gc_PlayRecordDataBuf[48];
+ 184   1              ((U8 *)(&gw_HostFolderIndex))[1]=gc_PlayRecordDataBuf[49];
+ 185   1      
+ 186   1              if(gc_CurrentCard==2) //SD CARD
+ 187   1              {
+ 188   2                      ((U8 *)(&gs_File_FCB[0].dw_FDB_StartCluster))[0]=gc_PlayRecordDataBuf[30];
+ 189   2                      ((U8 *)(&gs_File_FCB[0].dw_FDB_StartCluster))[1]=gc_PlayRecordDataBuf[31];
+ 190   2                      ((U8 *)(&gs_File_FCB[0].dw_FDB_StartCluster))[2]=gc_PlayRecordDataBuf[32];
+ 191   2                      ((U8 *)(&gs_File_FCB[0].dw_FDB_StartCluster))[3]=gc_PlayRecordDataBuf[33];
+ 192   2                      ((U8 *)(&gw_FileIndex[0]))[0]=gc_PlayRecordDataBuf[34];
+ 193   2                      ((U8 *)(&gw_FileIndex[0]))[1]=gc_PlayRecordDataBuf[35];         
+ 194   2                      ((U8 *)(&gw_FileTotalNumber[0]))[0]=gc_PlayRecordDataBuf[36];
+ 195   2                      ((U8 *)(&gw_FileTotalNumber[0]))[1]=gc_PlayRecordDataBuf[37];
+ 196   2                      ((U8 *)(&gw_CurrentFolderNum))[0]=(U16)gc_PlayRecordDataBuf[38];
+ 197   2                      ((U8 *)(&gw_CurrentFolderNum))[1]=(U16)gc_PlayRecordDataBuf[39];
+ 198   2              }
+ 199   1              else if(gc_CurrentCard==5)  //HOST
+ 200   1              {
+ 201   2                      ((U8 *)(&gs_File_FCB[0].dw_FDB_StartCluster))[0]=gc_PlayRecordDataBuf[40];
+ 202   2                      ((U8 *)(&gs_File_FCB[0].dw_FDB_StartCluster))[1]=gc_PlayRecordDataBuf[41];
+ 203   2                      ((U8 *)(&gs_File_FCB[0].dw_FDB_StartCluster))[2]=gc_PlayRecordDataBuf[42];
+ 204   2                      ((U8 *)(&gs_File_FCB[0].dw_FDB_StartCluster))[3]=gc_PlayRecordDataBuf[43];
+ 205   2                      ((U8 *)(&gw_FileIndex[0]))[0]=gc_PlayRecordDataBuf[44];
+ 206   2                      ((U8 *)(&gw_FileIndex[0]))[1]=gc_PlayRecordDataBuf[45];
+ 207   2                      ((U8 *)(&gw_FileTotalNumber[0]))[0]=gc_PlayRecordDataBuf[46];
+ 208   2                      ((U8 *)(&gw_FileTotalNumber[0]))[1]=gc_PlayRecordDataBuf[47];
+ 209   2                      ((U8 *)(&gw_CurrentFolderNum))[0]=(U16)gc_PlayRecordDataBuf[48];
+ 210   2                      ((U8 *)(&gw_CurrentFolderNum))[1]=(U16)gc_PlayRecordDataBuf[49];
+ 211   2              }
+ 212   1      
+ 213   1              for(i=0;i<30;i++)
+ 214   1              {
+ 215   2                      ((U8 *)(&gw_FM_CH[i]))[0]=gc_PlayRecordDataBuf[60+i*2];
+ 216   2                      ((U8 *)(&gw_FM_CH[i]))[1]=gc_PlayRecordDataBuf[61+i*2];
+ 217   2              }
+ 218   1      }
+ 219          
+ 220          
+ 221          void USER_FillSettingInfo(void)
+ 222          {
+ 223   1              xdata   U8 i;
+ 224   1      
+ 225   1              gc_PlayRecordDataBuf[ 0]=gs_DSP_GLOBAL_RAM.sc_Volume;           // Vol
+ 226   1              gc_PlayRecordDataBuf[ 1]=gs_DSP_GLOBAL_RAM.sc_EQ_Type;          // EQ
+ 227   1              gc_PlayRecordDataBuf[ 2]=gc_RepPlayMode;                                        // Play Mode
+ 228   1              gc_PlayRecordDataBuf[ 3]=gc_LCMBacklightTime;                           // LCM Backlight
+ 229   1              gc_PlayRecordDataBuf[ 4]=gc_RecordQuality;                                      // Record Quality
+ 230   1              gc_PlayRecordDataBuf[ 5]=gc_LastCard;                                           // Last Card Of Play
+ 231   1              gc_PlayRecordDataBuf[ 6]=(U8)gb_AlarmON;                                        // Alarm Clock ON/OFF
+ 232   1              gc_PlayRecordDataBuf[ 7]=(U8)gb_AlarmRepeatON;                          // Alarm Clcok Repeat ON/OFF
+ 233   1              gc_PlayRecordDataBuf[ 8]=gc_AlarmDaysSelect;                            // Alarm Clock Repeat Days Option
+ 234   1              gc_PlayRecordDataBuf[ 9]=(U8)gb_OrderRecordConfirm;                     // Order Record ON/OFF
+ 235   1              gc_PlayRecordDataBuf[10]=gc_CurrentHZK;                                         // Language Option
+ 236   1      
+ 237   1              gc_PlayRecordDataBuf[11]=((U8 *)(&gw_FM_frequency))[0];         // FM Frequency
+ 238   1              gc_PlayRecordDataBuf[12]=((U8 *)(&gw_FM_frequency))[1];
+ 239   1              gc_PlayRecordDataBuf[13]=((U8 *)(&gw_OrderRecDuration))[0];     // Order Record Duration
+C51 COMPILER V9.00   LOGDATA                                                               07/09/2012 21:16:50 PAGE 5   
+
+ 240   1              gc_PlayRecordDataBuf[14]=((U8 *)(&gw_OrderRecDuration))[1];
+ 241   1              gc_PlayRecordDataBuf[15]=((U8 *)(&gdw_OrderRecordTime))[0];     // Order Record Time
+ 242   1              gc_PlayRecordDataBuf[16]=((U8 *)(&gdw_OrderRecordTime))[1];
+ 243   1              gc_PlayRecordDataBuf[17]=((U8 *)(&gdw_OrderRecordTime))[2];
+ 244   1              gc_PlayRecordDataBuf[18]=((U8 *)(&gdw_OrderRecordTime))[3];
+ 245   1              gc_PlayRecordDataBuf[19]=((U8 *)(&gdw_AlarmTime))[0];           // Alarm Clock Time
+ 246   1              gc_PlayRecordDataBuf[20]=((U8 *)(&gdw_AlarmTime))[1];
+ 247   1              gc_PlayRecordDataBuf[21]=((U8 *)(&gdw_AlarmTime))[2];
+ 248   1              gc_PlayRecordDataBuf[22]=((U8 *)(&gdw_AlarmTime))[3];
+ 249   1      
+ 250   1              gc_PlayRecordDataBuf[23]=gc_FM_CHAmount;                                        // FM Station Memory Counter
+ 251   1              gc_PlayRecordDataBuf[24]=gc_FM_CH_COUNT;                                        // FM Playing Station Number
+ 252   1      
+ 253   1              gc_PlayRecordDataBuf[30]=((U8 *)(&gdw_SDDIRFDB_StartCluster))[0];
+ 254   1              gc_PlayRecordDataBuf[31]=((U8 *)(&gdw_SDDIRFDB_StartCluster))[1];
+ 255   1              gc_PlayRecordDataBuf[32]=((U8 *)(&gdw_SDDIRFDB_StartCluster))[2];
+ 256   1              gc_PlayRecordDataBuf[33]=((U8 *)(&gdw_SDDIRFDB_StartCluster))[3];
+ 257   1              gc_PlayRecordDataBuf[34]=((U8 *)(&gw_SDDIRFileIndex))[0];
+ 258   1              gc_PlayRecordDataBuf[35]=((U8 *)(&gw_SDDIRFileIndex))[1];
+ 259   1              gc_PlayRecordDataBuf[36]=((U8 *)(&gw_SDDIRFileTotalNumber))[0];
+ 260   1              gc_PlayRecordDataBuf[37]=((U8 *)(&gw_SDDIRFileTotalNumber))[1];
+ 261   1              gc_PlayRecordDataBuf[38]=((U8 *)(&gw_SDFolderIndex))[0];
+ 262   1              gc_PlayRecordDataBuf[39]=((U8 *)(&gw_SDFolderIndex))[1];
+ 263   1      
+ 264   1              gc_PlayRecordDataBuf[40]=((U8 *)(&gdw_HostDIRFDB_StartCluster))[0];
+ 265   1              gc_PlayRecordDataBuf[41]=((U8 *)(&gdw_HostDIRFDB_StartCluster))[1];
+ 266   1              gc_PlayRecordDataBuf[42]=((U8 *)(&gdw_HostDIRFDB_StartCluster))[2];
+ 267   1              gc_PlayRecordDataBuf[43]=((U8 *)(&gdw_HostDIRFDB_StartCluster))[3];
+ 268   1              gc_PlayRecordDataBuf[44]=((U8 *)(&gw_HostDIRFileIndex))[0];
+ 269   1              gc_PlayRecordDataBuf[45]=((U8 *)(&gw_HostDIRFileIndex))[1];
+ 270   1              gc_PlayRecordDataBuf[46]=((U8 *)(&gw_HostDIRFileTotalNumber))[0];
+ 271   1              gc_PlayRecordDataBuf[47]=((U8 *)(&gw_HostDIRFileTotalNumber))[1];
+ 272   1              gc_PlayRecordDataBuf[48]=((U8 *)(&gw_HostFolderIndex))[0];
+ 273   1              gc_PlayRecordDataBuf[49]=((U8 *)(&gw_HostFolderIndex))[1];
+ 274   1      
+ 275   1              if(gc_CurrentCard==2)  // SD
+ 276   1              {
+ 277   2                      gc_PlayRecordDataBuf[30]=((U8 *)(&gs_File_FCB[0].dw_FDB_StartCluster))[0];
+ 278   2                      gc_PlayRecordDataBuf[31]=((U8 *)(&gs_File_FCB[0].dw_FDB_StartCluster))[1];
+ 279   2                      gc_PlayRecordDataBuf[32]=((U8 *)(&gs_File_FCB[0].dw_FDB_StartCluster))[2];
+ 280   2                      gc_PlayRecordDataBuf[33]=((U8 *)(&gs_File_FCB[0].dw_FDB_StartCluster))[3];
+ 281   2                      gc_PlayRecordDataBuf[34]=((U8 *)(&gw_FileIndex[0]))[0];
+ 282   2                      gc_PlayRecordDataBuf[35]=((U8 *)(&gw_FileIndex[0]))[1];
+ 283   2                      gc_PlayRecordDataBuf[36]=((U8 *)(&gw_FileTotalNumber[0]))[0];
+ 284   2                      gc_PlayRecordDataBuf[37]=((U8 *)(&gw_FileTotalNumber[0]))[1];   
+ 285   2                      gc_PlayRecordDataBuf[38]=((U8 *)(&gw_CurrentFolderNum))[0];
+ 286   2                      gc_PlayRecordDataBuf[39]=((U8 *)(&gw_CurrentFolderNum))[1];
+ 287   2                      gdw_SDDIRFDB_StartCluster=gs_File_FCB[0].dw_FDB_StartCluster;
+ 288   2                      gw_SDDIRFileIndex=gw_FileIndex[0];
+ 289   2                      gw_SDDIRFileTotalNumber=gw_FileTotalNumber[0];
+ 290   2                      gw_SDFolderIndex=gw_CurrentFolderNum;
+ 291   2              }
+ 292   1              else if(gc_CurrentCard==5)  // HOST
+ 293   1              {
+ 294   2                      gc_PlayRecordDataBuf[40]=((U8 *)(&gs_File_FCB[0].dw_FDB_StartCluster))[0];
+ 295   2                      gc_PlayRecordDataBuf[41]=((U8 *)(&gs_File_FCB[0].dw_FDB_StartCluster))[1];
+ 296   2                      gc_PlayRecordDataBuf[42]=((U8 *)(&gs_File_FCB[0].dw_FDB_StartCluster))[2];
+ 297   2                      gc_PlayRecordDataBuf[43]=((U8 *)(&gs_File_FCB[0].dw_FDB_StartCluster))[3];
+ 298   2                      gc_PlayRecordDataBuf[44]=((U8 *)(&gw_FileIndex[0]))[0];
+ 299   2                      gc_PlayRecordDataBuf[45]=((U8 *)(&gw_FileIndex[0]))[1];
+ 300   2                      gc_PlayRecordDataBuf[46]=((U8 *)(&gw_FileTotalNumber[0]))[0];
+ 301   2                      gc_PlayRecordDataBuf[47]=((U8 *)(&gw_FileTotalNumber[0]))[1];
+C51 COMPILER V9.00   LOGDATA                                                               07/09/2012 21:16:50 PAGE 6   
+
+ 302   2                      gc_PlayRecordDataBuf[48]=((U8 *)(&gw_CurrentFolderNum))[0];
+ 303   2                      gc_PlayRecordDataBuf[49]=((U8 *)(&gw_CurrentFolderNum))[1];
+ 304   2                      gdw_HostDIRFDB_StartCluster=gs_File_FCB[0].dw_FDB_StartCluster;
+ 305   2                      gw_HostDIRFileIndex=gw_FileIndex[0];
+ 306   2                      gw_HostDIRFileTotalNumber=gw_FileTotalNumber[0];
+ 307   2                      gw_HostFolderIndex=gw_CurrentFolderNum;
+ 308   2              }
+ 309   1      
+ 310   1              for(i=0;i<30;i++)
+ 311   1              {
+ 312   2                      gc_PlayRecordDataBuf[60+i*2]=((U8 *)(&gw_FM_CH[i]))[0];
+ 313   2                      gc_PlayRecordDataBuf[61+i*2]=((U8 *)(&gw_FM_CH[i]))[1];
+ 314   2              }
+ 315   1      
+ 316   1              gc_PlayRecordDataBuf[249]='M';
+ 317   1              gc_PlayRecordDataBuf[250]='A';
+ 318   1              gc_PlayRecordDataBuf[251]='X';
+ 319   1      }
+ 320          
+ 321          
+ 322          void USER_LogFile_ReadWrite(bit tb_ReadOrWrite) //0=Read 1=Write
+ 323          {
+ 324   1              if(tb_ReadOrWrite==0)//read log
+ 325   1              {
+ 326   2                      Read_LogData();
+ 327   2                      USER_GetSettingInfo();
+ 328   2              }
+ 329   1              else
+ 330   1              {
+ 331   2                      USER_FillSettingInfo();
+ 332   2                      Write_LogData();
+ 333   2              }
+ 334   1      }
+ 335          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1504    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       2
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       4
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
