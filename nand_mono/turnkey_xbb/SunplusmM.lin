@@ -1,0 +1,228 @@
+//NOOVERLAY
+OVERLAY(
+	// Function pointer table Music_Download
+	?CO?PLAY_PROCESS ~ (MP3_Download, WMA_Download),
+	play_playpause ! (MP3_Download, WMA_Download),
+
+	// Function pointer table Music_Data_In
+	?CO?PLAY_PROCESS ~ (MP3_DataIn, WMA_DataIn), 
+	play_proc ! (MP3_DataIn, WMA_DataIn),
+
+	// Function pointer table Music_ReadTime
+	?CO?PLAY_PROCESS ~ (MP3_ReadTime, WMA_ReadTime),
+	play_proc ! (MP3_ReadTime, WMA_ReadTime),
+
+	// Function pointer table Music_Bitrate
+	?CO?PLAY_PROCESS ~ (MP3_Bitrate, WMA_Bitrate),
+	play_playpause ! (MP3_Bitrate, WMA_Bitrate),
+
+	// Function pointer table Music_EOF_Proc
+	?CO?PLAY_PROCESS ~ (MP3_EOF_Proc, WMA_EOF_Proc),
+	play_endfile ! (MP3_EOF_Proc, WMA_EOF_Proc)
+)
+
+BankArea(0x6000,0x8FFF) 
+XDATA( 0X7000-0X7FFF )
+
+
+COMMON
+(
+	?PR?L51_BANKINGLOADER(0x000E)
+,	?PR?*?L51_BANKINGLOADER	
+
+,	?PR?_SET_CLOCK_MODE?SYSTEM
+
+,	?PR?FLASH_COMM
+,	?PR?*?FLASH_COMM
+	
+,	?CO?DSPUser
+,	?PR?DSPUser
+,	?PR?*?DSPUser
+
+,	?PR?dspphysic
+,	?PR?*?dspphysic	
+		
+,	?PR?Host_phy
+,	?PR?*?Host_phy
+
+,	?CO?Host_command_scsi
+,	?PR?Host_command_scsi
+,	?PR?*?Host_command_scsi
+
+,	?PR?LCM_unicode_hzk
+,	?PR?*?LCM_unicode_hzk
+,	?PR?*?LCM_BMP_driver
+,	?PR?DOS_FILEPLAY
+,	?PR?*?DOS_FILEPLAY
+
+,	?PR?DOSCOMM
+,	?PR?*?DOSCOMM
+
+,	?PR?DOS
+,	?PR?*?DOS
+
+,	?PR?SD_CMD
+,	?PR?*?SD_CMD
+
+,	?PR?SD_HW
+,	?PR?_SD_RECEIVE_RESPOND?SD_HW
+,	?PR?_SD_SEND_DUMMYCLK?SD_HW
+,	?PR?SD_CMD12_STOP?SD_HW
+,	?PR?SD_TRIGGER_CMD?SD_HW
+,	?PR?SD_CHECK_IDLE?SD_HW
+,	?PR?SD_TRIGCMD_RECEIVE_RESPOND?SD_HW			
+
+,	?PR?USB_MODE_DISP?SYSTEM
+,	?PR?*?ProcessKey
+
+,	?PR?FLASH
+,	?PR?_USB_CHK_Bank0_1_BulkOut_Done?Flash
+,	?PR?_USB_Bank0_1_BulkOut?Flash
+,	?PR?_NAND_Set_Mark_Register?Flash
+,	?PR?_RW_Data_Stage?Flash
+,	?PR?_NAND_Set_FBlock?Flash
+,	?PR?_NAND_SequentWrite_Mode?Flash
+,	?PR?_NAND_Set_Spare_Data?Flash
+,	?PR?_NAND_OverWrite_Mode?Flash
+,	?PR?_USB_Rcevie_Data_To_BUf?Flash
+,	?PR?_USB_To_BUf?Flash
+,	?PR?_NAND_Laod_Data_To_Buf?Flash
+,	?PR?_NAND_Erase_Block_LEDR?Flash
+,	?PR?_NAND_Update_PWR_INX?Flash
+,	?PR?_NAND_Fill_H2E_SBlock?Flash
+,	?PR?_NAND_Fill_H2E_SPage?Flash
+,	?PR?_CHK_RandomPage_Space?Flash
+)   
+	
+
+BANK0
+(
+	?PR?DOSINIT(0x6000)
+,	?PR?*?DOSINIT
+
+,	?PR?MAIN?SYSTEM
+
+//,	?CO?FLASH_INIT
+,	?PR?FLASH_INIT
+,	?PR*?FLASH_INIT
+)   
+    
+BANK1
+(
+	?PR?LOGDATA(0x6000)
+,	?PR?*?LOGDATA
+
+,	?PR?FLSHSCAN
+,	?PR?*?FLSHSCAN
+
+,	?PR?MCU_DSPINIT
+,	?PR?*?MCU_DSPINIT
+
+,	?PR?*?SD_HW
+)	
+
+BANK2
+(
+	?PR?DOSFAT(0x6000)
+,	?PR?*?DOSFAT
+
+,	?CO?DOSFDB
+,	?PR?DOSFDB
+,	?PR?*?DOSFDB
+
+,	?PR?DOSFILE
+,	?PR?*?DOSFILE
+
+,	?CO?ID3
+,	?PR?ID3
+,	?PR?*?ID3
+) 
+
+BANK3
+(
+	?CO?PLAY_PROCESS(0x6000)
+,	?PR?PLAY_PROCESS
+,	?PR?*?PLAY_PROCESS
+
+,	?PR?LYRIC
+,	?PR?*?LYRIC
+)
+
+BANK4
+(	
+	?PR?USB_EP0(0x6000)
+,	?PR?*?USB_EP0	
+
+,	?PR?USB_BULK
+,	?PR?*?USB_BULK
+
+,	?PR?USB_CMDS
+,	?PR?*?USB_CMDS
+
+,	?PR?USB
+,	?PR?*?USB
+
+,	?PR?FLASH_READ
+,	?PR?*?FLASH_READ
+)
+
+BANK5
+(
+	?PR?*?FLASH(0x6000)
+
+,	?PR?ST_CMDS
+,	?PR?*?ST_CMDS
+)
+	
+BANK6(
+	?PR?FM(0x6000)
+,	?PR?*?FM
+
+,	?PR?remote
+,	?PR?*?remote
+)
+
+
+BANK7
+(
+	?PR?_DSP_DOWNLOAD?DSPUSER(0x6000)
+,	?PR?DSP_PLAYINIT?DSPUSER
+
+,	?PR?DSP_SURROUNDDISABLE?DSPUSER
+,	?PR?DSP_SURROUNDENABLE?DSPUSER
+
+//,	?CO?PlayMenu
+,	?PR?PlayMenu
+,	?PR?*?PlayMenu
+
+,	?CO?Menu_Hzk
+,	?PR?*?Menu_Hzk
+///--sunzhk move here
+,	?PR?USB_I2C?SYSTEM
+,	?PR?_I2C_M_TX?SYSTEM
+,	?PR?I2C_CLR_INT?SYSTEM
+,	?PR?I2C_WAIT_INTPEND?SYSTEM
+,	?PR?_I2C_M_RX?SYSTEM
+,	?PR?USB_ON?SYSTEM
+
+//,	?CO?FLASH_ENHANCE
+,	?PR?FLASH_ENHANCE
+,	?PR?*?FLASH_ENHANCE
+)
+
+
+BANK8
+(
+
+	?CO?LCM_BMP(0x6000)
+,	?PR?LCM_BMP
+,	?PR?*?LCM_BMP
+)
+
+BANK9
+(
+	?PR?DIR_PROCESS(0x6000)
+,	?PR?*?DIR_PROCESS
+)
+PRINT(".\lst\SPDA23xx.m51") RAMSIZE(256) 
+  

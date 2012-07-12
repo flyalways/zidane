@@ -1,0 +1,19 @@
+code void(code *VoicePhase[])(void)=
+{
+	voice_idle,//0
+	voice_init,//1
+    voice_proc,//2
+    voice_endfile,//3
+    voice_playpause,//4
+    voice_stop,//5
+	voice_next,//6
+	voice_prev,//7
+	voice_fastfwd,//8
+    voice_fastrev,//9
+	voice_fffr_end,//10
+	voice_set_repAB,//11
+	voice_volup,//12
+	voice_voldn,//13
+	voice_back2uplevel,//14
+	voice_menu//15
+};
