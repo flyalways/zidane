@@ -1,3 +1,6 @@
+#ifndef _EXGLOBAL_H_
+#define _EXGLOBAL_H_
+
 extern		BYTE	gc_LCD_Gobal_J;
 extern		BYTE	gc_Global_I;
 extern		WORD	gw_Global_J;
@@ -261,4 +264,6 @@ extern	UBYTE   gc_HZKBlock_Num;
 	
 	
   	extern	bit		gbt_USB_Detected;
-	extern	bit		gbt_USB_Detected_backUp;	
+	extern	bit		gbt_USB_Detected_backUp;
+ 
+#endif	

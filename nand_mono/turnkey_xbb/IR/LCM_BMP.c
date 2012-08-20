@@ -11,3 +11,7 @@
 	#include "..\IR\LCM_BMP_96x32.c"
 #endif
 
+#if (LCM_SIZE == 2)
+	#include "..\IR\LCM_BMP_160x120.c"
+#endif
+

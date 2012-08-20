@@ -1,13 +1,23 @@
-#define Model	0
+///////////////////////////////////////////////////////////////////////////////
+//
+// Central control and definition for LCM, UI and FM
+//
+///////////////////////////////////////////////////////////////////////////////
+#ifndef _UI_CONFIG_H_
+#define _UI_CONFIG_H_
+#include "SPDA2K.h"
+
+#define SERIAL_MONO     FEATURE_ON      // Flag for lcd type
+#define LCM_SIZE        2               // 0=128x64, 1=96x32, 2=160x120
+#define Model	        1               // 0: 64 pins, 1: 128 pins in evaluation board.
+#define LCM_TEST_ONLY   FEATURE_OFF
+#define LCM_TEST_INIT   FEATURE_OFF
 
 #if Model==0
 #define CAR_64  //S+input set build target
 #else
 #define EVB_128
 #endif
-
-#define LCM_SIZE    0   // 0=128x64  1=96x32
-
 
 #define     LCM_ID3HZK_CHS      15//0
 #define     LCM_ID3HZK_CHT      16//1 
@@ -37,3 +47,4 @@
 
 #define     FM_MODULE           FM_AS6300       //set FM_module  
 
+#endif

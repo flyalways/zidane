@@ -10,7 +10,7 @@
 #if (LCM_SIZE==1)
 #define C_LCM_ROW_MAX     2
 #endif
-#if (LCM_SIZE==0)
+#if (LCM_SIZE==0)||(LCM_SIZE==2)
 #define C_LCM_ROW_MAX     4
 #endif
 

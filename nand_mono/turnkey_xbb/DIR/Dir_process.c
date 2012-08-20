@@ -23,7 +23,7 @@
 #define DIR_OFFSET        0     
 #define Glass_ColumnNum  96     
 #endif
-#if (LCM_SIZE==0)
+#if (LCM_SIZE==0)||(LCM_SIZE==2)
 #define C_LCM_ROW_MAX     4     
 #define C_BUF_LENGTH	128 //512/4
 #define C_BUF_STRING	122 //取小於128-5且為偶數者
@@ -1474,7 +1474,7 @@ void DirManagement_Init()
 		UI_DispGet_ChildName();
 	}
 
-	#if (LCM_SIZE==0)
+	#if (LCM_SIZE==0)||(LCM_SIZE==2)
 	LCM_ShowFloderIcon(0);  //20090216 chiayen test
 	#endif
 	if(gw_TotalNumber)
@@ -1748,7 +1748,7 @@ void DirManagement_Process() //adjust code to match both music and voice case, C
 					FatherDir_FDBInit(gc_FatherIndex);
 					if(gc_FatherIndex)
 				 	{
-						#if (LCM_SIZE==0)
+						#if (LCM_SIZE==0)||(LCM_SIZE==2)
 						UI_DispGet_FatherName();
 						#endif
 					}
@@ -1761,7 +1761,7 @@ void DirManagement_Process() //adjust code to match both music and voice case, C
 					FatherDir_FDBInit(gc_FatherIndex);
 					if(gc_FatherIndex)
 				 	{
-						#if (LCM_SIZE==0)
+						#if (LCM_SIZE==0)||(LCM_SIZE==2)
 						UI_DispGet_FatherName();
 						#endif
 					}
@@ -1771,7 +1771,7 @@ void DirManagement_Process() //adjust code to match both music and voice case, C
 				UI_DispGet_ChildName();
 				if(!gc_FatherIndex)
 				{
-					#if (LCM_SIZE==0)
+					#if (LCM_SIZE==0)||(LCM_SIZE==2)
 					LCM_ShowFloderIcon(0);  //20090216 chiayen test
 					#endif
 				}
@@ -2184,7 +2184,7 @@ void UI_Disp_ChildName(void)//tc_mode for color project
 	#if (LCM_SIZE==1)
 	for(tc_i=0; tc_i<C_LCM_ROW_MAX; tc_i++)
 	#endif
-	#if (LCM_SIZE==0)
+	#if (LCM_SIZE==0)||(LCM_SIZE==2)
 	for(tc_i=1; tc_i<C_LCM_ROW_MAX; tc_i++)
 	#endif
 	{
@@ -2203,7 +2203,7 @@ void UI_Disp_ChildName(void)//tc_mode for color project
 				#if (LCM_SIZE==1)
 				LCD_disp_HZK_string((tc_i-1)*2, &gc_DirLCMtempBuf[tw_TempIndex+5], gc_DirLCMtempBuf[tw_TempIndex+2], gc_DirLCMtempBuf[tw_TempIndex+4], DIR_OFFSET, 0);
 				#endif
-				#if (LCM_SIZE==0)
+				#if (LCM_SIZE==0)||(LCM_SIZE==2)
 				LCD_disp_HZK_string(tc_i*2, &gc_DirLCMtempBuf[tw_TempIndex+5], gc_DirLCMtempBuf[tw_TempIndex+2], gc_DirLCMtempBuf[tw_TempIndex+4], DIR_OFFSET, 0);
 				#endif
 			}
@@ -2212,7 +2212,7 @@ void UI_Disp_ChildName(void)//tc_mode for color project
 				#if (LCM_SIZE==1)
 				LCD_disp_HZK_string((tc_i-1)*2, &gc_DirLCMtempBuf[tw_TempIndex+5], gc_DirLCMtempBuf[tw_TempIndex+2], gc_DirLCMtempBuf[tw_TempIndex+4], DIR_OFFSET, 1);
 				#endif
-				#if (LCM_SIZE==0)
+				#if (LCM_SIZE==0)||(LCM_SIZE==2)
 				LCD_disp_HZK_string(tc_i*2, &gc_DirLCMtempBuf[tw_TempIndex+5], gc_DirLCMtempBuf[tw_TempIndex+2], gc_DirLCMtempBuf[tw_TempIndex+4], DIR_OFFSET, 1);
 				#endif
 			}

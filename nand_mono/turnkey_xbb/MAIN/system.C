@@ -884,7 +884,7 @@ U8 code LCM_BmpUSBRlogo[]=	//USB Read
 
 void LCM_Disp_USBLine()  //for diaplay USB
 {
-	#if(LCM_SIZE==0)
+	#if(LCM_SIZE==0)||(LCM_SIZE==2)
 	U8  code X_C_IdleLogo[]={4,33,33,50,0,2};//offset3:start_column,offset5:start_page
 	#endif
 	#if(LCM_SIZE==1)
@@ -912,7 +912,7 @@ void LCM_Disp_XBMPArray_USB(U8 *Condition,U8 *Data)//_PLAY_&_USB_
 
 void LCM_Disp_USBRWLogo(U8 Condition)	//USB 0:(Read); 1:(Write)
 {
-	#if(LCM_SIZE==0)
+	#if(LCM_SIZE==0)||(LCM_SIZE==2)
 	U8  code X_C_TranLogo[]={4,33,33,50,0,2};//offset3:start_column,offset5:start_page
 	#endif
 	#if(LCM_SIZE==1)

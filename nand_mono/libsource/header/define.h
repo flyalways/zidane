@@ -23,7 +23,14 @@
 #define U16			unsigned short	//!< A 16-bit integer type.
 #define U32			unsigned long	//!< A 32-bit integer type.
 
+//-----------------------------------------------------------------------------
+// Define a better series of macro for data type to be a standard.
+//-----------------------------------------------------------------------------
+#define uint8		unsigned char
+#define uint16		unsigned int
 
+#define sint8		signed char
+#define sint16		signed int
 
 union LWDataType {
     	LWORD LW;
@@ -54,6 +61,9 @@ union WORDDataType {
 
 #define     FAIL            1
 #define     SUCCESS         0
+
+#define     FEATURE_ON      2
+#define     FEATURE_OFF     1
 
 /*------------ Card In -------------*/
 

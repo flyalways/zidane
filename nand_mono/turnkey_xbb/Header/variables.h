@@ -1,3 +1,6 @@
+#ifndef _VARIABLES_H_
+#define _VARIABLES_H_
+
 #include "define.h"
 
 extern	data 	bit gb_SDNoFileflag; 
@@ -84,3 +87,4 @@ extern code U8 LanguageTable[];
 extern U8 gc_language_offset;
 extern xdata U8 gc_Num_Flag;
 
+#endif

@@ -94,13 +94,17 @@ void LRC_LCMFillColumn(U8 tc_Page,U8 tc_CurrentColumn,U8 tc_TotalColumn);
 void LCM_disp_HZKCharBMP(U8 Page, U8 Column,U8 *BMPdataBuf, U8 CharOrWord,U8 reverse);
 U8 LCM_Disp_FileName(U8 *DataBuf,U8 tc_ISNOrUnicode, U8 nByte,U8 DispOnOff);
 U8 LCM_UNICODE_HZK_GET_BMP(U8 tc_HighByte, U8 tc_LowByte,U8 * tc_BmpBuf,U8 tbt_UnicodeOrISN);
+
+
 extern void LCM_ShowChar16x14(U8 Num,U8 tc_column);
 
 extern code U8 CharIcon8x16[];  //0916
 
 extern xdata U8 gc_IRNum_Count;
 extern void Menu_Disp_Item_Play(U8 tc_MenuType,U8 tc_Select,U8 tc_RefreshType);	  //tc_RefreshType always =1;
-
+extern void lcm_write_command(uint8 comamnd);
+extern void lcm_write_data(uint8 content);
+extern void lcm_init(void);
 
 void LCM_ShowCompanyLogo(void)
 {
@@ -889,7 +893,7 @@ void LCM_init_process(void)
 {
 	U8 i;
 
-#if(SERIAL_MONO == FEATURE_ON)  // Re-#define to mine
+#if (SERIAL_MONO == FEATURE_ON)  // Re-#define to mine
     lcm_init_spi();
 #else
 	LCM_Init();
@@ -907,6 +911,8 @@ void LCM_init_process(void)
 //U8 code LCM_InitCommand[]={0xe2,0xa2,0xa0,0xc8,0xa6,0xa4,0x26,0x81,0x10,0x2f,0x40,0xaf};//ST7565
 
 U8 code LCM_InitCommand[]={0xe2,0xa2,0xa0,0xc8,0xa6,0xa4,0x25,0x81,0x10,0x2f,0x40,0xaf};//ST7565
+
+
 void LCM_Init(void)
 {
 	U8 i;
@@ -929,6 +935,7 @@ void LCM_Init(void)
 }
 
 
+#if (SERIAL_MONO == FEATURE_OFF) // Re #define this function to mine lcm_clear_screen()
 void LCM_clear(void)
 {	
 	U8 i;
@@ -936,7 +943,7 @@ void LCM_clear(void)
 	for (i=0; i<8; i++)
 		LCM_erase_one_page(i);	
 }
-
+#endif
 
 void LCM_clear_dir(void)  //20090216 chiayen add 
 {	

@@ -1,3 +1,6 @@
+#ifndef _EX_USB_DATA_H_
+#define _EX_USB_DATA_H_
+
 extern unsigned char code Standard_INQUIRY_Format[];
 extern unsigned char code Standard_INQUIRY_Format_SDMMC[];
 extern unsigned char code DeviceQualifier_DescriptorTable[10];
@@ -12,3 +15,5 @@ extern unsigned char code iConfiguraiton_DescriptorTable[10];
 extern unsigned char code iDeviceQualifierString_DescriptorTable[10];
 extern unsigned char code iInterface_DescriptorTable[10] ;
 extern unsigned char code TOC_PMA_ATIP_Format[];
+
+#endif

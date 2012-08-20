@@ -4,6 +4,9 @@
 *       (c) Copyright 2007, SUNPLUS mMedia Inc., Hsinchu, Taiwan R.O.C.
 *                               All Right Reserved
 ****************************** Shi-Jay Weng *******************************/
+#ifndef SPDA2K_H
+#define SPDA2K_H
+
 #include    <stdio.h>
 #include    <stdlib.h>
 #include    <string.h> 
@@ -20,3 +23,5 @@
 #include    "EXCODE.h"                 	/* CODE Data          		  */
 #include    "EX_USB_Data.h"             /* USB Data          		  */
 #include    "EX_Flash_code.h"
+
+#endif

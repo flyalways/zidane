@@ -10,7 +10,7 @@
 #include "..\header\variables.h"
 
 #include "..\..\libsource\header\UI_config.h"
-#if (LCM_SIZE==0)
+#if (LCM_SIZE==0)||(LCM_SIZE==2)
 	#include "..\IR\LCM_BMP_128x64_Play.c"
 #endif
 #if (LCM_SIZE==1)
@@ -1003,7 +1003,7 @@ void play_proc()
                         }
                         if(gc_Num_Flag==0 && gc_ShowTimer==0 && gb_PickSong==0 && gb_ChannelSet==0  && gs_System_State.c_Phase == TASK_PHASE_PLAYACT)  //ryantest
                         {
-                            #if(LCM_SIZE==0)
+                            #if(LCM_SIZE==0)||(LCM_SIZE==2)
                             LRC_LCMDisplayString(&gc_LrcDisplayBuf,gc_LrcCurrentLen-1,16);
 							//===sunzhk add 100428
 							LCM_erase_one_page(6);
@@ -1539,7 +1539,7 @@ void Play_SourceDetect_Process()
 		U8 tc_CurrentCard;//20090803 chiayen add for media change
 		tc_CurrentCard=gc_CurrentCard; //20090803 chiayen add for media change		
 
-        #if(LCM_SIZE==0)    // 128x64
+        #if(LCM_SIZE==0)||(LCM_SIZE==2)    // 128x64
         LCM_ClearScreen();
 		LCM_ShowPlayTime(0);
         #endif

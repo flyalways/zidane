@@ -91,7 +91,7 @@ void init_system(void)
 	 * Set GPIO directions.  GPIO usage may vary between different turnkeys.
 	 **************************************************************************/
 	P1 = 0xff;	// P1 output high to turn off transistor and to avoid input grounded.
-	CPU_REG[0x02] = 0x00;
+	CPU_REG[0x02] = 0x07; // P1, 2, 3 is output for serial LCM
    	P3 = 0xff;	// P3 output high to turn off transistor and to avoid input grounded.
 	CPU_REG[0x03] = 0x02;	// set P3.1 UART Tx pin output enabled.
 

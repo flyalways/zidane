@@ -1,3 +1,5 @@
+#ifndef _PROTOTYP_H_
+#define _PROTOTYP_H_
 
 /* -------------------------------------------------------------------------
    USB.C
@@ -480,4 +482,4 @@ extern void Lyric_GetTimeStamp(void);
 extern U8 Lyric_FileSearch(void);
 extern U8 Lyric_ReadLrcFile(U8 tc_ReadNextSector);
 
-
+#endif

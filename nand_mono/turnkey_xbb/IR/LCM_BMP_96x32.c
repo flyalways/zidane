@@ -514,7 +514,7 @@ void LCM_init_process(void)
 	#if(LCM_SIZE==1)
 	U8 code LCM_InitCommand[]={0xe2,0xa2,0xa0,0xc8,0xa6,0xa4,0x22,0x81,0x1c,0x2f,0x40,0xaf};//96x32
 	#endif
-	#if(LCM_SIZE==0)
+	#if(LCM_SIZE==0)||(LCM_SIZE==2)
 	U8 code LCM_InitCommand[]={0xe2,0xa2,0xa0,0xc8,0xa6,0xa4,0x24,0x81,24,0x2f,0x40,0xaf};//128x64
 	#endif
 #endif
@@ -656,7 +656,7 @@ void LCM_Disp_PCConnect()  //for display USB
 
 void LCM_Disp_PC()  //for display USB
 {
-	#if(LCM_SIZE==0)
+	#if(LCM_SIZE==0)||(LCM_SIZE==2)
 	U8  code X_C_PC[]={4,24,24,86,0,0};//offset3:start_column,offset5:start_page
 	#endif
 	#if(LCM_SIZE==1)
@@ -669,7 +669,7 @@ void LCM_Disp_PC()  //for display USB
 
 void LCM_Disp_MyMP3Logo()	//for dispale USB
 {
-	#if(LCM_SIZE==0)
+	#if(LCM_SIZE==0)||(LCM_SIZE==2)
 	U8  code X_C_MyMP3Logo[]={4,38,38,8,0,0};//offset3:start_column,offset5:start_page
 	#endif
 	#if(LCM_SIZE==1)

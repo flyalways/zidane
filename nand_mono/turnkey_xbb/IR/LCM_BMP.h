@@ -1,3 +1,9 @@
+#ifndef _LCM_BMP_H_
+#define _LCM_BMP_H_
+
+#include "SPDA2K.H"
+#include "lcm_bmp_driver.h" // This is ugly.
+
 /*
 sbit LCM_CS				= P1^1; //P1^1;
 sbit LCM_RESET			= P1^2;
@@ -21,11 +27,55 @@ sbit LCM_BACKLIGHT		= P1^0;
 	#define LCM_CS_HI		LCM_CS = 1
 	#define LCM_CS_LO		LCM_CS = 0
 #endif
-//-------------------------------------------------------------
-#if 0
-#define LCM_write_command(tc_Data)
-#define LCM_write_data(tc_Data)
+
+//-----------------------------------------------------------------------------
+// Definitions for SPI interface LCM.
+// 
+// RESETB:  P1^2
+// CSB:     FMGPIO11
+// A0:      FMGPIO4
+// CLK:     P1^1
+// SI:      FMGPIO17
+// BACKLB:  P1^0
+//-----------------------------------------------------------------------------
+sbit LCM_BLB  =   P1^0;
+sbit SPI_CLK  =   P1^1;
+sbit LCM_RSTB =   P1^2;
+
+#define LCM_BL_SPI_LO       LCM_BLB = 0
+#define LCM_BL_SPI_HI       LCM_BLB = 1
+#define LCM_RSTB_SPI_LO     LCM_RSTB = 0
+#define LCM_RSTB_SPI_HI     LCM_RSTB = 1
+#define LCM_CSB_SPI_LO      XBYTE[0xB402] &= ~0x08  // FMGPIO11
+#define LCM_CSB_SPI_HI      XBYTE[0xB402] |= 0x08
+#define LCM_A0_SPI_CMD      XBYTE[0xB401] &= ~0x10  //FMGPIO4
+#define LCM_A0_SPI_DATA     XBYTE[0xB401] |= 0x10
+
+#define SPI_CLK_CLR         SPI_CLK = 0
+#define SPI_CLK_SET         SPI_CLK = 1
+#define SPI_SI_CLR          XBYTE[0xB403] &= ~0x02
+#define SPI_SI_SET          XBYTE[0xB403] |= 0x02
+
+// Definition for different size LCM
+typedef enum
+{
+	LCM_SIZE_128X64=0,
+	LCM_SIZE_96X32=1,
+	LCM_SIZE_160X120=2,
+} lcm_size_t;
+
+// Use new driver for serial mono lcd.
+// In order to use the dev package as much as possible without too big change,
+// below 3 functions are composed to replace the original ones.
+#if (SERIAL_MONO == FEATURE_ON)
+
+#define LCM_write_command(tc_Data)  lcm_write_command(tc_Data)
+#define LCM_write_data(tc_Data)     lcm_write_data(tc_Data)
+#define LCM_set_address(page, col)  lcm_set_addr(page, col)
+#define LCM_clear()                 lcm_clear_screen()
+
 #else
+
 #define LCM_write_command(tc_Data)  do {\
 	XBYTE[0xB400]=1; \
 	FLASH_REG[0x00]=0x00; \
@@ -40,11 +90,14 @@ sbit LCM_BACKLIGHT		= P1^0;
 	LCM_A0P_HI; LCM_CS_LO; DEVICE_REG[0x20] = tc_Data; LCM_CS_HI; \
 	FLASH_REG[0x00]=0x01; \
 	} while(0)
-#endif
+
+#endif // #if (SERIAL_MONO == FEATURE_ON)
 
 #define	LCM_ReverseOffset	36
 
+#if (SERIAL_MONO == FEATURE_OFF)  // Re-#define to mine
 extern void LCM_set_address(U8 page, U8 col);
+#endif
 
 extern void LCM_Display(void);
 extern void LCM_ShowCompanyLogo(void);
@@ -71,7 +124,9 @@ extern void LCM_ShowBitRate(void);
 extern void LCM_ClearScreen(void);
 extern void LCM_init_process(void);
 extern void LCM_Init(void);
-extern void LCM_clear(void);
+#if (SERIAL_MONO == FEATURE_OFF)  // Re-#define to mine
+extern void LCM_clear(void); // re-#define this function to mine
+#endif
 extern void LCM_clear_dir(void);  //20090216 chiayen add 
 extern void LCM_ShowSongNumber(void);
 extern void LCM_ShowSongNumber_dir(void);
@@ -97,6 +152,4 @@ extern U8 LCM_UNICODE_HZK_GET_BMP(U8 tc_HighByte, U8 tc_LowByte,U8 * tc_BmpBuf,U
 
 extern void LCM_ShowWait();
 
-
-
-
+#endif

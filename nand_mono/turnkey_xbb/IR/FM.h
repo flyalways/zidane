@@ -5,19 +5,26 @@ sbit	FM_CLK=P1^3;
 #ifdef CAR_64
 sbit 	FM_EN=P1^3; 
 #elif defined(EVB_128)  
+// We don't use P1_2 to enable FM on the EVB_128. We use AS6300.
+// P1_2 is dedicated to serial LCM.
 sbit	FM_EN=P1^2;
+//sbit	FM_EN=P3^4;
 #elif defined(EVB_64)
 sbit 	FM_EN=P1^2;
 #endif
 
 // For ZI2020, AS6300
+// ???
 sbit	FM_SCL=P1^3;
 sbit	FM_SDA=P3^1;
 
 #ifdef CAR_64
 sbit	FM_RSTB=P1^3;
-#elif defined(EVB_128)  
+#elif defined(EVB_128)
+// We don't use P1_2 to enable FM on the EVB_128. We use AS6300.
+// P1_2 is dedicated to serial LCM. 
 sbit	FM_RSTB=P1^2;
+//sbit	FM_RSTB=P3^4; // ??? temporary mess
 #elif defined(EVB_64)
 sbit	FM_RSTB=P1^2;
 #endif
