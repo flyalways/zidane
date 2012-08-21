@@ -1,9 +1,0 @@
-extern unsigned char code Standard_INQUIRY_Format_SDMMC[];
-extern unsigned char code Request_Sense_Format[];
-extern unsigned char code DeviceQualifier_DescriptorTable[10];
-extern unsigned char code Device_DescriptorTable[18];
-extern unsigned char code Configuration_DescriptorTable[39];
-extern unsigned char code iLANGID_DescriptorTable[4];
-extern unsigned char code iManufacturer_DescriptorTable[26];
-extern unsigned char code iProduct_DescriptorTable[48];
-extern unsigned char code iSerialNumber_DescriptorTable[28];
