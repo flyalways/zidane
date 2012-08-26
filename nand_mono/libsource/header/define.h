@@ -581,7 +581,10 @@ union WORDDataType {
 
 #define MCU_12MHz               		1 
 
-//------------------------------------------UI
+//-----------------------------------------------------------------------------
+// Key pressed. This info means which key is pressed we detect. This is 1st
+// level of key info. Value's range is 0x00-0x0F.
+//-----------------------------------------------------------------------------
 #define C_Key_Play                  0x01
 #define C_Key_Mode                  0x02
 #define C_Key_Next					0x03
@@ -590,7 +593,10 @@ union WORDDataType {
 #define C_Key_Voldn                	0x06
 #define C_Key_Rec                   0x07
 #define C_Key_Vol	 				0x08
-//======================================================
+
+//-----------------------------------------------------------------------------
+// Long keys. 0x10 | (key pressed)
+//-----------------------------------------------------------------------------
 #define C_LKey_Play                 0x11
 #define C_LKey_Mode                 0x12
 #define C_LKey_Next                 0x13

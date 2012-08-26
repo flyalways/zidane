@@ -1,4 +1,4 @@
-#include "..\IR\BMP_128x64.c"
+#include "..\IR\bmp_160x120.c"
 #include "..\header\variables.h"
 
 data	bit	gb_LCM_reverse=0;

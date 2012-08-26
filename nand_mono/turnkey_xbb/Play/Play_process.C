@@ -10,11 +10,14 @@
 #include "..\header\variables.h"
 
 #include "..\..\libsource\header\UI_config.h"
-#if (LCM_SIZE==0)||(LCM_SIZE==2)
+#if (LCM_SIZE==0)
 	#include "..\IR\LCM_BMP_128x64_Play.c"
 #endif
 #if (LCM_SIZE==1)
 	#include "..\IR\LCM_BMP_96x32_Play.c"
+#endif
+#if (LCM_SIZE==2)
+    #include "..\IR\lcm_bmp_160x120_play.c"
 #endif
 
 

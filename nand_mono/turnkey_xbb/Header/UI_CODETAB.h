@@ -51,7 +51,7 @@ UBYTE code IdleTask_PhaseTab[]=
 	C_NULLPHASE,
 	C_NULLPHASE
 };
-
+#message "Does index mismatch with key event?"
 UBYTE code PlayTask_PhaseTab[]=
 {
 	C_PlayIdle,//none

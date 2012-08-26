@@ -4,6 +4,9 @@
 #include "lcm_bmp_driver.h"
 
 //-----------------------------------------------------------------------------
+// uint8 * _convert_to_gray_16 (uint 
+
+//-----------------------------------------------------------------------------
 // void lcm_set_fmgpio(lcm_switch_fmgpio_action_t action)
 //
 // Description: because we multiplex FMGPIO between nand and GPIO. When we talk
@@ -146,6 +149,97 @@ void lcm_write_data (uint8 content)
 }
 
 //-----------------------------------------------------------------------------
+// void lcm_write_data_cooked (uint8 content)
+//
+// Description: For most of dot's data here, one dot is controlled by one bit.
+//              But we use multi gray level LCD, which means we could use several
+//              bits to light one dot.
+//              For 16-level ST7587, 4 bits control one dot. So we have to construct
+//              4 bits mode data based on the 1 bit mode passed in.
+//              
+// Input:
+//
+// Output:
+//
+// Created: 2012/08/26
+//-----------------------------------------------------------------------------
+void lcm_write_data_cooked (uint8 content)
+{
+    uint8 i;
+    uint8 j;
+    uint8 data_tmp=0;
+
+    // Set FMGPIO function as GPIO. Ususally, FMGPIO is used as nand.
+    // When we talk to lcd, we set it as GPIO.
+    // I don't know how much this switch process will impact performance. Let's see.
+    // 
+    // 2010/07/24, William:
+    // Below is preparation to use serial interface for LCM by switching nand
+    // interface to GPIO interface.
+    // There is a concern about this preparation. We only need to do
+    // this one time. But every call of this function to send one byte of data
+    // will do below again. Usually, this function will be called hundreds of
+    // times when we reflash the data in DDRAM.
+    // A better way could be seperate this preparation to be another function,
+    // which should be called every time before we start to write data to LCM.
+    // But there are many places to be modified...
+    XBYTE[0xB400] = 0;      // GPIO mode.
+    XBYTE[0xB405] |= 0x10;  // Enable FMGPIO4 output as A0.
+    XBYTE[0xB406] |= 0x08;  // Enable FMGPIO11 output as CSB.
+    XBYTE[0xB407] |= 0x02;  // Enable FMGPIO17 output as SI.
+
+    for (j=0; j<4; j++)
+    {
+        // Construct the high 4 bits in 1 byte.
+        if (content&0x01)
+        {
+            data_tmp |= 0xF0;
+        }
+        else
+        {
+            data_tmp &= 0x0F;
+        }
+
+        // Construct the low 4 bits in 1 byte.
+        if (content&0x02)
+        {
+            data_tmp |= 0x0F;
+        }
+        else
+        {
+            data_tmp &= 0xF0;
+        }
+              
+        LCM_CSB_SPI_LO;         // LCM chip select.
+        LCM_A0_SPI_DATA;        // LCM data mode.
+
+        // Send 8 bit data through IO mode.
+        // MSB first.
+        for (i=0; i<8; i++)
+        {
+            SPI_CLK_CLR;
+            if ((data_tmp&0x80)) // MSB first
+            {
+                SPI_SI_SET;
+            }
+            else
+            {
+                SPI_SI_CLR;
+            }
+            SPI_CLK_SET;
+    
+            data_tmp = data_tmp<<1;
+        }
+        LCM_CSB_SPI_HI;
+
+        content = content>>2;   // Construct next two bits to be 1 byte.
+    }
+ 
+    XBYTE[0xB400] = 1;      // Nand mode.
+    FLASH_REG[0x00]=0x01;   // nandauto enable
+}
+
+//-----------------------------------------------------------------------------
 // void lcm_clear_ddram (void)
 //
 // Description: Clear the whole DDRAM 384x160 in ST7587
@@ -242,6 +336,7 @@ void lcm_clear_screen(void)
 //
 // Created: 2012/07/30
 //-----------------------------------------------------------------------------
+#if 0 // Take this out from build to save some code space since we don't use it.
 void lcm_light_screen(void)
 {
     uint16  i;
@@ -260,7 +355,6 @@ void lcm_light_screen(void)
     size_ddram = size_x*size_y/8*4; // 4 bits for each dot.
 
     // Set the display area to be the whole screen 160x120
-#if 1
     lcm_write_command   (ST7587_COL_ADDR_SET_CMD);      // Set column address
     lcm_write_data      (ST7587_COL_ADDR_SET_START_HI);
     lcm_write_data      (ST7587_COL_ADDR_SET_START_LO);
@@ -272,7 +366,7 @@ void lcm_light_screen(void)
     lcm_write_data      (ST7587_ROW_ADDR_SET_START_LO);
     lcm_write_data      (ST7587_ROW_ADDR_SET_END_HI);
     lcm_write_data      (ST7587_ROW_ADDR_SET_END_LO);
-#endif
+
     lcm_write_command   (ST7587_WRITE_DISPLAY_DATA_CMD);            
     for(i=0; i<size_ddram; i++)
     {
@@ -280,6 +374,7 @@ void lcm_light_screen(void)
     }
  
 }
+#endif
 
 //-----------------------------------------------------------------------------
 // void lcm_disp_area(uint16 row, uint16 col, uint8 level)
@@ -349,6 +444,7 @@ void lcm_disp_area(uint16 row, uint16 col, uint8 level)
 //
 // Created: 2012/07/30
 //-----------------------------------------------------------------------------
+#if (LCM_TEST_ONLY == FEATURE_ON)
 void lcm_test_exclusive(void)
 {
     while(1)
@@ -362,6 +458,7 @@ void lcm_test_exclusive(void)
         USER_DelayDTms(1000);
     }
 }
+#endif
 
 //-----------------------------------------------------------------------------
 // Description: initialize LCM hardware interface and LCM function.
@@ -498,6 +595,7 @@ void lcm_init_spi (void)
 //
 // Created: 2012/08/07
 //-----------------------------------------------------------------------------
+#if (LCM_TEST_INIT == FEATURE_ON)
 void lcm_init_spi_simple (void)
 {
     // Enable IO output. The LCM pin definition is in LCM_BMP.h
@@ -552,6 +650,7 @@ void lcm_init_spi_simple (void)
     lcm_test_exclusive();
 #endif
 }
+#endif
 
 //----------------------------------------------------------------------------
 // Description: Set the display area boundary before sending the DDRAM data.

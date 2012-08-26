@@ -321,7 +321,7 @@ U8 Key_Detect(void)
 	{
         
 	  	gc_KeyEvent = gc_KeyValue;
-//dbprintf("gc_KeyEvent= %bx \n",gc_KeyEvent);
+        dbprintf ("[%-10s] line %-4d: gc_KeyEvent = %x\n", __FILE__, __LINE__, gc_KeyEvent);
 	   	gc_KeyValue = 0;
 	
 		if(gc_Task_Current!=C_Task_USB)  //20090107 chiayen modify

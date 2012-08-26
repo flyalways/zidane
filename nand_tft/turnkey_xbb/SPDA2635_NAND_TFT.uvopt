@@ -1178,7 +1178,7 @@
 
   <Group>
     <GroupName>LogData</GroupName>
-    <tvExp>0</tvExp>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <File>
@@ -1187,10 +1187,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>0</ColumnNumber>
+      <ColumnNumber>1</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>0</TopLine>
-      <CurrentLine>0</CurrentLine>
+      <TopLine>103</TopLine>
+      <CurrentLine>135</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\LogData\logData.c</PathWithFileName>
       <FilenameWithoutPath>logData.c</FilenameWithoutPath>
@@ -1395,10 +1395,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>0</ColumnNumber>
+      <ColumnNumber>122</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
       <TopLine>19</TopLine>
-      <CurrentLine>41</CurrentLine>
+      <CurrentLine>45</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\LCM\TFT_displayB7.c</PathWithFileName>
       <FilenameWithoutPath>TFT_displayB7.c</FilenameWithoutPath>
@@ -1549,9 +1549,9 @@
   </Group>
 
   <AlienFiles>
-    <PathWithFilename>C:\chanweif\work\project\spda2635\SPDA2635-NAND-1.8-TFT_101111_source\libsource\FLASH\Flash_Init.C</PathWithFilename>
-    <TopLine>424</TopLine>
-    <CurrentLine>437</CurrentLine>
+    <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_tft\turnkey_xbb\LCM\TFT_CONFIG\TFT_CONFIG_18H.H</PathWithFilename>
+    <TopLine>236</TopLine>
+    <CurrentLine>236</CurrentLine>
     <Constant>0</Constant>
     <WindowPosition>
       <length>0</length>
@@ -1575,9 +1575,9 @@
   </AlienFiles>
 
   <AlienFiles>
-    <PathWithFilename>C:\CHANWEIF\WORK\PROJECT\SPDA2635\SPDA2635-NAND-1.8-TFT_101111_SOURCE\LIBSOURCE\HEADER\RAMBASE.H</PathWithFilename>
-    <TopLine>1</TopLine>
-    <CurrentLine>10</CurrentLine>
+    <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_tft\LIBSOURCE\HEADER\GLOBAL.H</PathWithFilename>
+    <TopLine>75</TopLine>
+    <CurrentLine>93</CurrentLine>
     <Constant>0</Constant>
     <WindowPosition>
       <length>0</length>
@@ -1627,9 +1627,9 @@
   </AlienFiles>
 
   <AlienFiles>
-    <PathWithFilename>C:\chanweif\work\project\spda2635\SPDA2635-NAND-1.8-TFT_101111_source\LIBSOURCE\HEADER\GLOBAL.H</PathWithFilename>
-    <TopLine>75</TopLine>
-    <CurrentLine>93</CurrentLine>
+    <PathWithFilename>C:\CHANWEIF\WORK\PROJECT\SPDA2635\SPDA2635-NAND-1.8-TFT_101111_SOURCE\LIBSOURCE\HEADER\RAMBASE.H</PathWithFilename>
+    <TopLine>1</TopLine>
+    <CurrentLine>10</CurrentLine>
     <Constant>0</Constant>
     <WindowPosition>
       <length>0</length>
@@ -1653,9 +1653,35 @@
   </AlienFiles>
 
   <AlienFiles>
-    <PathWithFilename>C:\chanweif\work\project\spda2635\SPDA2635-NAND-1.8-TFT_101111_source\turnkey_xbb\LCM\TFT_CONFIG\TFT_CONFIG_18H.H</PathWithFilename>
-    <TopLine>236</TopLine>
-    <CurrentLine>236</CurrentLine>
+    <PathWithFilename>C:\chanweif\work\project\spda2635\SPDA2635-NAND-1.8-TFT_101111_source\libsource\FLASH\Flash_Init.C</PathWithFilename>
+    <TopLine>424</TopLine>
+    <CurrentLine>437</CurrentLine>
+    <Constant>0</Constant>
+    <WindowPosition>
+      <length>0</length>
+      <flags>0</flags>
+      <showCmd>0</showCmd>
+      <MinPosition>
+        <xPos>0</xPos>
+        <yPos>0</yPos>
+      </MinPosition>
+      <MaxPosition>
+        <xPos>0</xPos>
+        <yPos>0</yPos>
+      </MaxPosition>
+      <NormalPosition>
+        <Top>0</Top>
+        <Left>0</Left>
+        <Right>0</Right>
+        <Bottom>0</Bottom>
+      </NormalPosition>
+    </WindowPosition>
+  </AlienFiles>
+
+  <AlienFiles>
+    <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_tft\libsource\FLASH\Flash_COMM.C</PathWithFilename>
+    <TopLine>878</TopLine>
+    <CurrentLine>878</CurrentLine>
     <Constant>0</Constant>
     <WindowPosition>
       <length>0</length>
@@ -3019,7 +3045,7 @@
     <ActiveMDIGroup>0</ActiveMDIGroup>
     <MDIGroup>
       <Size>100</Size>
-      <ActiveTab>5</ActiveTab>
+      <ActiveTab>7</ActiveTab>
       <Documents>
         <Doc>
           <Name>.\MAIN\system.C</Name>
@@ -3034,7 +3060,7 @@
           <CurrentLine>437</CurrentLine>
         </Doc>
         <Doc>
-          <Name>\CHANWEIF\WORK\PROJECT\SPDA2635\SPDA2635-NAND-1.8-TFT_101111_SOURCE\LIBSOURCE\HEADER\RAMBASE.H</Name>
+          <Name>C:\CHANWEIF\WORK\PROJECT\SPDA2635\SPDA2635-NAND-1.8-TFT_101111_SOURCE\LIBSOURCE\HEADER\RAMBASE.H</Name>
           <ColumnNumber>8</ColumnNumber>
           <TopLine>1</TopLine>
           <CurrentLine>10</CurrentLine>
@@ -3053,15 +3079,27 @@
         </Doc>
         <Doc>
           <Name>.\LCM\TFT_displayB7.c</Name>
-          <ColumnNumber>0</ColumnNumber>
+          <ColumnNumber>122</ColumnNumber>
           <TopLine>19</TopLine>
-          <CurrentLine>41</CurrentLine>
+          <CurrentLine>45</CurrentLine>
         </Doc>
         <Doc>
           <Name>PLAY\..\LCM\TFT_CONFIG\TFT_CONFIG_18H.H</Name>
           <ColumnNumber>9</ColumnNumber>
           <TopLine>236</TopLine>
           <CurrentLine>236</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>.\LogData\logData.c</Name>
+          <ColumnNumber>1</ColumnNumber>
+          <TopLine>103</TopLine>
+          <CurrentLine>135</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>C:\Users\chanweif\Documents\GitHub\zidane\nand_tft\libsource\FLASH\Flash_COMM.C</Name>
+          <ColumnNumber>3</ColumnNumber>
+          <TopLine>878</TopLine>
+          <CurrentLine>878</CurrentLine>
         </Doc>
       </Documents>
     </MDIGroup>

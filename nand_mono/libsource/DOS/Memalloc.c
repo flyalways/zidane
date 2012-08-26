@@ -52,5 +52,6 @@ xdata	U8	gc_LrcDisplayBuf[LRC_DISPLAY_LYRICS_CHARNUMBER];
 
 xdata U16 gw_PrevTimeSec=0xffff;
 
-xdata U16 gw_init_needed;
+xdata U16 gw_init_needed;               // Each bit is a flag for various initialization.
+                                        // Usually work together with SET_BITx or CLR_BITx.
 

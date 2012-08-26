@@ -1,8 +1,8 @@
 #include "SPDA2K.h"
 #include "..\header\variables.h"
 
-bit gbLKeyTimer_Timeout=0;
-xdata U8 gcGetKey_Timeout=0;
+bit gbLKeyTimer_Timeout=0;                  // Flag for long-press key detect
+xdata U8 gcGetKey_Timeout=0;                // Flag of key scan peroid. One timer peroid.
 
 data U8 gc_IR_Setting=0;
 data bit gb_USB_ISR_Detected=0;
@@ -10,8 +10,8 @@ xdata U8 gc_USBRST_ISR_Detected=0;  //20090630 chiayen add
 data U8 gc_ircount=0;
 data U16 gw_ChangeFrequencyTimer=0;
 data U16 gw_IR_Setting_Timer=0;
-data U16 gw_LogData_Timer=0;
-xdata U8 gc_LogDataFlag=0;
+data U16 gw_LogData_Timer=0;                // times of timer peroid of logging data.
+xdata U8 gc_LogDataFlag=0;                  // Flag of we should log data.
 extern data	bit	gb_Frequency_Song;
 extern xdata	U8	gc_SelectEQ;
 extern xdata	U8	gc_Err;

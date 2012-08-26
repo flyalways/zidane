@@ -25,8 +25,8 @@ xdata	U16	gw_nCompressionLevel; //Jimi 091118
 
 xdata	U16	gw_Disp_CurrentSec=0;
 xdata	U8	gc_XTimeBase=0;
-data	U8	gc_LongKeyTimer=0;
-data	U8	gc_LongKeyDelay=0;
+data	U8	gc_LongKeyTimer=0;              // Count of T0 period: how long has this key been pressed.
+data	U8	gc_LongKeyDelay=0;              // Setpoint of timing length of a long key. Default is MAX_REPEATKEYDELAY.
 
 xdata	U8	gc_UIblock0_index=0;
 xdata	U8	gc_Dosinitfail=0;
@@ -67,13 +67,18 @@ xdata	U8	gc_FatherIndex=0;
 xdata	U8	gc_SetIndex=0;
 xdata	U8	gc_SetNumber=0;
 
-xdata	U8	gc_Vrefinit_Timer=0;
-xdata	U8	gc_KeyValue=0;
-xdata	U8	gc_KeyEvent;
-xdata	U8	gc_PhaseInx=0;
+xdata	U8	gc_Vrefinit_Timer=0;                // Times of timer peroid. The initial value is 60.
+                                                // It means, after 60*timer, we will poll the task event.
 
-xdata	U16	gw_CurrentSec=0;
-xdata	U16	gw_TotalSec=0;
+xdata	U8	gc_KeyValue=0;                      // Cooked "key pressed" info including short and long keys.
+
+xdata	U8	gc_KeyEvent;                        // Initialized by gc_KeyValue, but cooked again to be the index
+                                                // in various task phase tab.
+
+xdata	U8	gc_PhaseInx=0;                      // Task's phase. Be the index of action.
+
+xdata	U16	gw_CurrentSec=0;                    // The latest time point in current song.
+xdata	U16	gw_TotalSec=0;                      // The length of time of a song
 xdata	U8	gc_T0IntervalLSB=C_T0_12MhzLSB;
 xdata	U8	gc_T0IntervalMSB=C_T0_12MhzMSB;
 

@@ -79,16 +79,20 @@ void ProcKey_in_play(void)
 			gc_KeyEvent=0x20;
 		}
 	}
+    dbprintf ("[%-10s] line %-4d: gc_KeyEvent = %x\n", __FILE__, __LINE__, gc_KeyEvent);
+
 	x_gc_temp= PlayTask_PhaseTab[gc_KeyEvent];
     if( x_gc_temp != 9)
     {
        gc_PhaseInx = x_gc_temp;
     }
-	//	gc_PhaseInx=PlayTask_PhaseTab[gc_KeyEvent];
+    dbprintf ("[%-10s] line %-4d: gc_PhaseInx = %x\n", __FILE__, __LINE__, gc_PhaseInx);
+	
 	if((gc_PhaseInx==C_PlayNext)||(gc_PhaseInx==C_PlayPrev))
 	{
 		gw_FileSkipNumber = 0;
 	}
+
 	gc_Dirchange_Timer=0;  //20090216 chiayen add
    	gc_KeyEvent=0;
 }
