@@ -12,6 +12,7 @@
 #define Model	        1               // 0: 64 pins, 1: 128 pins in evaluation board.
 #define LCM_TEST_ONLY   FEATURE_OFF
 #define LCM_TEST_INIT   FEATURE_OFF
+#define UI_TEST_ONLY    FEATURE_OFF     // Infinite function to test UI implementation.
 
 #if Model==0
 #define CAR_64  //S+input set build target

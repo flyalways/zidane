@@ -13,6 +13,7 @@
 #include "..\header\host_init.h"
 #include "..\..\libsource\header\UI_config.h"
 #include "..\header\variables.h"
+#include "../ui/ui.h"
 
 
 xdata U8 gc_KeyDet_Mask=0; 
@@ -146,6 +147,10 @@ void main(void)
 	gc_Vrefinit_Timer=60;
 	XBYTE[0xB421]=0x13;
 	LCM_init_process();
+#if (UI_TEST_ONLY == FEATURE_ON)
+    ui_test();
+#endif
+    ui_disp_hello();
 	
 	if(gbt_USB_Detected)
 	{						 		

@@ -1562,6 +1562,21 @@
             </File>
           </Files>
         </Group>
+        <Group>
+          <GroupName>ui</GroupName>
+          <Files>
+            <File>
+              <FileName>ui.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\ui\ui.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui_impl.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\ui\ui_impl.c</FilePath>
+            </File>
+          </Files>
+        </Group>
       </Groups>
     </Target>
   </Targets>

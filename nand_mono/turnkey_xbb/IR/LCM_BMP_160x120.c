@@ -891,19 +891,20 @@ void LCM_ShowEQIcon(void)
 
 void LCM_init_process(void)
 {
-	U8 i;
+	//U8 i;
 
 #if (SERIAL_MONO == FEATURE_ON)  // Re-#define to mine
     lcm_init_spi();
 #else
 	LCM_Init();
 #endif
-
+    /*
 	LCM_ShowCompanyLogo();  //chiayenmark for car
 	for(i=0;i<=5;i++)
 	{
 		USER_DelayDTms(250);
 	}
+    */
 }
 
 //U8 code LCM_InitCommand[]={0xe2,0xa2,0xa0,0xc8,0xa6,0xa4,0x23,0x81,0x20,0x2f,0x40,0xaf};//ST7565  128*64

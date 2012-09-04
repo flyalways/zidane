@@ -49,8 +49,7 @@ COMMON
 ,	?PR?Host_command_scsi
 ,	?PR?*?Host_command_scsi
 
-,	?PR?LCM_unicode_hzk
-,	?PR?*?LCM_unicode_hzk
+,	?PR?LCM_BMP_DRIVER
 ,	?PR?*?LCM_BMP_driver
 ,	?PR?DOS_FILEPLAY
 ,	?PR?*?DOS_FILEPLAY
@@ -218,6 +217,17 @@ BANK8
 	?CO?LCM_BMP(0x6000)
 ,	?PR?LCM_BMP
 ,	?PR?*?LCM_BMP
+
+//,	?CO?UI
+//,	?PR?UI
+,	?PR?*?UI
+
+,	?CO?UI_IMPL
+//,	?PR?UI_IMPL
+,	?PR?*?UI_IMPL
+
+,	?PR?LCM_unicode_hzk
+,	?PR?*?LCM_unicode_hzk
 )
 
 BANK9
@@ -225,5 +235,6 @@ BANK9
 	?PR?DIR_PROCESS(0x6000)
 ,	?PR?*?DIR_PROCESS
 )
+
 PRINT(".\lst\SPDA23xx.m51") RAMSIZE(256) 
   
