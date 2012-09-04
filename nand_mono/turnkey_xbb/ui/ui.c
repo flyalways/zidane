@@ -19,7 +19,7 @@
 //-----------------------------------------------------------------------------
 void ui_disp_hello (void)
 {
-    _ui_disp_hello_impl();
+    ui_disp_hello_impl();
 }
 
 //-----------------------------------------------------------------------------
@@ -35,7 +35,7 @@ void ui_test(void)
 {
     while(1)
     {
-        lcm_clear_screen();
+        ui_clear_screen();
         ui_disp_hello();
     }
 }
