@@ -488,7 +488,7 @@
 
   <Group>
     <GroupName>SD</GroupName>
-    <tvExp>0</tvExp>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <File>
@@ -658,10 +658,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>86</ColumnNumber>
+      <ColumnNumber>12</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>118</TopLine>
-      <CurrentLine>127</CurrentLine>
+      <TopLine>131</TopLine>
+      <CurrentLine>153</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\MAIN\system.C</PathWithFileName>
       <FilenameWithoutPath>system.C</FilenameWithoutPath>
@@ -899,10 +899,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>91</ColumnNumber>
+      <ColumnNumber>9</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>0</TopLine>
-      <CurrentLine>0</CurrentLine>
+      <TopLine>1</TopLine>
+      <CurrentLine>18</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\LIBSOURCE\DOS\Memalloc.c</PathWithFileName>
       <FilenameWithoutPath>Memalloc.c</FilenameWithoutPath>
@@ -920,10 +920,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>17</ColumnNumber>
+      <ColumnNumber>4</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>0</TopLine>
-      <CurrentLine>0</CurrentLine>
+      <TopLine>621</TopLine>
+      <CurrentLine>648</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\Play\Play_process.C</PathWithFileName>
       <FilenameWithoutPath>Play_process.C</FilenameWithoutPath>
@@ -1077,10 +1077,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>11</ColumnNumber>
+      <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>0</TopLine>
-      <CurrentLine>0</CurrentLine>
+      <TopLine>102</TopLine>
+      <CurrentLine>135</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\LogData\logData.c</PathWithFileName>
       <FilenameWithoutPath>logData.c</FilenameWithoutPath>
@@ -1164,10 +1164,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>0</ColumnNumber>
+      <ColumnNumber>21</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
       <TopLine>1</TopLine>
-      <CurrentLine>1</CurrentLine>
+      <CurrentLine>15</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\IR\LCM_BMP.c</PathWithFileName>
       <FilenameWithoutPath>LCM_BMP.c</FilenameWithoutPath>
@@ -1178,10 +1178,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>31</ColumnNumber>
+      <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>509</TopLine>
-      <CurrentLine>509</CurrentLine>
+      <TopLine>720</TopLine>
+      <CurrentLine>720</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\IR\LCM_BMP_driver.c</PathWithFileName>
       <FilenameWithoutPath>LCM_BMP_driver.c</FilenameWithoutPath>
@@ -1192,10 +1192,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>0</ColumnNumber>
+      <ColumnNumber>26</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>0</TopLine>
-      <CurrentLine>0</CurrentLine>
+      <TopLine>3</TopLine>
+      <CurrentLine>22</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\IR\LCM_unicode_hzk.c</PathWithFileName>
       <FilenameWithoutPath>LCM_unicode_hzk.c</FilenameWithoutPath>
@@ -1283,10 +1283,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>0</ColumnNumber>
+      <ColumnNumber>16</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>0</TopLine>
-      <CurrentLine>0</CurrentLine>
+      <TopLine>337</TopLine>
+      <CurrentLine>353</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\Play\PlayMenu.C</PathWithFileName>
       <FilenameWithoutPath>PlayMenu.C</FilenameWithoutPath>
@@ -1316,10 +1316,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>0</ColumnNumber>
+      <ColumnNumber>39</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>0</TopLine>
-      <CurrentLine>0</CurrentLine>
+      <TopLine>45</TopLine>
+      <CurrentLine>66</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\Menu_Hzk\Menu_Hzk.c</PathWithFileName>
       <FilenameWithoutPath>Menu_Hzk.c</FilenameWithoutPath>
@@ -1354,12 +1354,12 @@
       <GroupNumber>16</GroupNumber>
       <FileNumber>54</FileNumber>
       <FileType>1</FileType>
-      <tvExp>1</tvExp>
+      <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>1</ColumnNumber>
+      <ColumnNumber>11</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
       <TopLine>1</TopLine>
-      <CurrentLine>1</CurrentLine>
+      <CurrentLine>36</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\ui\ui.c</PathWithFileName>
       <FilenameWithoutPath>ui.c</FilenameWithoutPath>
@@ -1370,10 +1370,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>5</ColumnNumber>
+      <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>7</TopLine>
-      <CurrentLine>40</CurrentLine>
+      <TopLine>243</TopLine>
+      <CurrentLine>247</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\ui\ui_impl.c</PathWithFileName>
       <FilenameWithoutPath>ui_impl.c</FilenameWithoutPath>
@@ -1381,9 +1381,9 @@
   </Group>
 
   <AlienFiles>
-    <PathWithFilename>C:\USERS\CHANWEIF\DOCUMENTS\GITHUB\ZIDANE\NAND_MONO\TURNKEY_XBB\IR\LCM_BMP_DRIVER.H</PathWithFilename>
-    <TopLine>92</TopLine>
-    <CurrentLine>92</CurrentLine>
+    <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\UI\UI_IMPL.H</PathWithFilename>
+    <TopLine>1</TopLine>
+    <CurrentLine>31</CurrentLine>
     <Constant>0</Constant>
     <WindowPosition>
       <length>0</length>
@@ -1407,9 +1407,35 @@
   </AlienFiles>
 
   <AlienFiles>
-    <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\TURNKEY_XBB\IR\LCM_BMP.H</PathWithFilename>
-    <TopLine>67</TopLine>
-    <CurrentLine>73</CurrentLine>
+    <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\ui\ui_music.c</PathWithFilename>
+    <TopLine>1</TopLine>
+    <CurrentLine>8</CurrentLine>
+    <Constant>0</Constant>
+    <WindowPosition>
+      <length>0</length>
+      <flags>0</flags>
+      <showCmd>0</showCmd>
+      <MinPosition>
+        <xPos>0</xPos>
+        <yPos>0</yPos>
+      </MinPosition>
+      <MaxPosition>
+        <xPos>0</xPos>
+        <yPos>0</yPos>
+      </MaxPosition>
+      <NormalPosition>
+        <Top>0</Top>
+        <Left>0</Left>
+        <Right>0</Right>
+        <Bottom>0</Bottom>
+      </NormalPosition>
+    </WindowPosition>
+  </AlienFiles>
+
+  <AlienFiles>
+    <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\Make_2635_Car_NAND.bat</PathWithFilename>
+    <TopLine>1</TopLine>
+    <CurrentLine>12</CurrentLine>
     <Constant>0</Constant>
     <WindowPosition>
       <length>0</length>
@@ -1459,9 +1485,35 @@
   </AlienFiles>
 
   <AlienFiles>
-    <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\lst\SPDA23xx.M51</PathWithFilename>
-    <TopLine>3054</TopLine>
-    <CurrentLine>3088</CurrentLine>
+    <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\SunplusmM.lin</PathWithFilename>
+    <TopLine>163</TopLine>
+    <CurrentLine>163</CurrentLine>
+    <Constant>0</Constant>
+    <WindowPosition>
+      <length>0</length>
+      <flags>0</flags>
+      <showCmd>0</showCmd>
+      <MinPosition>
+        <xPos>0</xPos>
+        <yPos>0</yPos>
+      </MinPosition>
+      <MaxPosition>
+        <xPos>0</xPos>
+        <yPos>0</yPos>
+      </MaxPosition>
+      <NormalPosition>
+        <Top>0</Top>
+        <Left>0</Left>
+        <Right>0</Right>
+        <Bottom>0</Bottom>
+      </NormalPosition>
+    </WindowPosition>
+  </AlienFiles>
+
+  <AlienFiles>
+    <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\UI\UI_BMP.C</PathWithFilename>
+    <TopLine>10</TopLine>
+    <CurrentLine>10</CurrentLine>
     <Constant>0</Constant>
     <WindowPosition>
       <length>0</length>
@@ -1486,8 +1538,8 @@
 
   <AlienFiles>
     <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\IR\LCM_BMP_160X120.C</PathWithFilename>
-    <TopLine>892</TopLine>
-    <CurrentLine>897</CurrentLine>
+    <TopLine>1</TopLine>
+    <CurrentLine>28</CurrentLine>
     <Constant>0</Constant>
     <WindowPosition>
       <length>0</length>
@@ -1511,9 +1563,165 @@
   </AlienFiles>
 
   <AlienFiles>
-    <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\SunplusmM.lin</PathWithFilename>
-    <TopLine>183</TopLine>
-    <CurrentLine>226</CurrentLine>
+    <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\lst\SPDA23xx.M51</PathWithFilename>
+    <TopLine>1149</TopLine>
+    <CurrentLine>1170</CurrentLine>
+    <Constant>0</Constant>
+    <WindowPosition>
+      <length>0</length>
+      <flags>0</flags>
+      <showCmd>0</showCmd>
+      <MinPosition>
+        <xPos>0</xPos>
+        <yPos>0</yPos>
+      </MinPosition>
+      <MaxPosition>
+        <xPos>0</xPos>
+        <yPos>0</yPos>
+      </MaxPosition>
+      <NormalPosition>
+        <Top>0</Top>
+        <Left>0</Left>
+        <Right>0</Right>
+        <Bottom>0</Bottom>
+      </NormalPosition>
+    </WindowPosition>
+  </AlienFiles>
+
+  <AlienFiles>
+    <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\TURNKEY_XBB\IR\LCM_BMP.H</PathWithFilename>
+    <TopLine>57</TopLine>
+    <CurrentLine>74</CurrentLine>
+    <Constant>0</Constant>
+    <WindowPosition>
+      <length>0</length>
+      <flags>0</flags>
+      <showCmd>0</showCmd>
+      <MinPosition>
+        <xPos>0</xPos>
+        <yPos>0</yPos>
+      </MinPosition>
+      <MaxPosition>
+        <xPos>0</xPos>
+        <yPos>0</yPos>
+      </MaxPosition>
+      <NormalPosition>
+        <Top>0</Top>
+        <Left>0</Left>
+        <Right>0</Right>
+        <Bottom>0</Bottom>
+      </NormalPosition>
+    </WindowPosition>
+  </AlienFiles>
+
+  <AlienFiles>
+    <PathWithFilename>C:\USERS\CHANWEIF\DOCUMENTS\GITHUB\ZIDANE\NAND_MONO\LIBSOURCE\HEADER\RAMBASE.H</PathWithFilename>
+    <TopLine>169</TopLine>
+    <CurrentLine>178</CurrentLine>
+    <Constant>0</Constant>
+    <WindowPosition>
+      <length>0</length>
+      <flags>0</flags>
+      <showCmd>0</showCmd>
+      <MinPosition>
+        <xPos>0</xPos>
+        <yPos>0</yPos>
+      </MinPosition>
+      <MaxPosition>
+        <xPos>0</xPos>
+        <yPos>0</yPos>
+      </MaxPosition>
+      <NormalPosition>
+        <Top>0</Top>
+        <Left>0</Left>
+        <Right>0</Right>
+        <Bottom>0</Bottom>
+      </NormalPosition>
+    </WindowPosition>
+  </AlienFiles>
+
+  <AlienFiles>
+    <PathWithFilename>C:\USERS\CHANWEIF\DOCUMENTS\GITHUB\ZIDANE\NAND_MONO\LIBSOURCE\HEADER\DEFINE.H</PathWithFilename>
+    <TopLine>1</TopLine>
+    <CurrentLine>10</CurrentLine>
+    <Constant>0</Constant>
+    <WindowPosition>
+      <length>0</length>
+      <flags>0</flags>
+      <showCmd>0</showCmd>
+      <MinPosition>
+        <xPos>0</xPos>
+        <yPos>0</yPos>
+      </MinPosition>
+      <MaxPosition>
+        <xPos>0</xPos>
+        <yPos>0</yPos>
+      </MaxPosition>
+      <NormalPosition>
+        <Top>0</Top>
+        <Left>0</Left>
+        <Right>0</Right>
+        <Bottom>0</Bottom>
+      </NormalPosition>
+    </WindowPosition>
+  </AlienFiles>
+
+  <AlienFiles>
+    <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\IR\LCM_BMP_128x64.c</PathWithFilename>
+    <TopLine>75</TopLine>
+    <CurrentLine>96</CurrentLine>
+    <Constant>0</Constant>
+    <WindowPosition>
+      <length>0</length>
+      <flags>0</flags>
+      <showCmd>0</showCmd>
+      <MinPosition>
+        <xPos>0</xPos>
+        <yPos>0</yPos>
+      </MinPosition>
+      <MaxPosition>
+        <xPos>0</xPos>
+        <yPos>0</yPos>
+      </MaxPosition>
+      <NormalPosition>
+        <Top>0</Top>
+        <Left>0</Left>
+        <Right>0</Right>
+        <Bottom>0</Bottom>
+      </NormalPosition>
+    </WindowPosition>
+  </AlienFiles>
+
+  <AlienFiles>
+    <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\IR\LCM_BMP_128x64_Play.c</PathWithFilename>
+    <TopLine>863</TopLine>
+    <CurrentLine>863</CurrentLine>
+    <Constant>0</Constant>
+    <WindowPosition>
+      <length>0</length>
+      <flags>0</flags>
+      <showCmd>0</showCmd>
+      <MinPosition>
+        <xPos>0</xPos>
+        <yPos>0</yPos>
+      </MinPosition>
+      <MaxPosition>
+        <xPos>0</xPos>
+        <yPos>0</yPos>
+      </MaxPosition>
+      <NormalPosition>
+        <Top>0</Top>
+        <Left>0</Left>
+        <Right>0</Right>
+        <Bottom>0</Bottom>
+      </NormalPosition>
+    </WindowPosition>
+  </AlienFiles>
+
+  <AlienFiles>
+    <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\IR\LCM_BMP_160X120_PLAY.C</PathWithFilename>
+    <TopLine>879</TopLine>
+    <CurrentLine>879</CurrentLine>
     <Constant>0</Constant>
     <WindowPosition>
       <length>0</length>
@@ -2877,73 +3085,157 @@
     <ActiveMDIGroup>0</ActiveMDIGroup>
     <MDIGroup>
       <Size>100</Size>
-      <ActiveTab>8</ActiveTab>
+      <ActiveTab>0</ActiveTab>
       <Documents>
         <Doc>
-          <Name>.\MAIN\system.C</Name>
-          <ColumnNumber>86</ColumnNumber>
-          <TopLine>118</TopLine>
-          <CurrentLine>127</CurrentLine>
-        </Doc>
-        <Doc>
-          <Name>.\ui\ui.c</Name>
-          <ColumnNumber>1</ColumnNumber>
+          <Name>IR\..\IR\LCM_BMP_160X120.C</Name>
+          <ColumnNumber>59</ColumnNumber>
           <TopLine>1</TopLine>
-          <CurrentLine>1</CurrentLine>
-        </Doc>
-        <Doc>
-          <Name>\USERS\CHANWEIF\DOCUMENTS\GITHUB\ZIDANE\NAND_MONO\TURNKEY_XBB\IR\LCM_BMP_DRIVER.H</Name>
-          <ColumnNumber>8</ColumnNumber>
-          <TopLine>92</TopLine>
-          <CurrentLine>92</CurrentLine>
+          <CurrentLine>28</CurrentLine>
         </Doc>
         <Doc>
           <Name>.\IR\LCM_BMP.c</Name>
-          <ColumnNumber>0</ColumnNumber>
-          <TopLine>1</TopLine>
-          <CurrentLine>1</CurrentLine>
-        </Doc>
-        <Doc>
-          <Name>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\SunplusmM.lin</Name>
-          <ColumnNumber>2</ColumnNumber>
-          <TopLine>183</TopLine>
-          <CurrentLine>226</CurrentLine>
-        </Doc>
-        <Doc>
-          <Name>IR\..\IR\LCM_BMP_160X120.C</Name>
-          <ColumnNumber>12</ColumnNumber>
-          <TopLine>892</TopLine>
-          <CurrentLine>897</CurrentLine>
-        </Doc>
-        <Doc>
-          <Name>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\lst\SPDA23xx.M51</Name>
-          <ColumnNumber>0</ColumnNumber>
-          <TopLine>3054</TopLine>
-          <CurrentLine>3088</CurrentLine>
-        </Doc>
-        <Doc>
-          <Name>.\IR\LCM_BMP_driver.c</Name>
-          <ColumnNumber>31</ColumnNumber>
-          <TopLine>1</TopLine>
-          <CurrentLine>1</CurrentLine>
-        </Doc>
-        <Doc>
-          <Name>.\ui\ui_impl.c</Name>
-          <ColumnNumber>18</ColumnNumber>
-          <TopLine>7</TopLine>
-          <CurrentLine>16</CurrentLine>
-        </Doc>
-        <Doc>
-          <Name>\USERS\CHANWEIF\DOCUMENTS\GITHUB\ZIDANE\NAND_MONO\LIBSOURCE\HEADER\UI_CONFIG.H</Name>
-          <ColumnNumber>34</ColumnNumber>
+          <ColumnNumber>21</ColumnNumber>
           <TopLine>1</TopLine>
           <CurrentLine>15</CurrentLine>
         </Doc>
         <Doc>
+          <Name>PLAY\..\IR\LCM_BMP_160X120_PLAY.C</Name>
+          <ColumnNumber>5</ColumnNumber>
+          <TopLine>879</TopLine>
+          <CurrentLine>879</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\IR\LCM_BMP_128x64_Play.c</Name>
+          <ColumnNumber>0</ColumnNumber>
+          <TopLine>863</TopLine>
+          <CurrentLine>863</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\IR\LCM_BMP_128x64.c</Name>
+          <ColumnNumber>0</ColumnNumber>
+          <TopLine>75</TopLine>
+          <CurrentLine>96</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>.\LogData\logData.c</Name>
+          <ColumnNumber>0</ColumnNumber>
+          <TopLine>102</TopLine>
+          <CurrentLine>135</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>\USERS\CHANWEIF\DOCUMENTS\GITHUB\ZIDANE\NAND_MONO\LIBSOURCE\HEADER\DEFINE.H</Name>
+          <ColumnNumber>8</ColumnNumber>
+          <TopLine>1</TopLine>
+          <CurrentLine>10</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>\USERS\CHANWEIF\DOCUMENTS\GITHUB\ZIDANE\NAND_MONO\LIBSOURCE\HEADER\RAMBASE.H</Name>
+          <ColumnNumber>8</ColumnNumber>
+          <TopLine>169</TopLine>
+          <CurrentLine>178</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>.\IR\LCM_unicode_hzk.c</Name>
+          <ColumnNumber>26</ColumnNumber>
+          <TopLine>3</TopLine>
+          <CurrentLine>22</CurrentLine>
+        </Doc>
+        <Doc>
           <Name>..\LIBSOURCE\USB\..\..\TURNKEY_XBB\IR\LCM_BMP.H</Name>
+          <ColumnNumber>8</ColumnNumber>
+          <TopLine>57</TopLine>
+          <CurrentLine>74</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>.\Menu_Hzk\Menu_Hzk.c</Name>
+          <ColumnNumber>39</ColumnNumber>
+          <TopLine>45</TopLine>
+          <CurrentLine>66</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>.\Play\PlayMenu.C</Name>
+          <ColumnNumber>16</ColumnNumber>
+          <TopLine>337</TopLine>
+          <CurrentLine>353</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\lst\SPDA23xx.M51</Name>
+          <ColumnNumber>120</ColumnNumber>
+          <TopLine>1149</TopLine>
+          <CurrentLine>1170</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>UI\UI_BMP.C</Name>
+          <ColumnNumber>19</ColumnNumber>
+          <TopLine>10</TopLine>
+          <CurrentLine>10</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>.\MAIN\system.C</Name>
+          <ColumnNumber>12</ColumnNumber>
+          <TopLine>131</TopLine>
+          <CurrentLine>153</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>.\IR\LCM_BMP_driver.c</Name>
+          <ColumnNumber>0</ColumnNumber>
+          <TopLine>720</TopLine>
+          <CurrentLine>720</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\SunplusmM.lin</Name>
           <ColumnNumber>46</ColumnNumber>
-          <TopLine>67</TopLine>
-          <CurrentLine>73</CurrentLine>
+          <TopLine>163</TopLine>
+          <CurrentLine>163</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>..\LIBSOURCE\DOS\Memalloc.c</Name>
+          <ColumnNumber>9</ColumnNumber>
+          <TopLine>1</TopLine>
+          <CurrentLine>18</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>.\Play\Play_process.C</Name>
+          <ColumnNumber>4</ColumnNumber>
+          <TopLine>621</TopLine>
+          <CurrentLine>648</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>.\ui\ui_impl.c</Name>
+          <ColumnNumber>0</ColumnNumber>
+          <TopLine>243</TopLine>
+          <CurrentLine>247</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>.\ui\ui.c</Name>
+          <ColumnNumber>11</ColumnNumber>
+          <TopLine>1</TopLine>
+          <CurrentLine>36</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>\USERS\CHANWEIF\DOCUMENTS\GITHUB\ZIDANE\NAND_MONO\LIBSOURCE\HEADER\UI_CONFIG.H</Name>
+          <ColumnNumber>35</ColumnNumber>
+          <TopLine>1</TopLine>
+          <CurrentLine>15</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\Make_2635_Car_NAND.bat</Name>
+          <ColumnNumber>0</ColumnNumber>
+          <TopLine>1</TopLine>
+          <CurrentLine>12</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\ui\ui_music.c</Name>
+          <ColumnNumber>4</ColumnNumber>
+          <TopLine>1</TopLine>
+          <CurrentLine>8</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>UI\UI_IMPL.H</Name>
+          <ColumnNumber>20</ColumnNumber>
+          <TopLine>1</TopLine>
+          <CurrentLine>31</CurrentLine>
         </Doc>
       </Documents>
     </MDIGroup>

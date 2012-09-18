@@ -42,12 +42,8 @@ COMMON
 ,	?PR?dspphysic
 ,	?PR?*?dspphysic	
 		
-,	?PR?Host_phy
-,	?PR?*?Host_phy
-
-,	?CO?Host_command_scsi
-,	?PR?Host_command_scsi
-,	?PR?*?Host_command_scsi
+,	?PR?LCM_unicode_hzk
+,	?PR?*?LCM_unicode_hzk
 
 ,	?PR?LCM_BMP_DRIVER
 ,	?PR?*?LCM_BMP_driver
@@ -172,6 +168,13 @@ BANK5
 
 ,	?PR?ST_CMDS
 ,	?PR?*?ST_CMDS
+
+,	?PR?Host_phy
+,	?PR?*?Host_phy
+
+,	?CO?Host_command_scsi
+,	?PR?Host_command_scsi
+,	?PR?*?Host_command_scsi
 )
 	
 BANK6(
@@ -226,15 +229,15 @@ BANK8
 //,	?PR?UI_IMPL
 ,	?PR?*?UI_IMPL
 
-,	?PR?LCM_unicode_hzk
-,	?PR?*?LCM_unicode_hzk
 )
 
 BANK9
 (
 	?PR?DIR_PROCESS(0x6000)
 ,	?PR?*?DIR_PROCESS
+
 )
+
 
 PRINT(".\lst\SPDA23xx.m51") RAMSIZE(256) 
   

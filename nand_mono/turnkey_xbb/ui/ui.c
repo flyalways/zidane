@@ -33,10 +33,6 @@ void ui_disp_hello (void)
 #if (UI_TEST_ONLY == FEATURE_ON)
 void ui_test(void)
 {
-    while(1)
-    {
-        ui_clear_screen();
-        ui_disp_hello();
-    }
+    ui_test_impl();
 }
 #endif
