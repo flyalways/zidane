@@ -890,7 +890,7 @@ void LCM_init_process(void)
 	U8 i;
 
 #if(SERIAL_MONO == FEATURE_ON)  // Re-#define to mine
-    lcm_init_spi();
+    ui_init_spi();
 #else
 	LCM_Init();
 #endif

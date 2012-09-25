@@ -9,6 +9,7 @@
 #ifndef _UI_H_
 #define _UI_H_
 
+void ui_init(void);
 void ui_disp_hello(void);
 void ui_test(void);
 

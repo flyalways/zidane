@@ -71,8 +71,8 @@ typedef enum
 
 #define LCM_write_command(tc_Data)  lcm_write_command(tc_Data)
 #define LCM_write_data(tc_Data)     lcm_write_data(tc_Data)
-#define LCM_set_address(page, col)  lcm_set_addr(page, col)
-#define LCM_clear()                 lcm_clear_screen()
+#define LCM_set_address(page, col)  lcm_set_address(page, col)
+#define LCM_clear()
 
 #else
 

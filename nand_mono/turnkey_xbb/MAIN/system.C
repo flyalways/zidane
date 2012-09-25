@@ -326,7 +326,9 @@ U8 Key_Detect(void)
 	{
         
 	  	gc_KeyEvent = gc_KeyValue;
-        dbprintf ("[%-10s] line %-4d: gc_KeyEvent = %x\n", __FILE__, __LINE__, gc_KeyEvent);
+        // 2012.09.23 William: below statement will cause system crashing down.
+        // The reason should be stack overflow (the string is too long).
+        //dbprintf ("[%-10s] line %-4d: gc_KeyEvent = %x\n", __FILE__, __LINE__, gc_KeyEvent);
 	   	gc_KeyValue = 0;
 	
 		if(gc_Task_Current!=C_Task_USB)  //20090107 chiayen modify

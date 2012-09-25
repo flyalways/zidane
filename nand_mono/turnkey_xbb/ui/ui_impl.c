@@ -7,23 +7,175 @@
 ******************************************************************************/
 #include <assert.h>
 #include "SPDA2K.H"
+#include "../IR/LCM_BMP.h"
 #include "../IR/lcm_bmp_driver.h"
 #include "ui_impl.h"
 
 #include "ui_bmp.c"
 
 //-----------------------------------------------------------------------------
-// _ui_set_bound
+// void ui_clear_ddram (void)
 //
-// Description: Set the area in the LCD which we'd like to light using dot as
-//              the unit. This is extremely conbined with the way to generate
-//              dot matrix array data which is sent to LCM later.
+// Description: Clear the whole DDRAM 384x160 in ST7587
 //
-// Created: 2012/08/27
+// Input:
+//
+// Output:
+//
+// Created: 2012/08/14
 //-----------------------------------------------------------------------------
+void ui_clear_ddram (void)
+{
+    uint16 i;
+    uint16 size_x;
+    uint16 size_y;
+    uint16 size_ddram;
+
+    size_x = LCM_RESOLUTION_LIMIT_X;
+    size_y = LCM_RESOLUTION_LIMIT_Y;
+    size_ddram = size_x*size_y/8*4;
+
+    lcm_write_command   (ST7587_COL_ADDR_SET_CMD);      // Set column address
+    lcm_write_data      (0x00);
+    lcm_write_data      (0x00);
+    lcm_write_data      (0x00);
+    lcm_write_data      (0x7F);                         // 384 columns
+    lcm_write_command   (ST7587_ROW_ADDR_SET_CMD);      // Set row address
+    lcm_write_data      (0x00);
+    lcm_write_data      (0x00);
+    lcm_write_data      (0x00);
+    lcm_write_data      (0x9F);                         // 160 rows
+
+    lcm_write_command   (ST7587_WRITE_DISPLAY_DATA_CMD);            
+    // write 0 to all DDRAM
+    for(i=0; i<size_ddram; i++)
+    {
+        lcm_write_data(0x00);
+    }    
+}
 
 
+//-----------------------------------------------------------------------------
+// When you see the GWMS9708D from the front, the display area is:
+//      X: SEG383 ~ SEG224
+//      Y: COM0 ~ COM159
+// That area is fixed phasically. We only can change the scan direction from DDRAM.
+// The best way to use GWMS9708D is see the display area as:
+//      X: SEG224 ~ SEG383
+//      Y: COM159 ~ COM0
+// With that, the scan direction is Y reversed.
+//
+// Below initialization is based on the order in scan_dir_t. I plan to use
+// designated initializer to initialize this array, but the compiler does not
+// support this C99 feature.
+//-----------------------------------------------------------------------------
+area_offset_t AREA_OFFSET[]=
+{
+    {225, 0},
+    {0,   0},
+    {225, 40},
+    {225, 0}, 
+};
 
+//-----------------------------------------------------------------------------
+// ui_get_offset
+//
+// Get the pixel offset info based on the scan direction setting.
+//
+// Created: 2012/09/01
+//-----------------------------------------------------------------------------
+void ui_get_offset (scan_dir_t direction, area_offset_t * p_offset)
+{
+    p_offset->offset_x = AREA_OFFSET[direction].offset_x;
+    p_offset->offset_y = AREA_OFFSET[direction].offset_y;
+    #if 0
+    switch (direction)
+    {
+        case NORMAL:
+            p_offset->offset_x = 225;
+            p_offset->offset_y = 0;
+            break;
+        case REVERSE_X:
+            p_offset->offset_x = 0;
+            p_offset->offset_y = 0;
+            break;
+        case REVERSE_Y:
+            p_offset->offset_x = 225;
+            p_offset->offset_y = 40;
+            break;
+        case REVERSE_ALL:
+            p_offset->offset_x = 0;
+            p_offset->offset_y = 40;
+            break;
+        default:
+            dbprintf("%s, %d line, scan direction setting is incorrect\n",
+                        __FILE__,
+                        __LINE__);
+            break;
+    }
+    #endif            
+}
+
+//-----------------------------------------------------------------------------
+// ui_set_disp_bound
+//
+// Before sending data into DDRAM, this function will configure the display area.
+// This area concept here means the area in the LCD not the area in the DDRAM.
+// Given the area in LCD and scan direction setting, this function will configure
+// the area in the DDRAM.
+//
+// This function can only care about ST7587. In that case, the bound setting is:
+//      X: 0-383
+//      Y: 0-159
+//
+// If considering GWMS9708D, the bound setting will be:
+//      X: 0-158.
+//      Y: 0-119
+//
+// Created: 2012/09/01
+//-----------------------------------------------------------------------------
+void ui_set_disp_bound(uint16 x_start,
+                        uint16 x_end,
+                        uint16 y_start,
+                        uint16 y_end
+                        )
+{
+    area_offset_t offset;
+
+    ui_get_offset (LCM_SCAN_DIRECTION_SETTING, &offset);
+
+    x_start += offset.offset_x;
+    x_end += offset.offset_x;
+    y_start += offset.offset_y;
+    y_end += offset.offset_y;
+
+    if ( (x_start>x_end)
+        ||(x_end>158)
+        ||(y_start>y_end)
+        ||(y_end>119)
+        ||(x_start%3)
+        ||((x_end-2)%3) )
+    {
+        dbprintf("%s, %d line: display bound setting incorrect!\n",
+                __FILE__,
+                __LINE__);
+    }
+
+    // REVISIT: should check if the X bound is 3's multiple.
+    x_start = x_start/3;
+    x_end   = (x_end)/3;
+
+    lcm_write_command   (ST7587_COL_ADDR_SET_CMD);      // Set column address
+    lcm_write_data      (x_start>>8);
+    lcm_write_data      (x_start&0xFF);
+    lcm_write_data      (x_end>>8);
+    lcm_write_data      (x_end&0xFF);
+    lcm_write_command   (ST7587_ROW_ADDR_SET_CMD);      // Set row address
+    lcm_write_data      (y_start>>8);
+    lcm_write_data      (y_start&0xFF);
+    lcm_write_data      (y_end>>8);
+    lcm_write_data      (y_end&0xFF);
+}
 
 //-----------------------------------------------------------------------------
 // ui_fill_ui_data
@@ -98,7 +250,7 @@ void ui_disp_ui_data (ui_data_t * p_ui_data)
        )
     {
         // I do not check if the origin x is 3's multiple.
-        lcm_set_disp_bound (bound_offset_x,
+        ui_set_disp_bound  (bound_offset_x,
                             bound_offset_x+bound_length-1,
                             bound_offset_y,
                             bound_offset_y+bound_height-1);
@@ -143,7 +295,7 @@ void ui_disp_ui_data (ui_data_t * p_ui_data)
         for (i=0; i<line; i++)
         {
             
-            lcm_set_disp_bound (bound_offset_x,
+            ui_set_disp_bound  (bound_offset_x,
                                 bound_offset_x+bound_length_mod-1,
                                 bound_offset_y,
                                 bound_offset_y+1);
@@ -248,15 +400,39 @@ void ui_disp_hello_impl(void)
                       sizeof(bmp_hello)-3);
 }
 
-
 //-----------------------------------------------------------------------------
-// ui_clear_screen
+// Description: clear the DDRAM by writing 0 to all DDRAM space in valid range.
+// Input:
 //
-// Created: 2012/08/27
+// Output:
+//
+// Created: 2012/07/24
 //-----------------------------------------------------------------------------
 void ui_clear_screen(void)
 {
-    lcm_clear_screen();
+    uint16  i;
+    uint16  size_x; // column counter
+    uint16  size_y; // row counter
+    uint16  size_ddram;
+    
+    size_x = LCM_RESOLUTION_X;
+    size_y = LCM_RESOLUTION_Y;
+    
+    if ((size_x>384)||(size_y>160))   
+    {
+        //dbprintf("Warning: LCM resolution is too bigger!\n");
+    }
+
+    size_ddram = size_x*size_y/8*4; // 4 bits for each dot.
+
+    ui_set_disp_bound (0, LCM_RESOLUTION_X-1, 0, LCM_RESOLUTION_Y-1);
+
+    lcm_write_command   (ST7587_WRITE_DISPLAY_DATA_CMD);            
+    // write 0 to all DDRAM
+    for(i=0; i<size_ddram; i++)
+    {
+        lcm_write_data(0x00);
+    }    
 }
 
 //-----------------------------------------------------------------------------
@@ -289,6 +465,8 @@ void ui_test_impl(void)
     while(1)
     {
         ui_show_demo_menu();
+        ui_clear_screen();
+        ui_disp_hello_impl();
         ui_clear_screen();
     }
     

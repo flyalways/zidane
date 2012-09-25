@@ -1,5 +1,6 @@
 #include "..\IR\bmp_160x120.c"
 #include "..\header\variables.h"
+#include "..\ui\ui.h"
 
 data	bit	gb_LCM_reverse=0;
 data	bit	gb_ChannelSet=0;  
@@ -894,7 +895,7 @@ void LCM_init_process(void)
 	//U8 i;
 
 #if (SERIAL_MONO == FEATURE_ON)  // Re-#define to mine
-    lcm_init_spi();
+    ui_init();
 #else
 	LCM_Init();
 #endif

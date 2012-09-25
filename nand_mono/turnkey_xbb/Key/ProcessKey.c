@@ -79,14 +79,18 @@ void ProcKey_in_play(void)
 			gc_KeyEvent=0x20;
 		}
 	}
-    dbprintf ("[%-10s] line %-4d: gc_KeyEvent = %x\n", __FILE__, __LINE__, gc_KeyEvent);
+    // 2012.09.23 William: below statement will cause system crashing down.
+    // The reason should be stack overflow (the string is too long).
+    //dbprintf ("[%-10s] line %-4d: gc_KeyEvent = %x\n", __FILE__, __LINE__, gc_KeyEvent);
 
 	x_gc_temp= PlayTask_PhaseTab[gc_KeyEvent];
     if( x_gc_temp != 9)
     {
        gc_PhaseInx = x_gc_temp;
     }
-    dbprintf ("[%-10s] line %-4d: gc_PhaseInx = %x\n", __FILE__, __LINE__, gc_PhaseInx);
+    // 2012.09.23 William: below statement will cause system crashing down.
+    // The reason should be stack overflow (the string is too long).
+    //dbprintf ("[%-10s] line %-4d: gc_PhaseInx = %x\n", __FILE__, __LINE__, gc_PhaseInx);
 	
 	if((gc_PhaseInx==C_PlayNext)||(gc_PhaseInx==C_PlayPrev))
 	{

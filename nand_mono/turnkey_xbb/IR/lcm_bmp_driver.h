@@ -121,15 +121,11 @@ typedef struct
 } area_offset_t;
 
 // function declaration
+void lcm_set_address(uint8, uint8);
 void lcm_write_command(uint8 command);
 void lcm_write_data(uint8 content);
-void lcm_clear_screen(void);
-void lcm_init_spi(void);
-void lcm_set_addr(uint8 row, uint8 col);
 void lcm_test_exclusive(void);
 void lcm_set_fmgpio(lcm_switch_fmgpio_action_t action);
-void lcm_clear_ddram(void);
 void lcm_write_data_cooked(uint8 content);
-void lcm_set_disp_bound(uint16, uint16, uint16, uint16);
 
 #endif

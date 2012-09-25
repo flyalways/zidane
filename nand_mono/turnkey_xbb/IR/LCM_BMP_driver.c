@@ -58,126 +58,8 @@
 * send data into DDRAM. And then if you only change the row bound later, the column
 * bound will also be reset to the begining based on the previous setting.
 ******************************************************************************/   
+#if (SERIAL_MONO == FEATURE_ON)
 
-// When you see the GWMS9708D from the front, the display area is:
-//      X: SEG383 ~ SEG224
-//      Y: COM0 ~ COM159
-// That area is fixed phasically. We only can change the scan direction from DDRAM.
-// The best way to use GWMS9708D is see the display area as:
-//      X: SEG224 ~ SEG383
-//      Y: COM159 ~ COM0
-// With that, the scan direction is Y reversed.
-//
-// Below initialization is based on the order in scan_dir_t. I plan to use
-// designated initializer to initialize this array, but the compiler does not
-// support this C99 feature.
-area_offset_t AREA_OFFSET[]=
-{
-    {225, 0},
-    {0,   0},
-    {225, 40},
-    {225, 0}, 
-};
-
-//-----------------------------------------------------------------------------
-// lcm_get_offset
-//
-// Get the pixel offset info based on the scan direction setting.
-//
-// Created: 2012/09/01
-//-----------------------------------------------------------------------------
-void lcm_get_offset (scan_dir_t direction, area_offset_t * p_offset)
-{
-    p_offset->offset_x = AREA_OFFSET[direction].offset_x;
-    p_offset->offset_y = AREA_OFFSET[direction].offset_y;
-    #if 0
-    switch (direction)
-    {
-        case NORMAL:
-            p_offset->offset_x = 225;
-            p_offset->offset_y = 0;
-            break;
-        case REVERSE_X:
-            p_offset->offset_x = 0;
-            p_offset->offset_y = 0;
-            break;
-        case REVERSE_Y:
-            p_offset->offset_x = 225;
-            p_offset->offset_y = 40;
-            break;
-        case REVERSE_ALL:
-            p_offset->offset_x = 0;
-            p_offset->offset_y = 40;
-            break;
-        default:
-            dbprintf("%s, %d line, scan direction setting is incorrect\n",
-                        __FILE__,
-                        __LINE__);
-            break;
-    }
-    #endif            
-}
-
-//-----------------------------------------------------------------------------
-// lcm_set_disp_bound
-//
-// Before sending data into DDRAM, this function will configure the display area.
-// This area concept here means the area in the LCD not the area in the DDRAM.
-// Given the area in LCD and scan direction setting, this function will configure
-// the area in the DDRAM.
-//
-// This function can only care about ST7587. In that case, the bound setting is:
-//      X: 0-383
-//      Y: 0-159
-//
-// If considering GWMS9708D, the bound setting will be:
-//      X: 0-158.
-//      Y: 0-119
-//
-// Created: 2012/09/01
-//-----------------------------------------------------------------------------
-void lcm_set_disp_bound(uint16 x_start,
-                        uint16 x_end,
-                        uint16 y_start,
-                        uint16 y_end
-                        )
-{
-    area_offset_t offset;
-
-    lcm_get_offset (LCM_SCAN_DIRECTION_SETTING, &offset);
-
-    x_start += offset.offset_x;
-    x_end += offset.offset_x;
-    y_start += offset.offset_y;
-    y_end += offset.offset_y;
-
-    if ( (x_start>x_end)
-        ||(x_end>158)
-        ||(y_start>y_end)
-        ||(y_end>119)
-        ||(x_start%3)
-        ||((x_end-2)%3) )
-    {
-        dbprintf("%s, %d line: display bound setting incorrect!\n",
-                __FILE__,
-                __LINE__);
-    }
-
-    // REVISIT: should check if the X bound is 3's multiple.
-    x_start = x_start/3;
-    x_end   = (x_end-2)/3;
-
-    lcm_write_command   (ST7587_COL_ADDR_SET_CMD);      // Set column address
-    lcm_write_data      (x_start>>8);
-    lcm_write_data      (x_start&0xFF);
-    lcm_write_data      (x_end>>8);
-    lcm_write_data      (x_end&0xFF);
-    lcm_write_command   (ST7587_ROW_ADDR_SET_CMD);      // Set row address
-    lcm_write_data      (y_start>>8);
-    lcm_write_data      (y_start&0xFF);
-    lcm_write_data      (y_end>>8);
-    lcm_write_data      (y_end&0xFF);
-}
     
 //-----------------------------------------------------------------------------
 // void lcm_set_fmgpio(lcm_switch_fmgpio_action_t action)
@@ -225,7 +107,7 @@ void lcm_set_fmgpio(lcm_switch_fmgpio_action_t action)
 // Created: 2012/07/13
 //-----------------------------------------------------------------------------
 void lcm_write_command (uint8 command)
-{
+{   
     uint8 i;
 
     // Set FMGPIO function as GPIO. Ususally, FMGPIO is used as nand.
@@ -273,7 +155,7 @@ void lcm_write_command (uint8 command)
 // Created: 2012/07/13
 //-----------------------------------------------------------------------------
 void lcm_write_data (uint8 content)
-{
+{  
     uint8 i;
 
     // Set FMGPIO function as GPIO. Ususally, FMGPIO is used as nand.
@@ -412,143 +294,22 @@ void lcm_write_data_cooked (uint8 content)
     }
  
     XBYTE[0xB400] = 1;      // Nand mode.
-    FLASH_REG[0x00]=0x01;   // nandauto enable
+    FLASH_REG[0x00]=0x01;   // nandauto enable   
 }
 
 //-----------------------------------------------------------------------------
-// void lcm_clear_ddram (void)
+// lcm_set_address
 //
-// Description: Clear the whole DDRAM 384x160 in ST7587
-//
-// Input:
-//
-// Output:
-//
-// Created: 2012/08/14
+// Description: temporary replacement of original function in the original driver.
 //-----------------------------------------------------------------------------
-void lcm_clear_ddram (void)
+// REVIST!!!
+void lcm_set_address (uint8 page, uint8 col)
 {
-    uint16 i;
-    uint16 size_x;
-    uint16 size_y;
-    uint16 size_ddram;
-
-    size_x = LCM_RESOLUTION_LIMIT_X;
-    size_y = LCM_RESOLUTION_LIMIT_Y;
-    size_ddram = size_x*size_y/8*4;
-
-    lcm_write_command   (ST7587_COL_ADDR_SET_CMD);      // Set column address
-    lcm_write_data      (0x00);
-    lcm_write_data      (0x00);
-    lcm_write_data      (0x00);
-    lcm_write_data      (0x7F);                         // 384 columns
-    lcm_write_command   (ST7587_ROW_ADDR_SET_CMD);      // Set row address
-    lcm_write_data      (0x00);
-    lcm_write_data      (0x00);
-    lcm_write_data      (0x00);
-    lcm_write_data      (0x9F);                         // 160 rows
-
-    lcm_write_command   (ST7587_WRITE_DISPLAY_DATA_CMD);            
-    // write 0 to all DDRAM
-    for(i=0; i<size_ddram; i++)
-    {
-        lcm_write_data(0x00);
-    }    
+    // Make compiler happy.
+    page++;
+    col++;    
 }
 
-//-----------------------------------------------------------------------------
-// Description: clear the DDRAM by writing 0 to all DDRAM space in valid range.
-// Input:
-//
-// Output:
-//
-// Created: 2012/07/24
-//-----------------------------------------------------------------------------
-void lcm_clear_screen(void)
-{
-    uint16  i;
-    uint16  size_x; // column counter
-    uint16  size_y; // row counter
-    uint16  size_ddram;
-    
-    size_x = LCM_RESOLUTION_X;
-    size_y = LCM_RESOLUTION_Y;
-    
-    if ((size_x>384)||(size_y>160))   
-    {
-        //dbprintf("Warning: LCM resolution is too bigger!\n");
-    }
-
-    size_ddram = size_x*size_y/8*4; // 4 bits for each dot.
-
-    #if 0
-    // Set the display area to be the whole screen 160x120.
-    // Because each column address has 3 dots and 4 bits for each dot,
-    // So we only can display 159x120, which means the limit of the
-    // column address is 0x34
-    lcm_write_command   (ST7587_COL_ADDR_SET_CMD);      // Set column address
-    lcm_write_data      (ST7587_COL_ADDR_SET_START_HI);
-    lcm_write_data      (ST7587_COL_ADDR_SET_START_LO);
-    lcm_write_data      (ST7587_COL_ADDR_SET_END_HI);
-    lcm_write_data      (ST7587_COL_ADDR_SET_END_LO);
-    lcm_write_command   (ST7587_ROW_ADDR_SET_CMD);      // Set row address
-    lcm_write_data      (ST7587_ROW_ADDR_SET_START_HI);
-    lcm_write_data      (ST7587_ROW_ADDR_SET_START_LO);
-    lcm_write_data      (ST7587_ROW_ADDR_SET_END_HI);
-    lcm_write_data      (ST7587_ROW_ADDR_SET_END_LO);
-    #endif
-
-    lcm_set_disp_bound (0, LCM_RESOLUTION_X-1, 0, LCM_RESOLUTION_Y-1);
-
-    lcm_write_command   (ST7587_WRITE_DISPLAY_DATA_CMD);            
-    // write 0 to all DDRAM
-    for(i=0; i<size_ddram; i++)
-    {
-        lcm_write_data(0x00);
-    }    
-}
-
-//-----------------------------------------------------------------------------
-// Description: set the DDRAM by writing 0xff to all DDRAM space in valid range.
-// Input:
-//
-// Output:
-//
-// Created: 2012/07/30
-//-----------------------------------------------------------------------------
-#if 0 // Take this out from build to save some code space since we don't use it.
-void lcm_light_screen(void)
-{
-    uint16  i;
-    uint16  size_x; // column counter
-    uint16  size_y; // row counter
-    uint16  size_ddram;
-    
-    size_x = LCM_RESOLUTION_X;
-    size_y = LCM_RESOLUTION_Y;
-    
-    if ((size_x>384)||(size_y>160))   
-    {
-        //dbprintf("Warning: LCM resolution is too bigger!\n");
-    }
-
-    size_ddram = size_x*size_y/8*4; // 4 bits for each dot.
-
-    // Set the display area to be the whole screen 160x120
-    lcm_set_disp_bound( 0,
-                        LCM_RESOLUTION_X-1,
-                        0,
-                        LCM_RESOLUTION_Y-1
-                        );
-
-    lcm_write_command   (ST7587_WRITE_DISPLAY_DATA_CMD);            
-    for(i=0; i<size_ddram; i++)
-    {
-        lcm_write_data(0xff);
-    }
- 
-}
-#endif
 
 //-----------------------------------------------------------------------------
 // void lcm_test_exclusive(void)
@@ -595,180 +356,7 @@ void lcm_test_exclusive(void)
 }
 #endif
 
-//-----------------------------------------------------------------------------
-// Description: initialize LCM hardware interface and LCM function.
-//
-// Input:
-//
-// Output:
-//
-// Created: 2012/07/13
-//-----------------------------------------------------------------------------
-void lcm_init_spi (void)
-{
-    // Enable IO output. The LCM pin definition is in LCM_BMP.h
-    // P1^0, 1, 2 is set output
-    XBYTE[0xB102] |= 0x07;         
-
-    // Set FMGPIO as GPIO to use LCM before resetting LCM.
-    // This is to avoid mis-sending the first bit when set pins' function
-    // after resetting. After this function runs:
-    //      CSB is high;
-    //      SCL is high (idle level)
-    lcm_set_fmgpio(LCM_SWITCH_FMGPIO_TO_GPIO);              
-
-    // Reset pulse width. ST7587 requires that minimum is 10us
-    LCM_RSTB_SPI_LO;
-    USER_DelayDTms(100);    // This delay func is defined in host_init.lib. Not accurate. 
-    LCM_RSTB_SPI_HI;
-
-    // Reset duration. ST7587 requires that minimum is 120ms
-    //SPI_CLK_CLR;            // This is to test the window of delay.
-    USER_DelayDTms(1000);
-    USER_DelayDTms(1000);
-    //SPI_CLK_SET;
-
-    lcm_write_command   (ST7587_SLEEP_OUT_CMD);
-    lcm_write_command   (ST7587_DISPLAY_OFF_CMD);
-    USER_DelayDTms(100);
-
-    lcm_write_command   (ST7587_AUTO_READ_CMD);         // Disable auto read
-    lcm_write_data      (ST7587_AUTO_READ_DISABLE);
-    lcm_write_command   (ST7587_OTP_SELECT_CMD);        // Disable OTP
-    lcm_write_data      (ST7587_OTP_SELECT_DISABLE);
-    
-    #if 0 // read OTP, then control out
-    lcm_write_command(0xE0);
-    lcm_write_data(0x00);
-    USER_DelayDTms(1200);
-    lcm_write_data(0xE3);
-    USER_DelayDTms(1200);
-    lcm_write_command(0xE1);
-    #endif
-
-    lcm_write_command   (ST7587_VOP_SET_CMD);           // Set Vop as 15V
-    lcm_write_data      (ST7587_VOP_SET_15V_LO);
-    lcm_write_data      (ST7587_VOP_SET_15V_HI);
-
-    lcm_write_command   (ST7587_BIAS_SET_CMD);          // Set Bias as 1/14
-    lcm_write_data      (ST7587_BIAS_SET_1_14);
-
-    lcm_write_command   (ST7587_BOOSTER_SET_CMD);       // Set booster level as x8
-    lcm_write_data      (ST7587_BOOSTER_SET_X8);
-
-    lcm_write_command   (ST7587_ANALOG_CTRL_CMD);       // Enable analog circuit
-    lcm_write_data      (ST7587_ANALOG_CTRL_DATA);
-
-    lcm_write_command   (ST7587_LINE_INVERSION_CMD);    // N-line = 0
-    lcm_write_data      (ST7587_LINE_INVERSION_FRAME);  
-
-    lcm_write_command   (ST7587_DDR_ENABLE_CMD);        // Enable DDR
-    lcm_write_command   (ST7587_DDR_IFC_CMD);           // Enable DDR interface
-    lcm_write_data      (ST7587_DDR_IFC_DATA);
-
-    //---------------------------------------------------------------
-    // The LCD we use is from SEG383->SEG224, so set the scan control
-    // based on this.
-    //---------------------------------------------------------------
-    lcm_write_command   (ST7587_SCAN_DIRECTION_CMD);    // Scan direction setting
-    if (LCM_SCAN_DIRECTION_SETTING == NORMAL)
-    {
-        lcm_write_data (ST7587_SCAN_DIRECTION_DEFAULT);
-    }
-    else if (LCM_SCAN_DIRECTION_SETTING == REVERSE_X)
-    {
-        lcm_write_data (ST7587_SCAN_DIRECTION_REVERSE_COL);
-    }
-    else if (LCM_SCAN_DIRECTION_SETTING == REVERSE_Y)
-    {
-        lcm_write_data (ST7587_SCAN_DIRECTION_REVERSE_ROW);
-    }
-    else if (LCM_SCAN_DIRECTION_SETTING == REVERSE_ALL)
-    {
-        lcm_write_data (ST7587_SCAN_DIRECTION_REVERSE_ALL);
-    }
-
-    lcm_write_command   (ST7587_DUTY_SET_CMD);          // Set duty as 1/120
-    lcm_write_data      (ST7587_DUTY_SET_DATA_120);
-
-    //---------------------------------------------------------------
-    // We use 160x120 screen and don't need to use partial mode.
-    // Partial mode setting does not impact the size of DDRAM we use.
-    // It just controls the size of area LCD displays.
-    // partial area must be larger than 0x60. Otherwise, display will be
-    // abnormal.
-    //---------------------------------------------------------------
-    //lcm_write_command   (ST7587_PARTIAL_ON_CMD);        // Partial mode on          
-    lcm_write_command   (ST7587_PARTIAL_SET_CMD);       // set partial display.
-    lcm_write_data      (ST7587_PARTIAL_SET_DATA);
-    lcm_write_command   (ST7587_PARTIAL_AREA_CMD);      // set partial display area
-    lcm_write_data      (ST7587_PARTIAL_AREA_START_HI);
-    lcm_write_data      (ST7587_PARTIAL_AREA_START_LO);
-    lcm_write_data      (ST7587_PARTIAL_AREA_END_HI);
-    lcm_write_data      (ST7587_PARTIAL_AREA_END_LO);   // must be larger than 0x60
-    
-    //---------------------------------------------------------------
-    // Clear the whole DDRAM before LCD displays
-    //---------------------------------------------------------------
-    lcm_clear_ddram();
-
-    LCM_BL_SPI_LO;  // light the blacklight
-
-    lcm_write_command   (ST7587_INVERSION_DISABLE_CMD); // Display inversion off
-    lcm_write_command   (ST7587_DISPLAY_ON_CMD);        // Display on
-    
-#if (LCM_TEST_ONLY == FEATURE_ON)
-    lcm_test_exclusive();
-#endif
-
-    //lcm_set_fmgpio (LCM_SWITCH_FMGPIO_TO_NAND);
-}
-
-//----------------------------------------------------------------------------
-// Description: Set the display area boundary before sending the DDRAM data.
-//              In this function, we set a display area: 1 row and the column
-//              is from col to maxium column.
-// 
-// Input:
-//
-// Output:
-//
-// Created: 2012/07/25
-//----------------------------------------------------------------------------
-void lcm_set_addr(uint8 row, uint8 col)
-{
-    // This function is made to replace original LCM_set_address(). The page
-    // in LCM_set_address() is thought as row number. Not sure if that makes
-    // sense. Anyway, we will use lcm_set_dis_area() in the future to set the
-    // display boundary before sending data to DDRAM.
-    uint8 row_hi=row;
-    uint8 row_lo=row;
-    uint8 col_hi=0;
-    uint8 col_lo=col;
-
-    // I don't want to switch FMGPIO between nand and GPIO every data/command
-    // transfer to LCM. So I put the switch process to two function seperately.
-    // This intention requires to call this switch process at every place
-    // where LCM_write_data() is called, which needs too many efforts. Since
-    // at every place where LCM_write_data() is called, LCM_set_address() is
-    // also called, I'd like to put this switch process here. But what about
-    //switch from GPIO to nand after we finish talking to LCM?
-    //lcm_set_fmgpio(0);
-        
-    // Set the display area to be the whole screen 160x120
-    lcm_write_command   (ST7587_COL_ADDR_SET_CMD);      // Set column address
-    lcm_write_data      (ST7587_COL_ADDR_SET_START_HI);
-    lcm_write_data      (col_lo);
-    lcm_write_data      (ST7587_COL_ADDR_SET_END_HI);
-    lcm_write_data      (ST7587_COL_ADDR_SET_END_LO);
-    lcm_write_command   (ST7587_ROW_ADDR_SET_CMD);      // Set row address
-    lcm_write_data      (ST7587_ROW_ADDR_SET_START_HI);
-    lcm_write_data      (row);
-    lcm_write_data      (ST7587_ROW_ADDR_SET_END_HI);
-    lcm_write_data      (row);
-
-    lcm_write_command   (ST7587_WRITE_DISPLAY_DATA_CMD); // start to write DDRAM
-}
+#endif // SERIAL_MONO == FEATURE_ON
 
 #if (SERIAL_MONO == FEATURE_OFF)  // Re-#define to mine
 //============================================================================

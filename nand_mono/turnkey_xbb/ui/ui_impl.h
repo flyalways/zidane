@@ -25,6 +25,7 @@ typedef struct
     ui_bmp_t    ui_bmp;
 } ui_data_t;
 
+void ui_clear_ddram();
 void ui_disp_hello_impl();
 void ui_clear_screen();
 void ui_show_demo_menu();
