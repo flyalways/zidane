@@ -1,4 +1,7 @@
+#include "SPDA2K.H"
 #include "..\header\variables.h"
+#include "../ui/ui.h"
+#include "../ui/ui_impl.h"
 
 extern xdata	U8	gc_Err;
 extern xdata U8 gc_Media_type;
@@ -155,9 +158,51 @@ U8	code BitRateIcon128x64[]=	// only for 128x64 LCD
 };
 
 extern U8 xdata gc_xs;
+//-----------------------------------------------------------------------------
+// Entry for LCD display routine.
+//
+// Considering the poor performance of platform, the principle here is:
+//      try only to show things which is renewed. 
+// So we will use some flags to mark which things are renewed just now.
+//-----------------------------------------------------------------------------
 void LCM_Display(void)
 {
 	U16	tw_DisplayTime;
+
+    // REVISIT!!!
+    // If we use this flag, we probably need to control this flag at many places
+    // not only here where the system status changes.
+    static bool music_basic_done = FALSE;
+    static uint8 task_phase_previous;
+    static bool task_phase_changed = FALSE;
+    
+    // The system is at play status. Show the music infrastructure menu.
+    // But only once.
+    if (gs_System_State.c_Phase == TASK_PHASE_PLAYACT)
+    {
+        if (music_basic_done == FALSE)
+        {
+            ui_show_music_basic();
+            ui_show_song_num (gw_FileIndex[0], gw_FileTotalNumber[0]);
+            music_basic_done = TRUE;
+        }
+
+        // REVISIT!!!
+        // If the task status does not change, this will be a waste. The better
+        // way is to record the previous status and check if the status is
+        // changed. The tracking of task phase should not be here but I do it.
+        if (task_phase_previous != TASK_PHASE_PLAYACT)
+        {
+            task_phase_changed = TRUE;
+        }
+        if (task_phase_changed)
+        {
+            ui_show_task_phase (gs_System_State.c_Phase);
+            task_phase_changed = FALSE;
+        }
+        task_phase_previous = TASK_PHASE_PLAYACT;
+    }
+
 	if(((gcPlay_FileType==1)&&(gs_System_State.c_Phase == TASK_PHASE_PLAYACT))&&(((gb_PickSong==1)||(gb_ChannelSet==1)) || gc_CurrentCard!=5))
 	{
 		if(gs_File_FCB[0].dw_File_TotalSize==0) 
@@ -206,20 +251,25 @@ void LCM_Display(void)
 	}
 
 	// Show MP3/WMA icon
+    #if (SERIAL_MONO != FEATURE_ON)
 	if(gc_Media_type!=gcPlay_FileType)
 	{
 		gc_Media_type=gcPlay_FileType;
 		LCM_ShowMediaType();
 	}
-		
+	#endif
+    	
 	// Show EQ icon
+    #if (SERIAL_MONO != FEATURE_ON)
 	if(gc_DisplayEQIcon!=gs_DSP_GLOBAL_RAM.sc_EQ_Type)
 	{
 		gc_DisplayEQIcon=gs_DSP_GLOBAL_RAM.sc_EQ_Type;
 		LCM_ShowEQIcon();
 	}
+    #endif
 
-	// Show bit rate 
+	// Show bit rate
+    #if (SERIAL_MONO != FEATURE_ON) 
 	if(gw_DisplayBitrateTime==0)
 	{
 		gw_DisplayBitrateTime=20;
@@ -230,6 +280,7 @@ void LCM_Display(void)
 			//LCM_ShowBitRateIcon();
 		}
 	}
+    #endif
 
 	if(gw_DispSongNum!=gw_FileIndex[0])
 	{
@@ -237,6 +288,7 @@ void LCM_Display(void)
 		LCM_ShowPlaySongNum();
 	}
 
+    #if (SERIAL_MONO == FEATURE_OFF)
     if((gb_ChannelSet==1)||(gb_PickSong==1) || (gc_Num_Flag==1))
 	{
 		if((gc_LCM_Media!=10)&&(gb_ChannelSet==1))
@@ -258,6 +310,8 @@ void LCM_Display(void)
 		goto Show_SongTime;
 		return;
 	}
+    #endif
+
 	if(1)//(gc_CurrentCard==2)||(gc_CurrentCard==3)||(gc_CurrentCard==5))	// Media insert
 	{
 		// Show "PAUSE"
@@ -270,10 +324,23 @@ void LCM_Display(void)
 				gw_DisplayTime=0xFFFF;
 				gw_DisplayFreq=0xFFFF;
 			}
+
+            if (task_phase_previous != TASK_PHASE_PAUSE)
+            {
+                task_phase_changed = TRUE;
+            }
+            if (task_phase_changed)
+            {
+                ui_show_task_phase (gs_System_State.c_Phase);
+                task_phase_changed = FALSE;
+            }
+            task_phase_previous = TASK_PHASE_PAUSE;
+
 			return;
 		}
 
 		// Show play mode icon
+        #if (SERIAL_MONO != FEATURE_ON)
 		if((gc_ShowTimer!=0)&&(gc_DisplayPlayMode!=gc_RepPlayMode))
 		{
 			if(gc_LCM_Media!=7)	// 7=Play mode
@@ -288,8 +355,10 @@ void LCM_Display(void)
 			LCM_ShowPlayModeIcon();
 			goto Show_SongTime;
 		}
+        #endif
 
 		// Show EQ
+        #if (SERIAL_MONO != FEATURE_ON)
 		if((gc_ShowTimer!=0)&&(gc_SelectEQ==1))
 		{
 			gc_LCM_Media=8;		// 8=EQ
@@ -302,8 +371,10 @@ void LCM_Display(void)
 			}
 			goto Show_SongTime;
 		}
+        #endif
 
 		// Change Frequency
+        #if (SERIAL_MONO == FEATURE_OFF)
 		if((gb_Frequency_Song==0)&&(gc_ShowTimer!=0))
 		{
 			if(gw_DisplayFreq!=gw_FM_frequency)
@@ -318,7 +389,9 @@ void LCM_Display(void)
 				gw_DisplayTime=0xFFFF;
 			}
 			goto Show_SongTime;
-		}		
+		}
+        #endif
+        		
 		// Change Volumn
 		if((gc_SelectVol==1)&&(gc_ShowTimer!=0))
 		{			
@@ -416,14 +489,12 @@ void LCM_Display(void)
 		{			
 			if((gc_CurrentCard==0)  && (gb_FlashNoFileflag==0))
 			{
-				//LCM_ClearScreen();//  by home.
-				LCM_erase_one_page(2);
-				LCM_erase_one_page(3);
 				LCM_Show_NOMP3FILE();
 				gb_FlashNoFileflag=1;
 			}
-			LCM_ShowPlayTime(0);
 			gw_DisplayTime=tw_DisplayTime;
+
+            return;
 		}
 		else
 		{
@@ -456,6 +527,8 @@ void LCM_Display(void)
 				LCM_Disp_FileName(&gc_FileLongName[5],gc_FileLongName[2],gc_FileLongName[4],1);
 				gw_LCMScrollTimer=40;
 			}
+
+            #if (SERIAL_MONO == FEATURE_ON)
 			if(gw_LCMScrollTimer==0)
 			{
 				if(!gb_LrcFileName_Exist)
@@ -463,7 +536,8 @@ void LCM_Display(void)
 					RollFileName();
 				}
 				gw_LCMScrollTimer=40;
-			}					
+			}
+            #endif					
 		}
 	}
 	else
@@ -485,6 +559,7 @@ void LCM_Display(void)
 	}
 
 	// Display Frequency
+    #if (SERIAL_MONO == FEATURE_ON)
 	if(gw_DisplayFreq!=gw_FM_frequency && gb_LrcFileName_Exist==0)
 	{
 		gb_FlashNoFileflag=0;
@@ -492,6 +567,8 @@ void LCM_Display(void)
 		LCM_ShowFrequency();									//for solang by home. homeing
 
 	}
+    #endif
+
 /*	if(gw_DisplayVol!=gs_DSP_GLOBAL_RAM.sw_Volume)			//show vol icon for solang by home
 	{
 			gw_DisplayVol=gs_DSP_GLOBAL_RAM.sw_Volume;
@@ -499,12 +576,14 @@ void LCM_Display(void)
 	}*/
 
 	//===========sunzhk add pinpu
+    #if (SERIAL_MONO != FEATURE_ON)
 	if((gs_System_State.c_Phase==TASK_PHASE_PLAYACT)&&gw_DisplayPinPuTime==0 && gb_LrcFileName_Exist==0)
 	{  //频谱刷新条件 播放中+timer到+无LRC
 		gw_DisplayPinPuTime=18;
 		LCM_ShowPinpu_Icon();
 			
 	}
+    #endif
 
 	//====end
 Show_SongTime:
@@ -579,7 +658,9 @@ void LCM_ShowBitRate(void)
 
 void LCM_ShowPlaySongNum(void)					//just for solang by home.
 {
-U8	tc_column;
+    #if (SERIAL_MONO == FEATURE_OFF)    // Original parallel LCM
+
+    U8	tc_column;
 
 	gc_LCM_line=0;
 	tc_column =62;
@@ -598,6 +679,14 @@ U8	tc_column;
 	tc_column+=6;
 	SongTimeNum(gw_FileTotalNumber[0]%10,tc_column);
 	gc_LCM_line=0;
+
+    #elif (SERIAL_MONO == FEATURE_ON)   // Serial LCM
+
+    ui_show_song_num (gw_FileIndex[0], gw_FileTotalNumber[0]);
+    //ui_show_song_pos(gw_FileIndex[0]);
+    //ui_show_song_num_total(gw_FileTotalNumber[0]);
+
+    #endif
 }
 
 /*
@@ -619,6 +708,8 @@ void LCM_ShowBitRateIcon(void)
 
 void LCM_ShowPlayTime(U16 time)
 {
+    #if (SERIAL_MONO == FEATURE_OFF)
+
 	U8	tc_column;
 	gc_LCM_line=0;
 	tc_column=98;
@@ -656,6 +747,12 @@ void LCM_ShowPlayTime(U16 time)
 	SongTimeNum(gw_TotalSec%10,tc_column);
 
 	gc_LCM_line=0;
+
+    #elif (SERIAL_MONO == FEATURE_ON)
+
+    ui_show_song_time(time);
+
+    #endif
 
 }
 
@@ -800,6 +897,8 @@ void LRC_LCMFillColumn(U8 tc_Page,U8 tc_CurrentColumn,U8 tc_TotalColumn)
 
 U8 LCM_Disp_FileName(U8 *DataBuf,U8 tc_ISNOrUnicode, U8 nByte,U8 DispOnOff)
 {
+    #if (SERIAL_MONO == FEATURE_OFF)
+
 	U8 i,Column;
 	U8 Tmp_DataBuf[32];
 	U8 Sts;
@@ -873,6 +972,13 @@ DispOver:
 		gw_DispFileName_ByteOffset=0;
 	}
 	return Sts;//overstep display area
+
+    #elif (SERIAL_MONO == FEATURE_ON)
+    
+    ui_show_file_name (DataBuf, tc_ISNOrUnicode, nByte, DispOnOff);
+    return 0;
+
+    #endif
 }
 
 

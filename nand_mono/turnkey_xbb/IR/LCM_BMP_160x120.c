@@ -295,6 +295,8 @@ void LCM_ShowChar8x16_L2(U8 Num,U8 tc_column)
 
 void LCM_ShowPAUSE(void)
 {
+    #if (SERIAL_MONO == FEATURE_OFF)
+
     U8 i,j,k=0;
 	U8	tc_column;
 
@@ -310,6 +312,13 @@ void LCM_ShowPAUSE(void)
 			LCM_write_data(PAUSEIcon96x32[((U16)j*96)+i]);
 		}
 	}
+
+    #elif (SERIAL_MONO == FEATURE_ON)
+
+    ui_show_music_pause ();
+
+    #endif
+
 }
 
 
@@ -608,6 +617,8 @@ void LCM_ShowEQ(void)
 
 void LCM_Show_NOMP3FILE(void)
 {
+    #if (SERIAL_MONO == FEATURE_OFF)
+
 	U8	i;
 	U8	tc_column=0;
 	U8	tc_NoFile[12];
@@ -630,11 +641,19 @@ void LCM_Show_NOMP3FILE(void)
 		LCM_ShowChar8x16_L2(tc_NoFile[i],tc_column);
 		tc_column+=8;
 	}
+
+    #elif (SERIAL_MONO == FEATURE_ON)
+
+    ui_show_nofile();
+
+    #endif
 }
 
 
 void LCM_ShowERROR(void)
 {
+    #if (SERIAL_MONO == FEATURE_OFF)    // Original parallel LCM
+
 	U8	tc_column;
 
 	tc_column=34;
@@ -647,7 +666,14 @@ void LCM_ShowERROR(void)
 	tc_column+=12;		
 	LCM_ShowChar12x32(23,tc_column);		
 	tc_column+=12;		
-	LCM_ShowChar12x32(25,tc_column);		
+	LCM_ShowChar12x32(25,tc_column);
+
+    #elif (SERIAL_MONO == FEATURE_ON)   // Serial LCM
+
+    ui_show_err();
+
+    #endif
+    		
 }
 
 /*

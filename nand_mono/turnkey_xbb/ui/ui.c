@@ -12,6 +12,8 @@
 #include "../IR/LCM_BMP.h"
 #include "../IR/lcm_bmp_driver.h"
 
+code ui_bound_t ui_bound_g = {0,0,0,0};
+
 //-----------------------------------------------------------------------------
 // ui_init
 //
@@ -23,124 +25,8 @@
 //-----------------------------------------------------------------------------
 void ui_init (void)
 {
-    // Enable IO output. The LCM pin definition is in LCM_BMP.h
-    // P1^0, 1, 2 is set output
-    XBYTE[0xB102] |= 0x07;         
-
-    // Set FMGPIO as GPIO to use LCM before resetting LCM.
-    // This is to avoid mis-sending the first bit when set pins' function
-    // after resetting. After this function runs:
-    //      CSB is high;
-    //      SCL is high (idle level)
-    lcm_set_fmgpio(LCM_SWITCH_FMGPIO_TO_GPIO);              
-
-    // Reset pulse width. ST7587 requires that minimum is 10us
-    LCM_RSTB_SPI_LO;
-    USER_DelayDTms(100);    // This delay func is defined in host_init.lib. Not accurate. 
-    LCM_RSTB_SPI_HI;
-
-    // Reset duration. ST7587 requires that minimum is 120ms
-    //SPI_CLK_CLR;            // This is to test the window of delay.
-    USER_DelayDTms(1000);
-    USER_DelayDTms(1000);
-    //SPI_CLK_SET;
-
-    lcm_write_command   (ST7587_SLEEP_OUT_CMD);
-    lcm_write_command   (ST7587_DISPLAY_OFF_CMD);
-    USER_DelayDTms(100);
-
-    lcm_write_command   (ST7587_AUTO_READ_CMD);         // Disable auto read
-    lcm_write_data      (ST7587_AUTO_READ_DISABLE);
-    lcm_write_command   (ST7587_OTP_SELECT_CMD);        // Disable OTP
-    lcm_write_data      (ST7587_OTP_SELECT_DISABLE);
-    
-    #if 0 // read OTP, then control out
-    lcm_write_command(0xE0);
-    lcm_write_data(0x00);
-    USER_DelayDTms(1200);
-    lcm_write_data(0xE3);
-    USER_DelayDTms(1200);
-    lcm_write_command(0xE1);
-    #endif
-
-    lcm_write_command   (ST7587_VOP_SET_CMD);           // Set Vop as 15V
-    lcm_write_data      (ST7587_VOP_SET_15V_LO);
-    lcm_write_data      (ST7587_VOP_SET_15V_HI);
-
-    lcm_write_command   (ST7587_BIAS_SET_CMD);          // Set Bias as 1/14
-    lcm_write_data      (ST7587_BIAS_SET_1_14);
-
-    lcm_write_command   (ST7587_BOOSTER_SET_CMD);       // Set booster level as x8
-    lcm_write_data      (ST7587_BOOSTER_SET_X8);
-
-    lcm_write_command   (ST7587_ANALOG_CTRL_CMD);       // Enable analog circuit
-    lcm_write_data      (ST7587_ANALOG_CTRL_DATA);
-
-    lcm_write_command   (ST7587_LINE_INVERSION_CMD);    // N-line = 0
-    lcm_write_data      (ST7587_LINE_INVERSION_FRAME);  
-
-    lcm_write_command   (ST7587_DDR_ENABLE_CMD);        // Enable DDR
-    lcm_write_command   (ST7587_DDR_IFC_CMD);           // Enable DDR interface
-    lcm_write_data      (ST7587_DDR_IFC_DATA);
-
-    //---------------------------------------------------------------
-    // The LCD we use is from SEG383->SEG224, so set the scan control
-    // based on this.
-    //---------------------------------------------------------------
-    lcm_write_command   (ST7587_SCAN_DIRECTION_CMD);    // Scan direction setting
-    if (LCM_SCAN_DIRECTION_SETTING == NORMAL)
-    {
-        lcm_write_data (ST7587_SCAN_DIRECTION_DEFAULT);
-    }
-    else if (LCM_SCAN_DIRECTION_SETTING == REVERSE_X)
-    {
-        lcm_write_data (ST7587_SCAN_DIRECTION_REVERSE_COL);
-    }
-    else if (LCM_SCAN_DIRECTION_SETTING == REVERSE_Y)
-    {
-        lcm_write_data (ST7587_SCAN_DIRECTION_REVERSE_ROW);
-    }
-    else if (LCM_SCAN_DIRECTION_SETTING == REVERSE_ALL)
-    {
-        lcm_write_data (ST7587_SCAN_DIRECTION_REVERSE_ALL);
-    }
-
-    lcm_write_command   (ST7587_DUTY_SET_CMD);          // Set duty as 1/120
-    lcm_write_data      (ST7587_DUTY_SET_DATA_120);
-
-    //---------------------------------------------------------------
-    // We use 160x120 screen and don't need to use partial mode.
-    // Partial mode setting does not impact the size of DDRAM we use.
-    // It just controls the size of area LCD displays.
-    // partial area must be larger than 0x60. Otherwise, display will be
-    // abnormal.
-    //---------------------------------------------------------------
-    //lcm_write_command   (ST7587_PARTIAL_ON_CMD);        // Partial mode on          
-    lcm_write_command   (ST7587_PARTIAL_SET_CMD);       // set partial display.
-    lcm_write_data      (ST7587_PARTIAL_SET_DATA);
-    lcm_write_command   (ST7587_PARTIAL_AREA_CMD);      // set partial display area
-    lcm_write_data      (ST7587_PARTIAL_AREA_START_HI);
-    lcm_write_data      (ST7587_PARTIAL_AREA_START_LO);
-    lcm_write_data      (ST7587_PARTIAL_AREA_END_HI);
-    lcm_write_data      (ST7587_PARTIAL_AREA_END_LO);   // must be larger than 0x60
-    
-    //---------------------------------------------------------------
-    // Clear the whole DDRAM before LCD displays
-    //---------------------------------------------------------------
-    ui_clear_ddram();
-
-    LCM_BL_SPI_LO;  // light the blacklight
-
-    lcm_write_command   (ST7587_INVERSION_DISABLE_CMD); // Display inversion off
-    lcm_write_command   (ST7587_DISPLAY_ON_CMD);        // Display on
-    
-#if (LCM_TEST_ONLY == FEATURE_ON)
-    lcm_test_exclusive();
-#endif
-
+    ui_init_impl();
 }
-
-
 
 //-----------------------------------------------------------------------------
 // ui_disp_hello
@@ -152,6 +38,133 @@ void ui_init (void)
 void ui_disp_hello (void)
 {
     ui_disp_hello_impl();
+}
+
+//-----------------------------------------------------------------------------
+// ui_show_music_basic
+//
+// Description: show the music infrastructure menu.
+// 
+// Created: 2012/10/04
+//-----------------------------------------------------------------------------
+void ui_show_music_basic(void)
+{
+    ui_show_music_basic_impl();
+}
+
+//-----------------------------------------------------------------------------
+// ui_show_err
+//
+// Created: 2012/10/04
+//-----------------------------------------------------------------------------
+void ui_show_err (void)
+{
+    ui_show_err_impl();
+}
+
+//-----------------------------------------------------------------------------
+// ui_show_song_pos
+//
+// Description: at music menu, show which song we are playing, i.e. song's number
+//              from 1.
+//
+// Created: 2012/10/04
+//-----------------------------------------------------------------------------
+void ui_show_song_pos (uint16 song_pos)
+{
+    ui_show_song_pos_impl(song_pos);
+}
+
+//-----------------------------------------------------------------------------
+// ui_show_song_num_total
+//
+// Description: show how many songs are there under current directory.
+//
+// Created: 2012/10/04
+//-----------------------------------------------------------------------------
+void ui_show_song_num_total (uint16 num)
+{
+    ui_show_song_num_total_impl(num);
+}
+
+//-----------------------------------------------------------------------------
+// ui_show_song_num
+//
+// Description: show song position and how many songs are there under current
+//              directory.
+//
+// Created: 2012/10/04
+//-----------------------------------------------------------------------------
+void ui_show_song_num (uint16 song_pos, uint16 num)
+{
+    ui_show_song_num_impl (song_pos, num);
+}
+
+//-----------------------------------------------------------------------------
+// ui_show_music_pause
+//
+// Description: show pause status at music menu.
+//
+// Created: 2012/10/04
+//-----------------------------------------------------------------------------
+void ui_show_music_pause(void)
+{
+    ui_show_music_pause_impl();
+}
+
+//-----------------------------------------------------------------------------
+// ui_show_nofile
+//
+// Description: show people there is no file under current dir.
+//
+// Created: 2012/10/04
+//-----------------------------------------------------------------------------
+void ui_show_nofile(void)
+{
+    ui_show_nofile_impl();
+}
+
+//-----------------------------------------------------------------------------
+// ui_show_time_play
+//
+// Description: show the latest time of current song. We don't use hour as the
+//              unit.
+//
+// Created: 2012/10/04
+//-----------------------------------------------------------------------------
+void ui_show_song_time (uint16 time)
+{
+    ui_show_song_time_impl (time);
+}
+
+//-----------------------------------------------------------------------------
+// ui_show_task_phase
+//
+// Description: show the current task status like play or pause, etc.
+//
+// Created: 2012/10/14
+//-----------------------------------------------------------------------------
+void ui_show_task_phase (uint8 task_phase)
+{
+    ui_show_task_phase_impl (task_phase);   
+}
+
+//-----------------------------------------------------------------------------
+// ui_show_file_name
+//
+// Description: show file name
+//
+// Created: 2012/10/14
+//-----------------------------------------------------------------------------
+uint8 ui_show_file_name
+(
+    uint8 *DataBuf,
+    uint8 tc_ISNOrUnicode,
+    uint8 nByte,
+    uint8 DispOnOff
+)
+{
+    return (ui_show_file_name_impl (DataBuf, tc_ISNOrUnicode, nByte, DispOnOff));
 }
 
 //-----------------------------------------------------------------------------

@@ -1,3 +1,14 @@
+/******************************************************************************
+* How to access the hzk file.
+*
+* Based on this file and some guess, the dot matrix data is made by a modulo:
+*       vertical, negative
+* 
+* But we are using a LCM which displays by:
+*       horizonal, positive
+*
+* So we probably need to cook the dot matrix data read from the hzk file.
+******************************************************************************/
 #include "..\Header\SPDA2K.h"
 #include "..\header\PROTOTYP.h"
 #include "..\IR\LCM_BMP.h"

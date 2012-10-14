@@ -6,12 +6,144 @@
 * Created: 2012/08/27
 ******************************************************************************/
 #include <assert.h>
+#include <string.h>
 #include "SPDA2K.H"
 #include "../IR/LCM_BMP.h"
 #include "../IR/lcm_bmp_driver.h"
 #include "ui_impl.h"
+#include "../Header/variables.h"
 
 #include "ui_bmp.c"
+
+static xdata bool ui_is_lock = FALSE;        // Flag of ui locked or not.
+
+//-----------------------------------------------------------------------------
+// ui_init_impl
+//
+// Description: it's actually LCM initialization. The reason we put it here and
+//              call it ui_init is, common area is really comstrained so I can't
+//              put it at lcm_bmp_driver.c but ui module.
+//
+// Created: 2012/07/13
+//-----------------------------------------------------------------------------
+void ui_init_impl (void)
+{
+    // Enable IO output. The LCM pin definition is in LCM_BMP.h
+    // P1^0, 1, 2 is set output
+    XBYTE[0xB102] |= 0x07;         
+
+    // Set FMGPIO as GPIO to use LCM before resetting LCM.
+    // This is to avoid mis-sending the first bit when set pins' function
+    // after resetting. After this function runs:
+    //      CSB is high;
+    //      SCL is high (idle level)
+    lcm_set_fmgpio(LCM_SWITCH_FMGPIO_TO_GPIO);              
+
+    // Reset pulse width. ST7587 requires that minimum is 10us
+    LCM_RSTB_SPI_LO;
+    USER_DelayDTms(100);    // This delay func is defined in host_init.lib. Not accurate. 
+    LCM_RSTB_SPI_HI;
+
+    // Reset duration. ST7587 requires that minimum is 120ms
+    //SPI_CLK_CLR;            // This is to test the window of delay.
+    USER_DelayDTms(1000);
+    USER_DelayDTms(1000);
+    //SPI_CLK_SET;
+
+    lcm_write_command   (ST7587_SLEEP_OUT_CMD);
+    lcm_write_command   (ST7587_DISPLAY_OFF_CMD);
+    USER_DelayDTms(100);
+
+    lcm_write_command   (ST7587_AUTO_READ_CMD);         // Disable auto read
+    lcm_write_data      (ST7587_AUTO_READ_DISABLE);
+    lcm_write_command   (ST7587_OTP_SELECT_CMD);        // Disable OTP
+    lcm_write_data      (ST7587_OTP_SELECT_DISABLE);
+    
+    #if 0 // read OTP, then control out
+    lcm_write_command(0xE0);
+    lcm_write_data(0x00);
+    USER_DelayDTms(1200);
+    lcm_write_data(0xE3);
+    USER_DelayDTms(1200);
+    lcm_write_command(0xE1);
+    #endif
+
+    lcm_write_command   (ST7587_VOP_SET_CMD);           // Set Vop as 15V
+    lcm_write_data      (ST7587_VOP_SET_15V_LO);
+    lcm_write_data      (ST7587_VOP_SET_15V_HI);
+
+    lcm_write_command   (ST7587_BIAS_SET_CMD);          // Set Bias as 1/14
+    lcm_write_data      (ST7587_BIAS_SET_1_14);
+
+    lcm_write_command   (ST7587_BOOSTER_SET_CMD);       // Set booster level as x8
+    lcm_write_data      (ST7587_BOOSTER_SET_X8);
+
+    lcm_write_command   (ST7587_ANALOG_CTRL_CMD);       // Enable analog circuit
+    lcm_write_data      (ST7587_ANALOG_CTRL_DATA);
+
+    lcm_write_command   (ST7587_LINE_INVERSION_CMD);    // N-line = 0
+    lcm_write_data      (ST7587_LINE_INVERSION_FRAME);  
+
+    lcm_write_command   (ST7587_DDR_ENABLE_CMD);        // Enable DDR
+    lcm_write_command   (ST7587_DDR_IFC_CMD);           // Enable DDR interface
+    lcm_write_data      (ST7587_DDR_IFC_DATA);
+
+    //---------------------------------------------------------------
+    // The LCD we use is from SEG383->SEG224, so set the scan control
+    // based on this.
+    //---------------------------------------------------------------
+    lcm_write_command   (ST7587_SCAN_DIRECTION_CMD);    // Scan direction setting
+    if (LCM_SCAN_DIRECTION_SETTING == NORMAL)
+    {
+        lcm_write_data (ST7587_SCAN_DIRECTION_DEFAULT);
+    }
+    else if (LCM_SCAN_DIRECTION_SETTING == REVERSE_X)
+    {
+        lcm_write_data (ST7587_SCAN_DIRECTION_REVERSE_COL);
+    }
+    else if (LCM_SCAN_DIRECTION_SETTING == REVERSE_Y)
+    {
+        lcm_write_data (ST7587_SCAN_DIRECTION_REVERSE_ROW);
+    }
+    else if (LCM_SCAN_DIRECTION_SETTING == REVERSE_ALL)
+    {
+        lcm_write_data (ST7587_SCAN_DIRECTION_REVERSE_ALL);
+    }
+
+    lcm_write_command   (ST7587_DUTY_SET_CMD);          // Set duty as 1/120
+    lcm_write_data      (ST7587_DUTY_SET_DATA_120);
+
+    //---------------------------------------------------------------
+    // We use 160x120 screen and don't need to use partial mode.
+    // Partial mode setting does not impact the size of DDRAM we use.
+    // It just controls the size of area LCD displays.
+    // partial area must be larger than 0x60. Otherwise, display will be
+    // abnormal.
+    //---------------------------------------------------------------
+    //lcm_write_command   (ST7587_PARTIAL_ON_CMD);        // Partial mode on          
+    lcm_write_command   (ST7587_PARTIAL_SET_CMD);       // set partial display.
+    lcm_write_data      (ST7587_PARTIAL_SET_DATA);
+    lcm_write_command   (ST7587_PARTIAL_AREA_CMD);      // set partial display area
+    lcm_write_data      (ST7587_PARTIAL_AREA_START_HI);
+    lcm_write_data      (ST7587_PARTIAL_AREA_START_LO);
+    lcm_write_data      (ST7587_PARTIAL_AREA_END_HI);
+    lcm_write_data      (ST7587_PARTIAL_AREA_END_LO);   // must be larger than 0x60
+
+    //---------------------------------------------------------------
+    // Clear the whole DDRAM before LCD displays
+    //---------------------------------------------------------------
+    ui_clear_ddram();
+
+    LCM_BL_SPI_LO;  // light the blacklight
+
+    lcm_write_command   (ST7587_INVERSION_DISABLE_CMD); // Display inversion off
+    lcm_write_command   (ST7587_DISPLAY_ON_CMD);        // Display on
+    
+#if (LCM_TEST_ONLY == FEATURE_ON)
+    lcm_test_exclusive();
+#endif
+
+}
 
 //-----------------------------------------------------------------------------
 // void ui_clear_ddram (void)
@@ -108,9 +240,9 @@ void ui_get_offset (scan_dir_t direction, area_offset_t * p_offset)
             p_offset->offset_y = 40;
             break;
         default:
-            dbprintf("%s, %d line, scan direction setting is incorrect\n",
-                        __FILE__,
-                        __LINE__);
+//            dbprintf("%s, %d line, scan direction setting is incorrect\n",
+//                        __FILE__,
+//                        __LINE__);
             break;
     }
     #endif            
@@ -156,14 +288,14 @@ void ui_set_disp_bound(uint16 x_start,
         ||(x_start%3)
         ||((x_end-2)%3) )
     {
-        dbprintf("%s, %d line: display bound setting incorrect!\n",
-                __FILE__,
-                __LINE__);
+//        dbprintf("%s, %d line: display bound setting incorrect!\n",
+//                __FILE__,
+//                __LINE__);
     }
 
     // REVISIT: should check if the X bound is 3's multiple.
     x_start = x_start/3;
-    x_end   = (x_end)/3;
+    x_end   = (x_end-2)/3;
 
     lcm_write_command   (ST7587_COL_ADDR_SET_CMD);      // Set column address
     lcm_write_data      (x_start>>8);
@@ -175,6 +307,84 @@ void ui_set_disp_bound(uint16 x_start,
     lcm_write_data      (y_start&0xFF);
     lcm_write_data      (y_end>>8);
     lcm_write_data      (y_end&0xFF);
+}
+
+//-----------------------------------------------------------------------------
+// ui_clear_area
+//
+// Description: clear specified area in the screen.
+//
+// Created: 2012/10/04
+//-----------------------------------------------------------------------------
+void ui_clear_area (ui_bound_t *p_ui_bound)
+{
+    uint16 i;
+    uint8 x_start, x_end, y_start, y_end;
+    uint16 size_ddram;
+
+    x_start = p_ui_bound->x_start;
+    x_end   = p_ui_bound->x_end;
+    y_start = p_ui_bound->y_start;
+    y_end   = p_ui_bound->y_end;
+
+    // Check if the bound range is reasonable.
+
+    size_ddram = (x_end-x_start)*(y_end-y_start)/8*4;
+
+    ui_set_disp_bound (x_start, x_end, y_start, y_end);
+    lcm_write_command (ST7587_WRITE_DISPLAY_DATA_CMD);
+    // write 0 to this area
+    for(i=0; i<size_ddram; i++)
+    {
+        lcm_write_data(0x00);
+    } 
+}
+
+
+// REVISIT!!!
+// Once this feature is used in ui code, every impl function must check this.
+//-----------------------------------------------------------------------------
+// ui_lock
+//
+// Description: Here intention is to disable any refresh on the screen. Expected
+//              impl is to disable the DDRAM interface of LCM. But there is no
+//              such function. And power save mode is not what I want neither...
+//              
+//              Problem is: once this feature is used, every function about ui
+//              impl must check if ui is locked.
+// 
+// Created: 2012/10/14
+//-----------------------------------------------------------------------------
+void ui_lock (void)
+{
+    if (!ui_is_lock)
+    {
+        // REVISIT!!!
+        // How to lock ui?
+        // The temporary impl is to set the display area to an invalid area for
+        // this LCM or only 3 dots.
+        ui_set_disp_bound (0,0,0,0);
+
+        ui_is_lock = TRUE;
+    }
+}
+
+//-----------------------------------------------------------------------------
+// ui_unlock
+//
+// Description: opposite operation of ui_lock. See ui_lock for details.
+// 
+// Created: 2012/10/14
+//-----------------------------------------------------------------------------
+void ui_unlock (void)
+{
+    if (ui_is_lock)
+    {
+        // REVISI1!!!
+        // How to unlock ui?
+
+        ui_is_lock = FALSE;
+    }   
 }
 
 //-----------------------------------------------------------------------------
@@ -216,7 +426,7 @@ void ui_fill_ui_data (
 //
 // Created: 2012/09/04
 //-----------------------------------------------------------------------------
-void ui_disp_ui_data (ui_data_t * p_ui_data)
+void ui_disp_ui_data (ui_data_t * p_ui_data, bool clear)
 {
     uint8 i=0;
     uint8 j=0;
@@ -256,11 +466,22 @@ void ui_disp_ui_data (ui_data_t * p_ui_data)
                             bound_offset_y+bound_height-1);
     
         lcm_write_command (ST7587_WRITE_DISPLAY_DATA_CMD);
-        for (i=0; i<size_bmp_data; i++)
+        if (!clear) // show it
         {
-            lcm_write_data_cooked (*p_tmp);
-            p_tmp++;
+            for (i=0; i<size_bmp_data; i++)
+            {
+                lcm_write_data_cooked (*p_tmp);
+                p_tmp++;
+            }
         }
+        else // clear it
+        {
+            for (i=0; i<size_bmp_data; i++)
+            {
+                lcm_write_data_cooked (0x00);
+            }
+        }
+
         
         return;        
     }
@@ -300,11 +521,22 @@ void ui_disp_ui_data (ui_data_t * p_ui_data)
                                 bound_offset_y,
                                 bound_offset_y+1);
             lcm_write_command (ST7587_WRITE_DISPLAY_DATA_CMD);
-            while(j<byte_of_line)
+            if (!clear) // show it
             {
-                lcm_write_data_cooked (*p_tmp);
-                p_tmp++;
-                j++;
+                while(j<byte_of_line)
+                {
+                    lcm_write_data_cooked (*p_tmp);
+                    p_tmp++;
+                    j++;
+                }
+            }
+            else // clear it
+            {
+                while(j<byte_of_line)
+                {
+                    lcm_write_data_cooked (0x00);
+                    j++;
+                }   
             }
 
             // Prepare to send data of next line.
@@ -354,7 +586,7 @@ void ui_disp_bmp_data (
                         bmp_data,
                         size_bmp_data
                     );
-    ui_disp_ui_data (&ui_data);
+    ui_disp_ui_data (&ui_data, 0);
 }
 
 //-----------------------------------------------------------------------------
@@ -385,6 +617,58 @@ void ui_disp_bmp_data_mid_xy (uint8* bmp_data, uint16 size_bmp_data)
                       origin_y,
                       bmp_data,
                       size_bmp_data);
+}
+
+// REVISIT!!!
+// Using char *str as the para is not a good choice. Better way is to use an
+// index of the element in this table. If so, we need to add a index field in
+// ui_bmp_profile_t.
+//-----------------------------------------------------------------------------
+// ui_show_bmp_by_string
+//
+// Description: with string passed in this function, we will get what we should
+//              show from the table using the string as the index.
+// 
+// Created: 2012/10/04
+//-----------------------------------------------------------------------------
+void ui_show_bmp_by_string (char *str, bool clear_if)
+{
+    uint8 i=0;
+
+    if (str == "NULL")
+    {
+        dbprintf("Failure: NULL string\n");
+    }
+
+    // Search this string in the table.
+    while (  strcmp(str, ui_bmp_profile[i].bmp_name)
+           &&strcmp("NULL", ui_bmp_profile[i].bmp_name)
+          )
+    {
+        i++;
+    }
+
+    // Don't find this string in table
+    if ( !(strcmp("NULL", ui_bmp_profile[i].bmp_name)) )
+    {
+        dbprintf("Failure: no string\n");
+        return;    
+    }
+
+    // Clear some area before show it if clr_first is set
+    if (ui_bmp_profile[i].clr_first == TRUE)
+    {
+        ui_clear_area (&(ui_bmp_profile[i].clr_bound));
+    }
+
+    if (clear_if)
+    {
+        ui_disp_ui_data ((ui_data_t *)&ui_bmp_profile[i].ui_data, 1);
+    }
+    else
+    {
+        ui_disp_ui_data ((ui_data_t *)&ui_bmp_profile[i].ui_data, 0);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -436,6 +720,268 @@ void ui_clear_screen(void)
 }
 
 //-----------------------------------------------------------------------------
+// ui_show_err_impl
+// 
+// Created: 2012/10/04
+//-----------------------------------------------------------------------------
+void ui_show_err_impl(void)
+{
+    ui_disp_ui_data (&ui_data_err,0);    
+}
+
+//-----------------------------------------------------------------------------
+// ui_show_music_basic_impl
+// 
+// Created: 2012/10/04
+//-----------------------------------------------------------------------------
+void ui_show_music_basic_impl (void)
+{
+    ui_disp_ui_data (&ui_data_music_line_0_0, 0);
+    ui_disp_ui_data (&ui_data_music_line_2_0_0, 0);
+    ui_disp_ui_data (&ui_data_music_line_2_1, 0);
+}
+
+//-----------------------------------------------------------------------------
+// ui_disp_digit_6x12
+//
+// Description: draw a 6x12 digit on the screen
+// 
+// Created: 2012/10/04
+//-----------------------------------------------------------------------------
+void ui_disp_digit_6x12 (uint8 origin_x, uint8 origin_y, uint8 digit)
+{  
+    ui_data_t ui_data_digit;
+
+    // Check the display bound setting
+
+
+    // Initialize ui_data_t fields for every digit to show.
+    ui_data_digit.origin_x                  = origin_x;
+    ui_data_digit.origin_y                  = origin_y;
+    ui_data_digit.ui_bmp.bmp.length         = 6;
+    ui_data_digit.ui_bmp.bmp.height         = 12;
+    ui_data_digit.ui_bmp.bmp.byte_of_line   = 1;
+    ui_data_digit.ui_bmp.bmp.p_data         = &bmp_digit_6x12[12*digit];
+    ui_data_digit.ui_bmp.size_bmp_data      = 12;
+
+    ui_disp_ui_data (&ui_data_digit, 0);   
+}
+
+//-----------------------------------------------------------------------------
+// ui_show_song_pos
+//
+// Description: show song position.
+// 
+// Created: 2012/10/04
+//-----------------------------------------------------------------------------
+void ui_show_song_pos_impl (uint16 song_pos)
+{
+    ui_disp_digit_6x12 (12, 0, song_pos/10);
+    ui_disp_digit_6x12 (18, 0, song_pos%10);
+}
+
+//-----------------------------------------------------------------------------
+// ui_show_song_num_total_impl
+//
+// Description: show how many songs are there under current dir.
+// 
+// Created: 2012/10/04
+//-----------------------------------------------------------------------------
+void ui_show_song_num_total_impl (uint16 num)
+{
+    ui_disp_digit_6x12 (54, 0, num/10);
+    ui_disp_digit_6x12 (60, 0, num%10);
+}
+
+//-----------------------------------------------------------------------------
+// ui_show_song_num_impl
+//
+// Description:
+// 
+// Created: 2012/10/04
+//-----------------------------------------------------------------------------
+void ui_show_song_num_impl (uint16 song_pos, uint16 num)
+{
+    ui_show_song_pos_impl (song_pos);
+    ui_show_song_num_total_impl (num);
+}
+
+//-----------------------------------------------------------------------------
+// ui_show_music_pause_impl
+//
+// Description: 
+// 
+// Created: 2012/10/04
+//-----------------------------------------------------------------------------
+void ui_show_music_pause_impl (void)
+{
+    ui_disp_ui_data (&ui_data_music_line_2_0_1, 0);
+}
+
+//-----------------------------------------------------------------------------
+// ui_show_nofile_impl
+//
+// Description: show message about no file and clear other redundant display area.
+// 
+// Created: 2012/10/04
+//-----------------------------------------------------------------------------
+void ui_show_nofile_impl (void)
+{
+    // Clear the screen first
+    ui_clear_screen();
+
+    // Show the message of no file.
+    ui_disp_ui_data (&ui_data_nofile, 0);
+}
+
+//-----------------------------------------------------------------------------
+// ui_show_song_time_impl
+//
+// Description: 
+// 
+// Created: 2012/10/04
+//-----------------------------------------------------------------------------
+void ui_show_song_time_impl (uint16 time)
+{
+    // Show the latest time stamp of the current song.
+    ui_disp_digit_6x12 (93,     108, time/600);
+    ui_disp_digit_6x12 (99,     108, (time%600)/60);
+    ui_disp_digit_6x12 (111,    108, (time%60)/10);
+    ui_disp_digit_6x12 (117,    108, time%10);
+
+    // Show the total time of the current song.
+
+    ui_disp_digit_6x12 (129,    108, gw_TotalSec/600);
+    ui_disp_digit_6x12 (135,    108, (gw_TotalSec%600)/60);
+    ui_disp_digit_6x12 (147,    108, (gw_TotalSec%60)/10);
+    ui_disp_digit_6x12 (153,    108, gw_TotalSec%10);
+}
+
+//-----------------------------------------------------------------------------
+// ui_show_task_phase_impl
+//
+// Description:
+// 
+// Created: 2012/10/14
+//-----------------------------------------------------------------------------
+void ui_show_task_phase_impl (uint8 task_phase)
+{
+    switch (task_phase)
+    {
+        case TASK_PHASE_PLAYACT:
+            ui_show_bmp_by_string ("play", FALSE);
+            //ui_disp_ui_data (&ui_data_music_line_2_0_0, 0);
+            break;
+        
+        case TASK_PHASE_PAUSE:
+            ui_show_bmp_by_string ("pause", FALSE);
+            break;
+        
+        default:
+            dbprintf("Fail: no such task phase\n");
+            break; 
+    }
+    ui_lock();
+}
+
+//-----------------------------------------------------------------------------
+// ui_show_file_name_impl
+//
+// Description: show file name
+//
+// Created: 2012/10/14
+//-----------------------------------------------------------------------------
+uint8 ui_show_file_name_impl
+(
+    uint8 *DataBuf,
+    uint8 tc_ISNOrUnicode,
+    uint8 nByte,
+    uint8 DispOnOff
+)
+{
+    ui_show_bmp_by_string("filename_no", 0);
+    return 0;
+
+    #if 0 // REVISIT!!!
+	U8 i,Column;
+	U8 Tmp_DataBuf[32];
+	U8 Sts;
+	U8 tc_ColumnNum,tc_FirstWorldColumnNum;
+
+	DispOnOff=1;
+	tc_FirstWorldColumnNum = 0x00;
+	Sts = 0;
+	i=0;
+	Column=0;
+
+	while(i<nByte)
+	{
+		if(DispOnOff)
+		{
+			if(!tc_ISNOrUnicode)
+			{
+				tc_ColumnNum = LCM_UNICODE_HZK_GET_BMP(*(DataBuf+i+1),*(DataBuf+i),Tmp_DataBuf,1);
+			}else{
+				tc_ColumnNum = LCM_UNICODE_HZK_GET_BMP(*(DataBuf+i),*(DataBuf+i+1),Tmp_DataBuf,0);
+			}
+			if(i==0)
+			{
+				tc_FirstWorldColumnNum = tc_ColumnNum;
+			}
+		}			
+		if((Column+(tc_ColumnNum&0x7f))>128)
+		{
+			Sts=1;
+			goto DispOver;
+		}
+		if(DispOnOff)
+		{	
+			if((tc_ColumnNum&0x7f) > 8)
+			{
+				LCM_disp_HZKCharBMP(2,Column,Tmp_DataBuf,LCM_IsWord,0);		//just for solang by home
+			}
+			else
+			{
+				LCM_disp_HZKCharBMP(2,Column,Tmp_DataBuf,LCM_IsChar,0);
+			}
+		}
+		Column+=(tc_ColumnNum&0x7f);
+
+		if(tc_ColumnNum&0x80)
+		{
+			i+=2;
+		}else
+		{
+			i+=1;
+		}
+	}
+	Sts=0;
+DispOver:
+	while(Column<128 && DispOnOff)
+	{
+		LCM_set_address(2,Column);//just for solang by home.
+		LCM_write_data(0x00);
+		LCM_set_address(2+1,Column);
+		LCM_write_data(0x00);
+		Column++;
+	}
+	if(Sts)
+	{
+		if(tc_FirstWorldColumnNum&0x80)
+		{
+			gw_DispFileName_ByteOffset++;
+		}
+		gw_DispFileName_ByteOffset+=1;
+	}else{
+		gw_DispFileName_ByteOffset=0;
+	}
+	return Sts;//overstep display area
+
+    #endif
+}
+
+
+//-----------------------------------------------------------------------------
 // Show a music demo menu like UES.
 //
 // Created: 2012/09/05
@@ -455,19 +1001,98 @@ void ui_show_demo_menu(void)
 }
 
 //-----------------------------------------------------------------------------
+// vtoh_16x16
+//
+// Description: transform the 16x16 dot matrix data read from unicode hzk file from
+//              vertical, negative modulo to horizontal positive modulo.
+//
+// Created: 2012/10/04
+//-----------------------------------------------------------------------------
+void vtoh_16x16 (unsigned char *v, unsigned char *h)
+{
+    // Be careful when using loop variables as decreasing step. It must be
+    // defined as signed not unsigned because when it decreases to 0, j--
+    // will be a positive number if it is defined as unsigned. Then the loop
+    // will never stop.
+    char i,j;
+    for (i=0; i<16; i=i+2)
+    {
+        for (j=7; j>=0; j--)
+        {
+            h[i] |= ( ((v[0+2*(7-j)] >> (unsigned char)(i/2)) & (unsigned char)0x01) << j );
+        }
+    }
+    for (i=1; i<16; i=i+2)
+    {
+        for (j=7; j>=0; j--)
+        {
+            h[i] |= ( ((v[16+2*(7-j)] >> (unsigned char)(i/2)) & (unsigned char)0x01) << j );
+        }
+    }
+    for (i=16; i<32; i=i+2)
+    {
+        for (j=7; j>=0; j--)
+        {
+            h[i] |= ( ((v[1+2*(7-j)] >> (unsigned char)((i-16)/2)) & (unsigned char)0x01) << j );
+        }
+    }
+    for (i=17; i<32; i=i+2)
+    {
+        for (j=7; j>=0; j--)
+        {
+            h[i] |= ( ((v[17+2*(7-j)] >> (unsigned char)((i-16)/2)) & (unsigned char)0x01) << j );
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
 // UI test routine
 //
 // Created: 2012/09/05
 //-----------------------------------------------------------------------------
+xdata uint8 bmp_tmp[32];
+xdata uint8 bmp_tmp_h[32];
+extern uint8 LCM_UNICODE_HZK_GET_BMP(U8 tc_HighByte, U8 tc_LowByte,U8 * tc_BmpBuf,U8 tbt_UnicodeOrISN);
+
 #if (UI_TEST_ONLY == FEATURE_ON)
 void ui_test_impl(void)
 {
-    while(1)
+    uint8 i;
+    ui_data_t hz_data;
+
+    LCM_UNICODE_HZK_GET_BMP (0x4e,
+                             0x00,
+                             bmp_tmp,
+                             1);
+
+    memset (bmp_tmp_h, 0, 32);
+    vtoh_16x16 (bmp_tmp, bmp_tmp_h);
+
+    //while(1)
     {
-        ui_show_demo_menu();
-        ui_clear_screen();
-        ui_disp_hello_impl();
-        ui_clear_screen();
+//        ui_show_demo_menu();
+//        ui_clear_screen();
+//        ui_disp_hello_impl();
+//        ui_clear_screen();
+
+        /*
+        hz_data.origin_x = 0;
+        hz_data.origin_y = 20;
+        hz_data.ui_bmp.bmp.length       = 16;
+        hz_data.ui_bmp.bmp.height       = 16;
+        hz_data.ui_bmp.bmp.byte_of_line = 2;
+        hz_data.ui_bmp.bmp.p_data       = bmp_tmp;
+        hz_data.ui_bmp.size_bmp_data    = 32;
+        ui_disp_ui_data (&hz_data, 0);
+
+        hz_data.origin_x = 20;
+        hz_data.origin_y = 20;
+        hz_data.ui_bmp.bmp.p_data       = bmp_tmp_h;
+        ui_disp_ui_data (&hz_data, 0);
+        */
+        //ui_show_music_basic();
+
+
     }
     
 }

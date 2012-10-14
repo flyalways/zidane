@@ -26,6 +26,7 @@
 //-----------------------------------------------------------------------------
 // Define a better series of macro for data type to be a standard.
 //-----------------------------------------------------------------------------
+#define bool        BOOLEAN
 #define uint8		unsigned char
 #define uint16		unsigned int
 

@@ -260,7 +260,7 @@ void main(void)
 	DOS_DIRtable();  //20090817 chiayen mark
 
 	LCM_clear();
-    LCM_ShowWait();  //20081124 chiayen add 
+    //LCM_ShowWait();  //20081124 chiayen add 
 	gs_File_FCB[0].dw_FDB_StartCluster = gdw_DOS_RootDirClus;
 	DOS_Search_File(C_File_All|C_Cnt_FileNo, C_MusicFileType, C_CmpExtName|C_Next);//(JC)count music file no. in root
 	set_clock_mode(tc_clock_mode_backup);  //20090817 chiayen mark
