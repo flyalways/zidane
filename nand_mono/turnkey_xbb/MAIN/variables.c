@@ -24,7 +24,7 @@ xdata	U16	gw_USBLogFileIndex=0;
 xdata	U16	gw_nCompressionLevel; //Jimi 091118
 
 xdata	U16	gw_Disp_CurrentSec=0;
-xdata	U8	gc_XTimeBase=0;
+xdata	U8	gc_XTimeBase=0;                 // Sequence index of handles in timer0 ISR.
 data	U8	gc_LongKeyTimer=0;              // Count of T0 period: how long has this key been pressed.
 data	U8	gc_LongKeyDelay=0;              // Setpoint of timing length of a long key. Default is MAX_REPEATKEYDELAY.
 
