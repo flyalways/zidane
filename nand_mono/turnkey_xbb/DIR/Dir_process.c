@@ -2284,3 +2284,36 @@ U8 LCD_disp_HZK_string(U8 Page,U8 *DataBuf,U8 tc_ISNOrUnicode, U8 nByte,U8 Colum
 	return Sts;//overstep display area
 }
 
+U8 SwitchClass(U8 tClass)
+{
+	switch(tClass)
+	{
+		case 0x01:
+		gw_DIRtableIndex=3;
+		break;
+		case 0x02:
+		gw_DIRtableIndex=4;
+		break;
+		case 0x03:
+		gw_DIRtableIndex=5;
+		break;
+		case 0x04:
+		gw_DIRtableIndex=6;
+		break;
+		case 0x05:
+		gw_DIRtableIndex=7;
+		break;
+		case 0x06:
+		gw_DIRtableIndex=8;
+		break;
+		case 0x07:
+		gw_DIRtableIndex=9;
+		break;
+		case 0x08:
+		gw_DIRtableIndex=10;
+		break;
+	}
+	USER_Read2KBReserveBlock_DIR(gw_DIRtableIndex);
+	gc_RepPlayMode==C_InDirPlay;
+	play_next();
+}
