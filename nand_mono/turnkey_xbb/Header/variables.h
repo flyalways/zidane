@@ -13,7 +13,7 @@ extern	xdata	U8	gc_HostSectorUnit;
 extern	xdata	U16	gw_Disp_CurrentSec;
 extern	xdata	U8 gc_Dosinitfail;
 
-extern	data	U8	gc_IRCmdStatus;
+extern	xdata	U8	gc_IRCmdStatus;
 extern	xdata	U16	gw_Random_Timer;
 extern	xdata	U8	gc_XTimeBase;
 extern	data	U8	gc_LongKeyTimer;
@@ -39,7 +39,7 @@ extern	xdata	U8	gc_NUMBER[4];
 
 extern	bit		gb_DirPlay_Flag;  // 0:PlayAll  1:Play in Dir
 
-extern	data 	U8	gc_PlayMenu_Timeout;
+extern	xdata 	U8	gc_PlayMenu_Timeout;
 extern	xdata	U8	gc_DirNoFile_Flag;
 extern	xdata	U8	Save_c_FileType[3];
 extern	xdata	U8	Save_dw_File_StartCluster[3];
@@ -74,10 +74,10 @@ extern	xdata	U16	gw_CurrentSec;
 extern	xdata	U16	gw_TotalSec;
 extern	xdata	U8	gc_T0IntervalLSB;
 extern	xdata	U8	gc_T0IntervalMSB;
-extern	data	U8	gc_key_Pressed;
-extern	data	U8	gc_key_PrevPressed;
+extern	xdata	U8	gc_key_Pressed;
+extern	xdata	U8	gc_key_PrevPressed;
 
-extern	data	U16 gw_DispFileName_ByteOffset;
+extern	xdata	U16 gw_DispFileName_ByteOffset;
 
 
 extern	data	bit	gb_FindFlag;

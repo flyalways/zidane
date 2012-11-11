@@ -12,9 +12,9 @@ data	bit	gb_Host_Exist_pre=0;
 data	bit	gb_HostNoFileflag=0;
 
 data	bit	gb_FindFlag;
-data	U8	gc_IRCmdStatus=0;
+xdata	U8	gc_IRCmdStatus=0;
 
-data	U8	gc_PlayMenu_Timeout=0;
+xdata	U8	gc_PlayMenu_Timeout=0;
 
 xdata	U8	gc_HostSectorUnit=1;
 xdata	U16	gw_DIRFileIndex=0;
@@ -82,9 +82,9 @@ xdata	U16	gw_TotalSec=0;                      // The length of time of a song
 xdata	U8	gc_T0IntervalLSB=C_T0_12MhzLSB;
 xdata	U8	gc_T0IntervalMSB=C_T0_12MhzMSB;
 
-data	U8	gc_key_Pressed=0;
-data	U8	gc_key_PrevPressed=0;
-data	U16 gw_DispFileName_ByteOffset=0;
+xdata	U8	gc_key_Pressed=0;
+xdata	U8	gc_key_PrevPressed=0;
+xdata	U16 gw_DispFileName_ByteOffset=0;
 
 xdata U32 gdw_ID3_v2_sz;	//Jimi 0901027
 xdata U8 gc_language_offset;//多国语言的偏移（第几国语言）

@@ -13,8 +13,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "SPDA2K.H"
-#include "i2c_sim.h"
 #include "i2c.h"
+#include "i2c_sim.h"
 
 ///-----------------------------------------------------------------------------
 /// @brief  delay control used in i2c bus simulated by gpio.
@@ -220,7 +220,7 @@ int8 i2c_sim_get_byte (int8 *p_dat, bool ack_or_not)
 {
     int8 err=0;
     uint8 i;
-    int8 bits;
+    int8 bits=0;
 
     // Initial bus state.
     I2C_SCL_LOW;
@@ -232,7 +232,7 @@ int8 i2c_sim_get_byte (int8 *p_dat, bool ack_or_not)
         bits<<=1;
 
         I2C_SCL_HIGH;
-        bits += I2C_SDA;
+        bits += (int8) I2C_SDA;
         I2C_SCL_LOW;
         i2c_sim_delay(1);
     }
@@ -330,7 +330,7 @@ static int8 i2c_sim_write_reg_byte (uint8 addr, uint8 reg, int8 val)
 /// @author William Chang
 /// @date   2012/10/28
 ///-----------------------------------------------------------------------------
-static int8 i2c_sim_read_reg_byte (uint8 addr, uint8 reg, uint8 *p_val, bool is_last)
+static int8 i2c_sim_read_reg_byte (uint8 addr, uint8 reg, uint8 *p_val, bool is_last) reentrant
 {
     int8 err=0;
 
@@ -367,8 +367,8 @@ static int8 i2c_sim_read_reg_byte (uint8 addr, uint8 reg, uint8 *p_val, bool is_
 }
 
 // Interface provided for clients from i2c_sim module.
-i2c_access_t i2c_access_sim =  { 
-                                   i2c_sim_write_reg_byte,
-                                   i2c_sim_read_reg_byte,
-                               };
+xdata i2c_access_t i2c_access_sim = { 
+                                        i2c_sim_write_reg_byte,
+                                        i2c_sim_read_reg_byte,
+                                    };
                                       

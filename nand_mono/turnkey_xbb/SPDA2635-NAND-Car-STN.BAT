@@ -27,6 +27,7 @@ SET CPU_XTAL=0x0112A880
 "C:\Keil\C51\BIN\C51.EXE" @.\obj\MCU_DS~1.__I
 "C:\Keil\C51\BIN\C51.EXE" @.\obj\FFR1.__i
 "C:\Keil\C51\BIN\C51.EXE" @.\obj\PROCES~1.__I
+"C:\Keil\C51\BIN\C51.EXE" @.\obj\TCA841~1.__I
 "C:\Keil\C51\BIN\C51.EXE" @.\obj\USB_PR~1.__I
 "C:\Keil\C51\BIN\C51.EXE" @.\obj\logData.__i
 "C:\Keil\C51\BIN\C51.EXE" @.\obj\remote.__i
@@ -39,6 +40,8 @@ SET CPU_XTAL=0x0112A880
 "C:\Keil\C51\BIN\C51.EXE" @.\obj\Menu_Hzk.__i
 "C:\Keil\C51\BIN\C51.EXE" @.\obj\ui.__i
 "C:\Keil\C51\BIN\C51.EXE" @.\obj\ui_impl.__i
+"C:\Keil\C51\BIN\C51.EXE" @.\obj\i2c_sim.__i
+"C:\Keil\C51\BIN\C51.EXE" @.\obj\i2c.__i
 "C:\Keil\C51\BIN\BL51.EXE" @.\obj\SPDA23xx.lnp
 "C:\Keil\C51\BIN\OC51.EXE" ".\obj\SPDA23xx" 
 "C:\Keil\C51\BIN\OH51.EXE" ".\obj\SPDA23xx.B00" HEXFILE(.\obj\SPDA23xx.H00)
