@@ -138,8 +138,10 @@ xdata tca8418_keymap_t tca8418_keymap[KEYMAP_COUNTER] =
     {41, KEY_VALUE_LECTURE},{42, KEY_VALUE_MISC},   {43, KEY_VALUE_BACKWARD},
 };
 
+#if (FEATURE_I2C_DRIVER_VTBL == FEATURE_ON)
 //i2c driver used for TCA8148
 static i2c_driver_t *tca8418_drv = &i2c_driver_tca8418;
+#endif
 
 
 
@@ -160,14 +162,19 @@ int8 tca8418_write_byte (uint8 reg, int8 val)
 {
     int8 err;
     
+    #if (FEATURE_I2C_DRIVER_VTBL == FEATURE_ON)
+
     err = tca8418_drv->i2c_write_reg_byte (tca8418_drv,
                                            TCA8418_ADDR_WR,
                                            reg,
                                            val);
-//    err = i2c_driver_tca8418.i2c_write_reg_byte (tca8418_drv,
-//                                           TCA8418_ADDR_WR,
-//                                           reg,
-//                                           val);
+
+    #else
+
+    err = i2c_write_reg_byte (TCA8418_ADDR_WR, reg, val);
+
+    #endif 
+
     return err;
 }
 
@@ -187,14 +194,19 @@ int8 tca8418_read_byte (uint8 reg, int8 *p_val)
 {
     int8 err;
 
+    #if (FEATURE_I2C_DRIVER_VTBL == FEATURE_ON)
+
     err = tca8418_drv->i2c_read_reg_byte (tca8418_drv,
                                           TCA8418_ADDR_RD,
                                           reg,
                                           p_val);
-//    err = i2c_driver_tca8418.i2c_read_reg_byte (tca8418_drv,
-//                                          TCA8418_ADDR_RD,
-//                                          reg,
-//                                          p_val);
+
+    #else
+
+    err = i2c_read_reg_byte (TCA8418_ADDR_RD, reg, p_val, TRUE);
+
+    #endif
+
     return err;
 }
 

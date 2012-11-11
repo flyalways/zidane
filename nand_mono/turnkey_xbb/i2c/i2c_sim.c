@@ -283,7 +283,7 @@ int8 i2c_sim_get_byte (int8 *p_dat, bool ack_or_not)
 /// @author William Chang
 /// @date   2012/10/28
 ///-----------------------------------------------------------------------------
-static int8 i2c_sim_write_reg_byte (uint8 addr, uint8 reg, int8 val)
+int8 i2c_sim_write_reg_byte (uint8 addr, uint8 reg, int8 val)
 {
     int8 err=0;
 
@@ -330,7 +330,12 @@ static int8 i2c_sim_write_reg_byte (uint8 addr, uint8 reg, int8 val)
 /// @author William Chang
 /// @date   2012/10/28
 ///-----------------------------------------------------------------------------
-static int8 i2c_sim_read_reg_byte (uint8 addr, uint8 reg, uint8 *p_val, bool is_last) reentrant
+#if (FEATURE_I2C_DRIVER_VTBL == FEATURE_ON)
+
+// When using function pointer to call below function, we must make the function
+// to be a reentrant function since the some parameters passed in can not fit the
+// registers.
+int8 i2c_sim_read_reg_byte (uint8 addr, uint8 reg, uint8 *p_val, bool is_last) reentrant
 {
     int8 err=0;
 
@@ -366,9 +371,51 @@ static int8 i2c_sim_read_reg_byte (uint8 addr, uint8 reg, uint8 *p_val, bool is_
     return err;
 }
 
+#else
+
+int8 i2c_sim_read_reg_byte (uint8 addr, uint8 reg, uint8 *p_val, bool is_last)
+{
+    int8 err=0;
+
+    // Send start condition.
+    i2c_sim_start();
+
+    // Send the device address on the bus.
+    if ( i2c_sim_send_byte(addr) )
+    {
+        err |= I2C_ERROR_NO_ACK;
+    }
+
+    // Send the register address to the device.
+    if ( i2c_sim_send_byte(reg) )
+    {
+        err |= I2C_ERROR_NO_ACK;
+    }
+
+    // Receive the byte from the register.
+    if ( i2c_sim_get_byte(p_val, !is_last) )
+    {
+        err |= I2C_ERROR_NO_ACK;
+    }
+
+    // Send the stop signal if needed.
+    if (is_last)
+    {
+        // After GET function runs, SDA is INPUT mode.
+        I2C_SDA_SET_OUTPUT;
+        i2c_sim_stop();    
+    }
+
+    return err;
+}
+
+#endif // (FEATURE_I2C_DRIVER_VTBL == FEATURE_ON)
+
+#if (FEATURE_I2C_DRIVER_VTBL == FEATURE_ON)
 // Interface provided for clients from i2c_sim module.
 xdata i2c_access_t i2c_access_sim = { 
                                         i2c_sim_write_reg_byte,
                                         i2c_sim_read_reg_byte,
                                     };
+#endif
                                       

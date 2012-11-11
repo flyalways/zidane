@@ -10,6 +10,8 @@
 #define I2C_ERROR_NO_ACK        0x01
 #define I2C_ERROR_NO_DRIVER     0x02 // Driver initialized to NULL.
 
+#if (FEATURE_I2C_DRIVER_VTBL == FEATURE_ON)
+
 typedef struct
 {
     int8 (*write_reg_byte) (uint8 addr, uint8 reg, int8 val);
@@ -36,6 +38,8 @@ struct i2c_driver_st
 typedef struct i2c_driver_st i2c_driver_t;
 
 
+
+
 #if 0 // Another way to define the interface style.
 typedef struct 
 {
@@ -59,5 +63,12 @@ typedef struct
 
 extern i2c_driver_t i2c_driver_tca8418;
 extern i2c_driver_t i2c_driver_kt0810;
+
+#else // (FEATURE_I2C_DRIVER_VTBL == FEATURE_ON)
+
+extern int8 i2c_write_reg_byte (uint8 addr,uint8 reg,int8 val);
+extern int8 i2c_read_reg_byte  (uint8 addr,uint8 reg,uint8 *p_val,bool is_last);
+
+#endif // (FEATURE_I2C_DRIVER_VTBL == FEATURE_ON)
 
 #endif
