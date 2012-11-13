@@ -51,56 +51,59 @@ UBYTE code IdleTask_PhaseTab[]=
 	C_NULLPHASE,
 	C_NULLPHASE
 };
+
 #message "Does index mismatch with key event?"
+/// REVISIT!!!
+/// The sequence of play task phase highly depends on the macro definition
+/// of keys. This is so ugly. But I don't have time to improve this...:(
+/// If you change the key macro defintion, you must change here accordingly.
 UBYTE code PlayTask_PhaseTab[]=
 {
-	C_PlayIdle,//none
-	C_PlayIdle,//mode
-	C_PlayPause,//play
-	//C_PlayIdle,//mode
-	C_PlayPrev,//prev
-	C_PlayNext,//next
-	C_FmFreqChg,//C_FmFreqChgUp,
-	C_FmFreqChgDown,
-	C_PlayIdle,//rec; set repAB
-	C_PlayIdle,//vol
+	C_PlayIdle,         // C_Key_None             	   0x00
+	C_PlayPause,        // C_Key_Play                  0x01
+	C_PlayPause,        // C_Key_Mode                  0x02
+                        // The phase should be C_PlayIdle. Just use mode as play.
+	C_PlayNext,         // C_Key_Next				   0x03
+	C_PlayPrev,         // C_Key_Prev                  0x04
+	C_PlayVolUp,        // C_Key_Volup                 0x05
+                        // It was C_FmFreqChg.
+	C_PlayVolDn,        // C_Key_Voldn                 0x06
+                        // It was C_FmFreqChgDown.
+	C_PlayIdle,         // C_Key_Rec                   0x07
+	C_PlayIdle,         // C_Key_Vol	 			   0x08
 	C_PlayIdle,
 	C_PlayIdle,
 	C_PlayIdle,
 	C_PlayIdle,
 	C_PlayIdle,
 	C_PlayIdle,
-	C_PlayIdle,
+	C_PlayIdle,         // 0x0F
 
-	C_PlayIdle,//none
-	C_PlayProc,//Lmode
+	C_PlayIdle,         // 0x10
+	C_PowerOff,         // C_LKey_Play                 0x11
+	C_PowerOff,         // C_LKey_Mode                 0x12
+	C_PlayFF,           // C_LKey_Next                 0x13
+	C_PlayFR,           // C_LKey_Prev                 0x14
+	C_PlayModeChg,      // C_LKey_Volup                0x15
+	C_FmFreqChgDown,    // C_LKey_Voldn                0x16
+	C_PlayProc,         // C_LKey_Rec                  0x17
+	C_PlayProc,         // C_LKey_Vol	 			   0x18
+	C_PlayIdle,
+	C_PlayIdle,
+	C_PlayIdle,
+	C_PlayIdle,
+	C_PlayIdle,
+	C_PlayIdle,
+	C_PlayIdle,         // 0x1F
 
-	C_PowerOff,//	C_PlayProc,//C_PlayModeChg,--sunzhk add 100428
-
-	C_PlayVolDn,//vol-
-	C_PlayVolUp,//vol+
-
-	C_PlayModeChg,//C_PlayModeChg,
-	C_FmFreqChgDown,
-
-	C_PlayProc,//Lrec
-	C_PlayProc,
-	C_PlayIdle,
-	C_PlayIdle,
-	C_PlayIdle,
-	C_PlayIdle,
-	C_PlayIdle,
-	C_PlayIdle,
-	C_PlayIdle,
-
-	C_PlayIdle,//none
-	C_PlayIdle,//Rmode
+	C_PlayIdle,         // 0x20
+	C_PlayIdle,     
 	C_PlayProc,
 	C_PlayProc,
 	C_PlayProc,
 	C_PlayProc,
 	C_PlayProc,
-	C_PlayProc,//Rrec
+	C_PlayProc,
 	C_PlayProc,
 	C_NULLPHASE,
 	C_NULLPHASE,
@@ -108,7 +111,7 @@ UBYTE code PlayTask_PhaseTab[]=
 	C_NULLPHASE,
 	C_NULLPHASE,
 	C_NULLPHASE,
-	C_NULLPHASE
+	C_NULLPHASE         // 0x2F
 };
 
 
