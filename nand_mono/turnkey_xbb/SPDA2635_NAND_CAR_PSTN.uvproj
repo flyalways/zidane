@@ -1186,11 +1186,6 @@
               <FileType>1</FileType>
               <FilePath>.\Key\ProcessKey.c</FilePath>
             </File>
-            <File>
-              <FileName>tca8418_keypad.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Key\tca8418_keypad.c</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>
@@ -1594,6 +1589,11 @@
               <FileName>i2c.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\i2c\i2c.c</FilePath>
+            </File>
+            <File>
+              <FileName>tca8418_keypad.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\i2c\tca8418_keypad.c</FilePath>
             </File>
           </Files>
         </Group>

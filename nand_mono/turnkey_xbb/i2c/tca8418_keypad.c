@@ -140,7 +140,7 @@ xdata tca8418_keymap_t tca8418_keymap[KEYMAP_COUNTER] =
 
 #if (FEATURE_I2C_DRIVER_VTBL == FEATURE_ON)
 //i2c driver used for TCA8148
-static i2c_driver_t *tca8418_drv = &i2c_driver_tca8418;
+static i2c_driver_t *tca8418_drv = &i2c_driver_tca8418 reentrant;
 #endif
 
 
