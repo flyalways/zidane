@@ -24,7 +24,7 @@ xdata U8 gc_PlayMenuLevel=0; //0:playmenu 1:pause menu 2:language menu 3:play mo
 xdata U8 gc_PlayMenuTotalNum=3;
 xdata U8 gc_IRRepAllFlag=0;
 
-extern data  U8 gc_PlayMenu_Timeout;  //20090206 chiayen add
+extern xdata  U8 gc_PlayMenu_Timeout;  //20090206 chiayen add
 extern data	 U8		gc_LCM_Media;
 extern data	 U8	 	gc_LCM_line;
 extern data	 U8		gc_DisplayEQIcon;

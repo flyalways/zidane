@@ -33,6 +33,9 @@
 #define sint8		signed char
 #define sint16		signed int
 
+#define int8        signed char
+#define int16       signed int
+
 union LWDataType {
     	LWORD LW;
     	UWORD WD[2];
