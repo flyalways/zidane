@@ -45,6 +45,7 @@ void ProcKey_in_play(void)
 {
      U8 x_gc_temp;
 
+    // When the screen is not lit, don't act.
 	if(LCM_BACKLIGHT==1)
 	{
 		gc_KeyEvent=0;
@@ -56,18 +57,22 @@ void ProcKey_in_play(void)
 		return;	
 	}
 
-	if((gs_System_State.c_Phase == TASK_PHASE_PAUSE) && ((gc_KeyEvent!=0x02) && (gc_KeyEvent!=0x15)&&(gc_KeyEvent!=0x12)) && (gc_Task_Current!=C_Task_Setting))  //20090107 chiayen  modify  
+    // When the system is at pause, act differently depanding on ket event:
+	if( (gs_System_State.c_Phase == TASK_PHASE_PAUSE)
+        && ( (gc_KeyEvent!=C_Key_Play)&&(gc_KeyEvent!=0x15)&&(gc_KeyEvent!=0x12) )
+        && ( (gc_Task_Current!=C_Task_Setting) ) )  
 	{
 		gc_KeyEvent=0;
 		return;
 	}
-
-	if((gs_System_State.c_Phase == TASK_PHASE_PAUSE) && (gc_KeyEvent==0x12))
+	if( (gs_System_State.c_Phase == TASK_PHASE_PAUSE)
+        && (gc_KeyEvent==C_LKey_Mode) )
 	{
          MediaChange(); 
          return; 
     } 
 	
+    // When the system is at stop:
 	if(gs_System_State.c_Phase==TASK_PHASE_STOP)  
 	{
 		if(gc_KeyEvent==0x23 || gc_KeyEvent==0x24 || gc_KeyEvent==0x13 || gc_KeyEvent==0x14)
@@ -84,7 +89,7 @@ void ProcKey_in_play(void)
     //dbprintf ("[%-10s] line %-4d: gc_KeyEvent = %x\n", __FILE__, __LINE__, gc_KeyEvent);
 
 	x_gc_temp= PlayTask_PhaseTab[gc_KeyEvent];
-    if( x_gc_temp != 9)
+    if( x_gc_temp != C_PlayIdle)
     {
        gc_PhaseInx = x_gc_temp;
     }

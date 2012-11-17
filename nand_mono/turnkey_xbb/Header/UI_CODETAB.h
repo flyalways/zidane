@@ -59,18 +59,16 @@ UBYTE code IdleTask_PhaseTab[]=
 /// If you change the key macro defintion, you must change here accordingly.
 UBYTE code PlayTask_PhaseTab[]=
 {
-	C_PlayIdle,         // C_Key_None             	   0x00
-	C_PlayPause,        // C_Key_Play                  0x01
-	C_PlayPause,        // C_Key_Mode                  0x02
+	C_PlayIdle,         // 0x00	C_Key_None
+	C_PlayPause,        // 0x01	C_Key_Play
+	C_PlayPause,        // 0x02	C_Key_Mode
                         // The phase should be C_PlayIdle. Just use mode as play.
-	C_PlayNext,         // C_Key_Next				   0x03
-	C_PlayPrev,         // C_Key_Prev                  0x04
-	C_PlayVolUp,        // C_Key_Volup                 0x05
-                        // It was C_FmFreqChg.
-	C_PlayVolDn,        // C_Key_Voldn                 0x06
-                        // It was C_FmFreqChgDown.
-	C_PlayIdle,         // C_Key_Rec                   0x07
-	C_PlayIdle,         // C_Key_Vol	 			   0x08
+	C_PlayNext,         // 0x03	C_Key_Next 
+	C_PlayPrev,         // 0x04	C_Key_Prev 
+	C_PlayVolUp,        // 0x05	C_Key_Volup. It was C_FmFreqChg.
+	C_PlayVolDn,        // 0x06	C_Key_Voldn. It was C_FmFreqChgDown.
+	C_PlayIdle,         // 0x07	C_Key_Rec
+	C_PlayIdle,         // 0x08	C_Key_Vol
 	C_PlayIdle,
 	C_PlayIdle,
 	C_PlayIdle,
@@ -80,14 +78,14 @@ UBYTE code PlayTask_PhaseTab[]=
 	C_PlayIdle,         // 0x0F
 
 	C_PlayIdle,         // 0x10
-	C_PowerOff,         // C_LKey_Play                 0x11
-	C_PowerOff,         // C_LKey_Mode                 0x12
-	C_PlayFF,           // C_LKey_Next                 0x13
-	C_PlayFR,           // C_LKey_Prev                 0x14
-	C_PlayModeChg,      // C_LKey_Volup                0x15
-	C_FmFreqChgDown,    // C_LKey_Voldn                0x16
-	C_PlayProc,         // C_LKey_Rec                  0x17
-	C_PlayProc,         // C_LKey_Vol	 			   0x18
+	C_PowerOff,         // 0x11	C_LKey_Play 
+	C_PowerOff,         // 0x12	C_LKey_Mode 
+	C_PlayFF,           // 0x13	C_LKey_Next 
+	C_PlayFR,           // 0x14	C_LKey_Prev 
+	C_PlayModeChg,      // 0x15	C_LKey_Volup
+	C_FmFreqChgDown,    // 0x16	C_LKey_Voldn
+	C_PlayProc,         // 0x17	C_LKey_Rec  
+	C_PlayProc,         // 0x18	C_LKey_Vol
 	C_PlayIdle,
 	C_PlayIdle,
 	C_PlayIdle,
