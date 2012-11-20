@@ -31,6 +31,15 @@
 #define Glass_ColumnNum 128     
 #endif
 
+#define SWCLASS_1	0x01
+#define SWCLASS_2	0x02
+#define SWCLASS_3	0x03
+#define SWCLASS_4	0x04
+#define SWCLASS_5	0x05
+#define SWCLASS_6	0x06
+#define SWCLASS_7	0x07
+#define SWCLASS_8	0x08
+
 xdata UBYTE gc_DirReBuildFlag=0;
 
 extern data	 U8		gc_LCM_Media;
@@ -2282,5 +2291,39 @@ U8 LCD_disp_HZK_string(U8 Page,U8 *DataBuf,U8 tc_ISNOrUnicode, U8 nByte,U8 Colum
 		gw_DispFileName_ByteOffset=0;
 	}
 	return Sts;//overstep display area
+}
+
+U8 SwitchClass(U8 tClass)
+{
+	switch(tClass)
+	{
+		case SWCLASS_1:
+		gw_DIRtableIndex=3;
+		break;
+		case SWCLASS_2:
+		gw_DIRtableIndex=4;
+		break;
+		case SWCLASS_3:
+		gw_DIRtableIndex=5;
+		break;
+		case SWCLASS_4:
+		gw_DIRtableIndex=6;
+		break;
+		case SWCLASS_5:
+		gw_DIRtableIndex=7;
+		break;
+		case SWCLASS_6:
+		gw_DIRtableIndex=8;
+		break;
+		case SWCLASS_7:
+		gw_DIRtableIndex=9;
+		break;
+		case SWCLASS_8:
+		gw_DIRtableIndex=10;
+		break;
+	}
+	USER_Read2KBReserveBlock_DIR(gw_DIRtableIndex);
+	gc_RepPlayMode=C_InDirPlay;
+	play_next();
 }
 
