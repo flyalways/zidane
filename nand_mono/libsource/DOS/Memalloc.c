@@ -14,7 +14,7 @@ data	U8	gc_DispTimeBuf[3];
 xdata	U8	gc_Task_Current;
 xdata	U8	gc_Task_Next;
 xdata U16 gw_FileIndex[3];
-xdata U16 gw_FileTotalNumber[3];
+xdata U16 gw_FileTotalNumber[3];                // NR of files in the current dir. It means recursively.
 xdata U8 gc_FileLongName[512] _at_ 0x7500;
 xdata U8 gc_CurrentExistMedia;
 xdata U32 gdw_DOS_RootDirClus;

@@ -2295,35 +2295,57 @@ U8 LCD_disp_HZK_string(U8 Page,U8 *DataBuf,U8 tc_ISNOrUnicode, U8 nByte,U8 Colum
 
 U8 SwitchClass(U8 tClass)
 {
-	switch(tClass)
-	{
-		case SWCLASS_1:
-		gw_DIRtableIndex=3;
-		break;
-		case SWCLASS_2:
-		gw_DIRtableIndex=4;
-		break;
-		case SWCLASS_3:
-		gw_DIRtableIndex=5;
-		break;
-		case SWCLASS_4:
-		gw_DIRtableIndex=6;
-		break;
-		case SWCLASS_5:
-		gw_DIRtableIndex=7;
-		break;
-		case SWCLASS_6:
-		gw_DIRtableIndex=8;
-		break;
-		case SWCLASS_7:
-		gw_DIRtableIndex=9;
-		break;
-		case SWCLASS_8:
-		gw_DIRtableIndex=10;
-		break;
-	}
-	USER_Read2KBReserveBlock_DIR(gw_DIRtableIndex);
-	gc_RepPlayMode=C_InDirPlay;
-	play_next();
+    U8 tIndex;
+    switch(tClass)
+    {
+       case SWCLASS_1:
+       tIndex=1;
+       break;
+       case SWCLASS_2:
+       tIndex=2;
+       break;
+       case SWCLASS_3:
+       tIndex=3;
+       break;
+       case SWCLASS_4:
+       tIndex=4;
+       break;
+       case SWCLASS_5:
+       tIndex=5;
+       break;
+       case SWCLASS_6:
+       tIndex=6;
+       break;
+       case SWCLASS_7:
+       tIndex=7;
+       break;
+       case SWCLASS_8:
+       tIndex=8;
+       break;
+
+       // Just quit if passed into an invalid dir index.
+       default:
+           return 0;
+           break;
+    }
+
+    //gs_DIR_FCB[0].dw_FDB_StartCluster    = gs_DIRtable[tIndex].dw_FDB_StartCluster;
+    //gs_DIR_FCB[0].dw_LongFDB_LogAdd0 = gs_DIRtable[tIndex].dw_LongFDB_LogAdd0;
+    //gs_DIR_FCB[0].dw_FDB_Cluster     = gs_DIRtable[tIndex].dw_FDB_Cluster;
+    //gs_DIR_FCB[0].dw_FDB_LogAdd          = gs_DIRtable[tIndex].dw_FDB_LogAdd;
+    //gs_DIR_FCB[0].w_FDB_Offset           = gs_DIRtable[tIndex].w_FDB_Offset;
+ 
+    gs_File_FCB[0].dw_FDB_StartCluster = gs_DIRtable[tIndex].dw_File_StartCluster;
+
+    // REVISIT!!!
+    // Update the FCB?
+
+    // Update the index in the dir table.
+    gw_DIRtableIndex = tIndex;
+
+	//USER_Read2KBReserveBlock_DIR(gw_DIRtableIndex);   
+    gc_RepPlayMode = C_InDirPlay;
+    gc_PhaseInx = C_PlayNext;
+    //play_next();
 }
 

@@ -102,23 +102,6 @@
 // The counter of keypad we use tca8418 to scan 
 #define KEYMAP_COUNTER      15
 
-// Key value definition. Used as a combination with key definition in define.h
-#define KEY_VALUE_NONE          0
-#define KEY_VALUE_FM            0x21
-#define KEY_VALUE_OPERA         0x22
-#define KEY_VALUE_PLAY          0x23
-#define KEY_VALUE_MUSIC         0x24
-#define KEY_VALUE_FICTION       0x25
-#define KEY_VALUE_PREV          0x26
-#define KEY_VALUE_CITY          0x27
-#define KEY_VALUE_COMIC         0x28
-#define KEY_VALUE_NEXT          0x29
-#define KEY_VALUE_SONG          0x2A
-#define KEY_VALUE_STORY         0x2B
-#define KEY_VALUE_FORWARD       0x2C
-#define KEY_VALUE_LECTURE       0x2D
-#define KEY_VALUE_MISC          0x2E
-#define KEY_VALUE_BACKWARD      0x2F
 
 // Key mapping: key code -> real key. A real key is the 1st level of key info.
 // In our project, we use row 0,1,2,3,4 and col 0,1,2 as the keypad. 15 keys in

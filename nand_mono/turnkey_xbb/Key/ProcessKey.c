@@ -2,6 +2,7 @@
 #include "dos\fs_struct.h"
 #include "Memalloc.h"
 #include "../IR/lcm_bmp.h"
+#include "../i2c/tca8418_keypad.h"
 
 extern data U8 gc_Dirchange_Timer;  //20090216 chiayen add
 extern data	U16	gw_IR_Timer;
@@ -21,6 +22,7 @@ extern UBYTE code FMRTask_PhaseTab[];
 extern UBYTE code MenuTask_PhaseTab[];
 extern	void MediaChange(void);
 //extern xdata WORD gw_SearchAmount; //Ching marked 080805
+extern U8 SwitchClass(U8 tClass);
 
 /*
 extern void Music_WakeUp(U8 tc_Data);
@@ -56,6 +58,42 @@ void ProcKey_in_play(void)
 		gc_KeyEvent=0;
 		return;	
 	}
+
+    // If we've got a key to switch the file category:
+
+    #if 1 // Only for test
+    if ( (gc_KeyEvent == C_Key_Rec) )
+    {
+        SwitchClass(1); // comic;
+        return;
+    }
+    if ( (gc_KeyEvent == C_Key_Vol) )
+    {
+        SwitchClass(2); // music;
+        return;
+    }
+    if ( (gc_KeyEvent == C_LKey_Rec) )
+    {
+        SwitchClass(3); // song;
+        return;
+    }
+    if ( (gc_KeyEvent == C_LKey_Vol) )
+    {
+        SwitchClass(4);
+        return;
+    }
+    #endif // Only for test
+
+    if ( (gc_KeyEvent == KEY_VALUE_OPERA)||(gc_KeyEvent==KEY_VALUE_MUSIC)
+         ||(gc_KeyEvent == KEY_VALUE_FICTION)||(gc_KeyEvent == KEY_VALUE_COMIC)
+         ||(gc_KeyEvent == KEY_VALUE_SONG)||(gc_KeyEvent == KEY_VALUE_STORY)
+         ||(gc_KeyEvent == KEY_VALUE_LECTURE)||(gc_KeyEvent == KEY_VALUE_MISC) )
+    {
+        SwitchClass(gc_KeyEvent);
+        gc_Dirchange_Timer=0;
+   	    gc_KeyEvent=0;
+        return;
+    }
 
     // When the system is at pause, act differently depanding on ket event:
 	if( (gs_System_State.c_Phase == TASK_PHASE_PAUSE)

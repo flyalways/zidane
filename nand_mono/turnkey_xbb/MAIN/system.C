@@ -14,6 +14,7 @@
 #include "..\..\libsource\header\UI_config.h"
 #include "..\header\variables.h"
 #include "../ui/ui.h"
+#include "../i2c/tca8418_keypad.h"
 
 
 xdata U8 gc_KeyDet_Mask=0; 
@@ -510,7 +511,15 @@ void TimeOutHandle()
 
 	if(gcGetKey_Timeout==1)//(JC)Read ADC value(get key) period 
 	{
-		gcGetKey_Timeout=0;	
+		gcGetKey_Timeout=0;
+        
+        // Read the key event from tca8418 keypad. If we've got valid data, quit.
+        // Otherwise, check sac line to see what's there.
+        if ( gc_key_Pressed = tca8418_get_real_key() )
+        {
+            return;     
+        }
+
 		if((!gc_KeyValue)&&(!gc_KeyDet_Mask))//(JC)Key event determined //20090107 chiayen modify
 		{
 		#ifndef CAR_64
@@ -559,8 +568,13 @@ void TimeOutHandle()
 				}
 				else if((gc_key_PrevPressed & 0x90) == 0x90)//(JC)long key released
 				{
-					gc_KeyValue = (gc_key_PrevPressed | 0x20) & 0x6f;//(JC)key value will be 0x2x,long-pressed key released
-					gc_LongKeyCount=0; //chiayen0807
+					//gc_KeyValue = (gc_key_PrevPressed | 0x20) & 0x6f;//(JC)key value will be 0x2x,long-pressed key released
+					
+                    // Don't handle the key event when long key is released.
+                    // The old way will generate a 0x2x key value which conflicts
+                    // with the category keys added later.
+                    gc_KeyValue = C_Key_None;
+                    gc_LongKeyCount=0; //chiayen0807
 				}
 				gc_key_PrevPressed = C_Key_None;
 				gc_LongKeyTimer = 0;

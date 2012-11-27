@@ -282,6 +282,7 @@ void LCM_Display(void)
 	}
     #endif
 
+    // Show song numbers.
 	if(gw_DispSongNum!=gw_FileIndex[0])
 	{
 		gw_DispSongNum = gw_FileIndex[0];
@@ -682,7 +683,12 @@ void LCM_ShowPlaySongNum(void)					//just for solang by home.
 
     #elif (SERIAL_MONO == FEATURE_ON)   // Serial LCM
 
-    ui_show_song_num (gw_FileIndex[0], gw_FileTotalNumber[0]);
+    uint8 file_index;
+    uint8 file_num; // File NR in this dir not recursively.
+
+    file_num = gs_DIRtable[gw_DIRtableIndex].c_file_num_lo;
+    ui_show_song_num (gw_FileIndex[0], file_num);
+    //ui_show_song_num (gw_FileIndex[0], gw_FileTotalNumber[0]);
     //ui_show_song_pos(gw_FileIndex[0]);
     //ui_show_song_num_total(gw_FileTotalNumber[0]);
 
