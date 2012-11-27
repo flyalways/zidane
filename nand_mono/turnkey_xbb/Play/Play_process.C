@@ -756,7 +756,7 @@ void play_init()
         gw_init_needed&=CLR_BIT0;      
         gs_System_State.c_FileHandle=0;
         gs_System_State.c_Phase = TASK_PHASE_STOP;
-        gs_DSP_GLOBAL_RAM.sw_Volume = 42;//(JC)init value
+        gs_DSP_GLOBAL_RAM.sw_Volume = 20;//(JC)init value
         gs_DSP_GLOBAL_RAM.sc_EQ_Type=0;//(JC)init value
         gb_LrcFileName_Exist=0;//(JC)H0702
         gs_DSP_GLOBAL_RAM.sc_DM_Index = 0;  // reset bitstream address of DM
@@ -870,7 +870,7 @@ void play_init()
 
         if((gs_DSP_GLOBAL_RAM.sw_Volume<0) || (gs_DSP_GLOBAL_RAM.sw_Volume>50))
         {
-            gs_DSP_GLOBAL_RAM.sw_Volume=42; 
+            gs_DSP_GLOBAL_RAM.sw_Volume=20; 
         }
 
         if((gs_DSP_GLOBAL_RAM.sc_EQ_Type<0) || (gs_DSP_GLOBAL_RAM.sc_EQ_Type>5))

@@ -22,7 +22,7 @@ extern UBYTE code FMRTask_PhaseTab[];
 extern UBYTE code MenuTask_PhaseTab[];
 extern	void MediaChange(void);
 //extern xdata WORD gw_SearchAmount; //Ching marked 080805
-extern U8 SwitchClass(U8 tClass);
+extern void SwitchClass(U8 tClass);
 
 /*
 extern void Music_WakeUp(U8 tc_Data);

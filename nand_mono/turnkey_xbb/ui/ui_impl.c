@@ -737,6 +737,7 @@ void ui_show_err_impl(void)
 void ui_show_music_basic_impl (void)
 {
     ui_disp_ui_data (&ui_data_music_line_0_0, 0);
+    ui_disp_ui_data (&ui_data_music_line_0_1, 0);
     ui_disp_ui_data (&ui_data_music_line_2_0_0, 0);
     ui_disp_ui_data (&ui_data_music_line_2_1, 0);
 }
@@ -980,6 +981,18 @@ DispOver:
     #endif
 }
 
+//-----------------------------------------------------------------------------
+// ui_show_vol_impl
+//
+// Description:
+//
+// Created: 2012/11/27
+//-----------------------------------------------------------------------------
+void ui_show_vol_impl (uint8 vol)
+{
+    ui_disp_digit_6x12 (141,    0, vol/10);
+    ui_disp_digit_6x12 (147,    0, vol%10);    
+}
 
 //-----------------------------------------------------------------------------
 // Show a music demo menu like UES.

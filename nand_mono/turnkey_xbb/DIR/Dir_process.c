@@ -2293,7 +2293,7 @@ U8 LCD_disp_HZK_string(U8 Page,U8 *DataBuf,U8 tc_ISNOrUnicode, U8 nByte,U8 Colum
 	return Sts;//overstep display area
 }
 
-U8 SwitchClass(U8 tClass)
+void SwitchClass(U8 tClass)
 {
     U8 tIndex;
     switch(tClass)
@@ -2325,7 +2325,7 @@ U8 SwitchClass(U8 tClass)
 
        // Just quit if passed into an invalid dir index.
        default:
-           return 0;
+           return;
            break;
     }
 

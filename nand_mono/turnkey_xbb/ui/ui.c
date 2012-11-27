@@ -168,6 +168,18 @@ uint8 ui_show_file_name
 }
 
 //-----------------------------------------------------------------------------
+// ui_show_vol
+//
+// Description: show system vol
+//
+// Created: 2012/11/27
+//-----------------------------------------------------------------------------
+void ui_show_vol (uint8 vol)
+{
+    ui_show_vol_impl (vol);
+}
+
+//-----------------------------------------------------------------------------
 // ui_test
 //
 // Description: Wrapper function to do some test about ui. It will be an infinite

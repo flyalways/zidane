@@ -394,6 +394,7 @@ void LCM_Display(void)
         #endif
         		
 		// Change Volumn
+        #if (SERIAL_MONO == FEATURE_OFF)    // Original parallel LCM
 		if((gc_SelectVol==1)&&(gc_ShowTimer!=0))
 		{			
 			if(gw_DisplayVol!=gs_DSP_GLOBAL_RAM.sw_Volume)
@@ -414,6 +415,13 @@ void LCM_Display(void)
 		{
 			gw_DisplayVol=0xFF;
 		}
+        #elif (SERIAL_MONO == FEATURE_ON)
+        if(gw_DisplayVol!=gs_DSP_GLOBAL_RAM.sw_Volume)
+        {
+            gw_DisplayVol = gs_DSP_GLOBAL_RAM.sw_Volume;
+            LCM_ShowVOL();    
+        }
+        #endif
 
 		// Show Song Number
 		if((gb_Frequency_Song==1)&&(gc_ShowTimer!=0))
@@ -683,7 +691,6 @@ void LCM_ShowPlaySongNum(void)					//just for solang by home.
 
     #elif (SERIAL_MONO == FEATURE_ON)   // Serial LCM
 
-    uint8 file_index;
     uint8 file_num; // File NR in this dir not recursively.
 
     file_num = gs_DIRtable[gw_DIRtableIndex].c_file_num_lo;

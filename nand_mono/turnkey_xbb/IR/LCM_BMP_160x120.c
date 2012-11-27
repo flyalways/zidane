@@ -324,6 +324,8 @@ void LCM_ShowPAUSE(void)
 
 void LCM_ShowVOL(void)
 {
+    #if (SERIAL_MONO == FEATURE_OFF)    // Original parallel LCM
+
 	U8	tc_column;
 	U8	VOL;
 
@@ -339,6 +341,16 @@ void LCM_ShowVOL(void)
 	LCM_ShowChar12x32(VOL/10,tc_column);
 	tc_column+=12;
 	LCM_ShowChar12x32(VOL%10,tc_column);
+
+    #elif (SERIAL_MONO == FEATURE_ON)
+
+    // The range system supports is 0-63. With current vol control functions,
+    // the range we can adjust is: 0-51.
+    // But I'd like to provide 10 steps for users.
+    // Currently just show the original volumn values.
+    ui_show_vol (gs_DSP_GLOBAL_RAM.sw_Volume);
+
+    #endif
 }
 
 void LCM_ShowPlayVol(void)

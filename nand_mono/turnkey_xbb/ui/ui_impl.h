@@ -63,5 +63,6 @@ uint8 ui_show_file_name_impl
     uint8 nByte,
     uint8 DispOnOff
 );
+extern void ui_show_vol_impl(uint8);
 
 #endif
