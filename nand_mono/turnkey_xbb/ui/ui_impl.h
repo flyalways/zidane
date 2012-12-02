@@ -41,6 +41,14 @@ typedef struct
     ui_bound_t      clr_bound;
 } ui_bmp_profile_t;
 
+typedef struct
+{
+    uint8 origin_x;
+    uint8 origin_y;
+    char  str[26]; // 6x12 alphabet in a 160x120 resolution.
+    uint8 num;
+} ui_str_t;
+
 void ui_init_impl ();
 void ui_clear_ddram();
 void ui_disp_hello_impl();
@@ -64,5 +72,9 @@ uint8 ui_show_file_name_impl
     uint8 DispOnOff
 );
 extern void ui_show_vol_impl(uint8);
+void ui_disp_dbg_impl (char *str, uint8 num);
+void ui_disp_char_6x12 (uint8 origin_x, uint8 origin_y, uint8 ascii);
+//void ui_disp_string_6x12 (uint8 origin_x, uint8 origin_y, char *str, uint8 num);
+void ui_disp_string_6x12 (ui_str_t *ui_str);
 
 #endif

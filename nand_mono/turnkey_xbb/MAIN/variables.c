@@ -90,3 +90,5 @@ xdata U32 gdw_ID3_v2_sz;	                    //Jimi 0901027
 xdata U8 gc_language_offset;                    //多国语言的偏移（第几国语言）
 
 xdata U8 gc_Num_Flag=0;
+
+xdata char dbg_msg[26];                         // Buffer for debug message output.

@@ -87,4 +87,6 @@ extern code U8 LanguageTable[];
 extern U8 gc_language_offset;
 extern xdata U8 gc_Num_Flag;
 
+extern xdata char dbg_msg[26];
+
 #endif

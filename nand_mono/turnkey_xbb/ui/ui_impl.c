@@ -14,6 +14,7 @@
 #include "../Header/variables.h"
 
 #include "ui_bmp.c"
+#include <string.h>
 
 static xdata bool ui_is_lock = FALSE;        // Flag of ui locked or not.
 
@@ -766,6 +767,141 @@ void ui_disp_digit_6x12 (uint8 origin_x, uint8 origin_y, uint8 digit)
     ui_data_digit.ui_bmp.size_bmp_data      = 12;
 
     ui_disp_ui_data (&ui_data_digit, 0);   
+}
+
+//-----------------------------------------------------------------------------
+// ui_disp_char_6x12
+//
+// Description: draw a 6x12 character on the screen with input ascii value of
+//              this character.
+//              Support all the chars which can be displayed among ascii from
+//              ' ' to '~'. If the char is not in this range, show it as '?'.
+// 
+// Created: 2012/12/02
+//-----------------------------------------------------------------------------
+void ui_disp_char_6x12 (uint8 origin_x, uint8 origin_y, uint8 ascii)
+{  
+    ui_data_t ui_data_digit;
+    uint8 index_bmp_char;
+
+    if ((' '<=ascii)&&(ascii<='~'))
+    {
+        index_bmp_char = ascii-' ';
+    }
+    else // For the char which can't be displayed, show it as '?'.
+    {
+        index_bmp_char = '?'-' ';
+    }
+
+    // Initialize ui_data_t fields for every digit to show.
+    ui_data_digit.origin_x                  = origin_x;
+    ui_data_digit.origin_y                  = origin_y;
+    ui_data_digit.ui_bmp.bmp.length         = 6;
+    ui_data_digit.ui_bmp.bmp.height         = 12;
+    ui_data_digit.ui_bmp.bmp.byte_of_line   = 1;
+    ui_data_digit.ui_bmp.bmp.p_data         = &bmp_char_6x12[12*index_bmp_char];
+    ui_data_digit.ui_bmp.size_bmp_data      = 12;
+
+    ui_disp_ui_data (&ui_data_digit, 0);   
+}
+
+//-----------------------------------------------------------------------------
+// ui_disp_string_6x12
+//
+// Description: Display a 6x12 string only in lowercase.
+// 
+// 
+// Created: 2012/12/02
+//-----------------------------------------------------------------------------
+// Virgin implementation. Just too many parameters. I'm worried if there is
+// something wrong given the limit of passing parameters with registers in Keil
+// C51. So use new implementation below.
+#if 0
+void ui_disp_string_6x12 (uint8 origin_x, uint8 origin_y, char *str, uint8 num)
+{
+    uint8 i;
+    uint8 *ascii_p=str;
+
+    for(i=0; i<num; i++)
+    {
+        ui_disp_char_6x12 (origin_x, origin_y, *(ascii_p+i));
+        origin_x += 6;
+    }        
+}
+#endif
+
+void ui_disp_string_6x12 (ui_str_t *ui_str)
+{
+    uint8 i;
+
+    for (i=0; i<ui_str->num; i++)
+    {
+        ui_disp_char_6x12 (ui_str->origin_x,
+                           ui_str->origin_y,
+                           (ui_str->str)[i]);
+        ui_str->origin_x += 6;
+
+    }
+}
+
+//-----------------------------------------------------------------------------
+// ui_disp_dbg_impl
+//
+// Description: Display the debug info I want in a 6x12 lowercase string.
+//              The start axis is hard-coded here. The info is showed line by
+//              line.
+// 
+// Created: 2012/12/02
+//-----------------------------------------------------------------------------
+// Virgin implementation. Just too many parameters. I'm worried if there is
+// something wrong given the limit of passing parameters with registers in Keil
+// C51. So use new implementation below.
+#if 0
+void ui_disp_dbg_impl (char *str, uint8 num)
+{
+    static uint8 y_next=12;
+
+    ui_str_t ui_str;
+    ui_str.origin_x=0;
+    ui_str.origin_y=12;
+    strcpy (ui_str.str, str);
+    ui_str.num=num;
+
+    // Show this debug info at this line.
+    ui_disp_string_6x12 (0, y_next, str, num);
+
+    // Update the y for next line at next time.
+    y_next += 12;
+
+    // If the info reaches the bottom of the screen, roll it back to the top.
+    if (y_next>95)
+    {
+        y_next = 12;
+    }
+}
+#endif
+
+void ui_disp_dbg_impl (char *str, uint8 num)
+{
+    static uint8 y_next=12;
+
+    ui_str_t ui_str;
+    ui_str.origin_x=0;
+    ui_str.origin_y=y_next;
+    strcpy (ui_str.str, str);
+    ui_str.num=num;
+
+    // Show this debug info at this line.
+    ui_disp_string_6x12 (&ui_str);
+
+    // Update the y for next line at next time.
+    y_next += 12;
+
+    // If the info reaches the bottom of the screen, roll it back to the top.
+    if (y_next>95)
+    {
+        y_next = 12;
+    }
 }
 
 //-----------------------------------------------------------------------------

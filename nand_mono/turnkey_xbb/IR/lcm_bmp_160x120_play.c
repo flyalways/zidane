@@ -2,6 +2,7 @@
 #include "..\header\variables.h"
 #include "../ui/ui.h"
 #include "../ui/ui_impl.h"
+#include <stdio.h>
 
 extern xdata	U8	gc_Err;
 extern xdata U8 gc_Media_type;
@@ -166,7 +167,7 @@ extern U8 xdata gc_xs;
 // So we will use some flags to mark which things are renewed just now.
 //-----------------------------------------------------------------------------
 void LCM_Display(void)
-{
+{   
 	U16	tw_DisplayTime;
 
     // REVISIT!!!
@@ -607,6 +608,7 @@ Show_SongTime:
 		LCM_ShowPlayTime(tw_DisplayTime);
 		gw_DisplayTime=tw_DisplayTime;
 	}
+
 }
 
 void LCM_erase_one_page(U8 page)

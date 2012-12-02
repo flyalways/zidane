@@ -180,6 +180,24 @@ void ui_show_vol (uint8 vol)
 }
 
 //-----------------------------------------------------------------------------
+// ui_show_dbg
+//
+// Description: show debug info.
+//
+// Created: 2012/12/02
+//-----------------------------------------------------------------------------
+void ui_show_dbg (char *str, uint8 num)
+{
+    // 6x12 alphabet in 160x120 resolution. We can display at most 26 chars in
+    // a line. So cut out the rest.
+    if (num>26)
+    {
+        num=26;
+    }
+    ui_disp_dbg_impl (str, num);
+}
+
+//-----------------------------------------------------------------------------
 // ui_test
 //
 // Description: Wrapper function to do some test about ui. It will be an infinite
