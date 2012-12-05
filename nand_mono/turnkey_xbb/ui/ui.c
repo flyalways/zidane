@@ -186,15 +186,9 @@ void ui_show_vol (uint8 vol)
 //
 // Created: 2012/12/02
 //-----------------------------------------------------------------------------
-void ui_show_dbg (char *str, uint8 num)
+void ui_show_dbg (char *str)
 {
-    // 6x12 alphabet in 160x120 resolution. We can display at most 26 chars in
-    // a line. So cut out the rest.
-    if (num>26)
-    {
-        num=26;
-    }
-    ui_disp_dbg_impl (str, num);
+    ui_disp_dbg_impl (str);
 }
 
 //-----------------------------------------------------------------------------

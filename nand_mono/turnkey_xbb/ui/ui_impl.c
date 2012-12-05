@@ -790,7 +790,8 @@ void ui_disp_char_6x12 (uint8 origin_x, uint8 origin_y, uint8 ascii)
     }
     else // For the char which can't be displayed, show it as '?'.
     {
-        index_bmp_char = '?'-' ';
+        //index_bmp_char = '?'-' ';
+        return; // Quit right away to avoid too many '?'.
     }
 
     // Initialize ui_data_t fields for every digit to show.
@@ -834,8 +835,14 @@ void ui_disp_string_6x12 (ui_str_t *ui_str)
 {
     uint8 i;
 
-    for (i=0; i<ui_str->num; i++)
+    for (i=0; i<UI_MAX_LEN_STRING_6X12; i++)
     {
+        // When we reach the end of this string.
+        if ((ui_str->str)[i]=='\0')
+        {
+            return;
+        }
+
         ui_disp_char_6x12 (ui_str->origin_x,
                            ui_str->origin_y,
                            (ui_str->str)[i]);
@@ -881,15 +888,14 @@ void ui_disp_dbg_impl (char *str, uint8 num)
 }
 #endif
 
-void ui_disp_dbg_impl (char *str, uint8 num)
+void ui_disp_dbg_impl (char *str)
 {
     static uint8 y_next=12;
 
     ui_str_t ui_str;
     ui_str.origin_x=0;
     ui_str.origin_y=y_next;
-    strcpy (ui_str.str, str);
-    ui_str.num=num;
+    strcpy (ui_str.str, str);;
 
     // Show this debug info at this line.
     ui_disp_string_6x12 (&ui_str);

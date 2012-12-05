@@ -3,6 +3,7 @@
 
 #define UI_DISP_BOUND_LIMIT_X   159
 #define UI_DISP_BOUND_LIMIT_Y   120
+#define UI_MAX_LEN_STRING_6X12  26
 
 typedef struct 
 {
@@ -45,8 +46,7 @@ typedef struct
 {
     uint8 origin_x;
     uint8 origin_y;
-    char  str[26]; // 6x12 alphabet in a 160x120 resolution.
-    uint8 num;
+    char  str[UI_MAX_LEN_STRING_6X12]; // 6x12 alphabet in a 160x120 resolution.
 } ui_str_t;
 
 void ui_init_impl ();
@@ -72,7 +72,7 @@ uint8 ui_show_file_name_impl
     uint8 DispOnOff
 );
 extern void ui_show_vol_impl(uint8);
-void ui_disp_dbg_impl (char *str, uint8 num);
+void ui_disp_dbg_impl (char *str);
 void ui_disp_char_6x12 (uint8 origin_x, uint8 origin_y, uint8 ascii);
 //void ui_disp_string_6x12 (uint8 origin_x, uint8 origin_y, char *str, uint8 num);
 void ui_disp_string_6x12 (ui_str_t *ui_str);

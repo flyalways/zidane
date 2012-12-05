@@ -42,6 +42,7 @@ SET CPU_XTAL=0x0112A880
 "C:\Keil\C51\BIN\C51.EXE" @.\obj\i2c_sim.__i
 "C:\Keil\C51\BIN\C51.EXE" @.\obj\i2c.__i
 "C:\Keil\C51\BIN\C51.EXE" @.\obj\TCA841~1.__I
+"C:\Keil\C51\BIN\C51.EXE" @.\obj\utility.__i
 "C:\Keil\C51\BIN\BL51.EXE" @.\obj\SPDA23xx.lnp
 "C:\Keil\C51\BIN\OC51.EXE" ".\obj\SPDA23xx" 
 "C:\Keil\C51\BIN\OH51.EXE" ".\obj\SPDA23xx.B00" HEXFILE(.\obj\SPDA23xx.H00)

@@ -29,6 +29,6 @@ extern uint8 ui_show_file_name
     uint8 DispOnOff
 );
 extern void ui_show_vol(uint8);
-void ui_show_dbg (char *str, uint8 num);
+void ui_show_dbg (char *str);
 
 #endif

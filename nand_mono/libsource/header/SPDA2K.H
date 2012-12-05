@@ -24,5 +24,6 @@
 #include    "EX_USB_Data.h"             /* USB Data          		  */
 #include    "EX_Flash_code.h"
 #include    "feature_flag.h"
+#include    "utility/utility.h"
 
 #endif

@@ -294,7 +294,7 @@
               <MiscControls></MiscControls>
               <Define>K_ICTYPE = 0x03</Define>
               <Undefine></Undefine>
-              <IncludePath>..\libsource\header</IncludePath>
+              <IncludePath>..\libsource\header;utility/</IncludePath>
             </VariousControls>
           </C51>
           <Ax51>
@@ -1594,6 +1594,16 @@
               <FileName>tca8418_keypad.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\i2c\tca8418_keypad.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>utility</GroupName>
+          <Files>
+            <File>
+              <FileName>utility.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\utility\utility.c</FilePath>
             </File>
           </Files>
         </Group>

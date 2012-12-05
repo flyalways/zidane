@@ -42,12 +42,12 @@ COMMON
 ,	?PR?dspphysic
 ,	?PR?*?dspphysic	
 		
-,	?PR?Host_phy
-,	?PR?*?Host_phy
+//,	?PR?Host_phy
+//,	?PR?*?Host_phy
 
-,	?CO?Host_command_scsi
-,	?PR?Host_command_scsi
-,	?PR?*?Host_command_scsi
+//,	?CO?Host_command_scsi
+//,	?PR?Host_command_scsi
+//,	?PR?*?Host_command_scsi
 
 ,	?PR?LCM_unicode_hzk
 ,	?PR?*?LCM_unicode_hzk
@@ -178,6 +178,17 @@ BANK5
 ,	?CO?UI_IMPL
 ,	?PR?UI_IMPL
 ,	?PR?*?UI_IMPL
+
+,	?PR?Host_phy
+,	?PR?*?Host_phy
+
+,	?CO?Host_command_scsi
+,	?PR?Host_command_scsi
+,	?PR?*?Host_command_scsi
+
+//,	?CO?UTILITY
+//,	?PR?UTILITY
+//,	?PR?*?UTILITY
 
 )
 	
