@@ -463,6 +463,30 @@ void Timer0_init()//(JC)Timer0 init;~7.5mS@24Mhz MCU
 //! Mapping ADC value to a key.
 void Get_KeyValue(U8 ADCValue)
 {
+    // For the hw design with spda2635a, the ideal key values are:
+    //      87:  undefined sw2
+    //      162: vol+
+    //      236: vol-
+    //      255: no key pressed.
+    #if defined CAR_64
+    if (ADCValue>246)
+    {
+        gc_key_Pressed = C_Key_None;
+    }
+    else if (ADCValue>200)
+    {
+        gc_key_Pressed = C_Key_Voldn;
+    }
+    else if (ADCValue>125)
+    {
+        gc_key_Pressed = C_Key_Volup;
+    }
+    else
+    {
+        gc_key_Pressed = C_Key_None; // Maybe I can define a new one.
+    }
+
+    #else
 	if(ADCValue>246)
 	{ 		
 		gc_key_Pressed=C_Key_None;
@@ -495,7 +519,9 @@ void Get_KeyValue(U8 ADCValue)
 	{
 		gc_key_Pressed=C_Key_Mode;
 	}
-}
+
+    #endif // #if defined CAR_64 
+}   
 extern bit gbLKeyTimer_Timeout;
 //bit	gbLKeyTimer_Timeout=0;
 void TimeOutHandle()
@@ -522,13 +548,19 @@ void TimeOutHandle()
 
 		if((!gc_KeyValue)&&(!gc_KeyDet_Mask))//(JC)Key event determined //20090107 chiayen modify
 		{
-		#ifndef CAR_64
-			if(!P1_3)  //chiayenmark for car
+            // 128 pin evaluation board:
+            // P1.3 is used as the play key. But I set it as output direction.
+            // Not sure if it can work as expectedly.
+            //
+            // 64 pin hw design with SPDA2635A:
+            // P1.3 is used as the reset pin for the keyscan id.
+		    #ifndef CAR_64
+			if(!P1_3)
 			{
 				gc_key_Pressed=C_Key_Play;
 			}
 			else
-		#endif
+		    #endif
 			{
 				Get_KeyValue(READ_SARADC(0));
 			}
@@ -827,9 +859,15 @@ void I2C_M_Rx(U8 ID,U8 Addr)
 ***************************************************************************/
 bit SD_Card_Detect(void)
 {
+    // REVISIT!!!
+    // For our hw design with SPDA2635A, we use micro SD card, where
+    // the /CD signal and DAT3 share the same pin, XFMGPIO_16.
+    // I don't know how to define a pin for SD_Detect, but just keep
+    // it the same with P1^7 in EVB_128. Because P1^7 is not pulled out
+    // in 64 pin SPDA2635A.
 	#ifdef CAR_64
-    P1|=0x02;
-	XBYTE[0xB102]&=0xFD;
+    P1|=0x80;
+	XBYTE[0xB102]&=0x7F;
 	#elif defined(EVB_128)  
     P1|=0x80;
 	XBYTE[0xB102]&=0x7F;

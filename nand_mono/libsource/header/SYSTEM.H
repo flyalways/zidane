@@ -83,7 +83,12 @@
         sbit P1_7               = P1^7;     // LED
 
 		#ifdef CAR_64
-		sbit SD_Detect          = P1^1;     //
+        // For our hw design with SPDA2635A, we use micro SD card, where
+        // the /CD signal and DAT3 share the same pin, XFMGPIO_16.
+        // I don't know how to define a pin for SD_Detect, but just keep
+        // it the same with P1^7 in EVB_128. Because P1^7 is not pulled out
+        // in 64 pin SPDA2635A.
+		sbit SD_Detect          = P1^7;     //
 		#elif defined(EVB_128)  
         sbit SD_Detect          = P1^7;     //
 		#endif

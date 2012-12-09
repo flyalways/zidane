@@ -1,32 +1,54 @@
-// For AS6001, HY1418
-sbit	FM_DAT=P3^1;
-sbit	FM_CLK=P1^3;
+// For AS6001, HY1418.
+//
+// We will not run into code which uses the definition below... I hope so...
+// The original definition below is a fool... P3^1 is UART_TX pin...
+// Anyway, I will not use these FM modules. I just set it based on our hw
+// design with SPDA2635A. 
+//-----------------------------------------------------------------------------
+sbit	FM_DAT=P1^5;
+sbit	FM_CLK=P1^4;
 
 #ifdef CAR_64
-sbit 	FM_EN=P1^3; 
+// We don't have a FM_EN signal on our hw design with SPDA2635A. Here use a
+// pin which is not pulled out in SPDA2635A to avoid it to mess up the code.
+sbit 	FM_EN=P3^4;
+ 
 #elif defined(EVB_128)  
 // We don't use P1_2 to enable FM on the EVB_128. We use AS6300.
 // P1_2 is dedicated to serial LCM.
-sbit	FM_EN=P1^2;
-//sbit	FM_EN=P3^4;
+// And, I don't see a FM_EN signal on the 128 pin evaluation board...
+sbit	FM_EN=P3^4;
+
 #elif defined(EVB_64)
 sbit 	FM_EN=P1^2;
+
 #endif
 
 // For ZI2020, AS6300
-// ???
-sbit	FM_SCL=P1^3;
-sbit	FM_SDA=P3^1;
+//
+// The original definition below is a fool... P3^1 is UART_TX pin...
+// Anyway, I will not use these FM modules. I just set it based on our hw
+// design with SPDA2635A.
+//
+// Note, the 128 pin evaluation board uses different pins:
+//      XFMGPIO_9
+//      XFMGPIO_19
+//-----------------------------------------------------------------------------
+sbit	FM_SCL=P1^4;
+sbit	FM_SDA=P1^5;
 
+// I don't think we use a FM_RSTB signal for both of our hw design64 pin
+// SPDA2635A and 128 pin EVB_128.
+// Like above, use a pin which is not pulled out to avoid messing up the code.
 #ifdef CAR_64
-sbit	FM_RSTB=P1^3;
+sbit	FM_RSTB=P3^4;
+
 #elif defined(EVB_128)
-// We don't use P1_2 to enable FM on the EVB_128. We use AS6300.
-// P1_2 is dedicated to serial LCM. 
-sbit	FM_RSTB=P1^2;
-//sbit	FM_RSTB=P3^4; // ??? temporary mess
+sbit	FM_RSTB=P3^4;
+
 #elif defined(EVB_64)
 sbit	FM_RSTB=P1^2;
+
 #endif
 
 // For AS6300

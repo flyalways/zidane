@@ -94,9 +94,9 @@ void init_system(void)
 
     // P1 is used for LCM and i2c. Find details at thoses modules.
     // P1.0~P1.2 for LCM;
-    // P1.3 is key rest to key scan ic.
+    // P1.3 is key rest to key scan ic. But it is used as play key in 128 evb...
     // P1.4~P1.5 for i2c;
-	CPU_REG[0x02] = 0x3f; // P1, 2, 3 is output for serial LCM
+	CPU_REG[0x02] = 0x3f;
    	P3 = 0xff;	// P3 output high to turn off transistor and to avoid input grounded.
 	CPU_REG[0x03] = 0x02;	// set P3.1 UART Tx pin output enabled.
 
