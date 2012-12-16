@@ -801,7 +801,7 @@ void play_init()
 		            }
 					gb_FlashNoFileflag=0;
 		            gw_init_needed |= SET_BIT8;
-		            gc_PhaseInx = 9;
+		            gc_PhaseInx = 9; dbprintf("1\n");
 		
 		            return;
 		        }				
@@ -813,7 +813,7 @@ void play_init()
 			gb_TriggerFileSkip=0;
             gc_RepPlayMode=gc_RepPlayMode_Pre;
             gb_InitLogFileIndex=0;			
-			gb_DirPlay_Flag=1;
+			gb_DirPlay_Flag=1;dbprintf("2\n");
 		}
 		else
 		{
@@ -830,7 +830,7 @@ void play_init()
 	            }
 				gb_FlashNoFileflag=0;
 	            gw_init_needed |= SET_BIT8;
-	            gc_PhaseInx = 9;
+	            gc_PhaseInx = 9;dbprintf("3\n");
 	
 	            return;
 	        }
@@ -903,7 +903,7 @@ void play_init()
 
 		if(gb_DirPlay_Flag==0)
 		{
-			gw_FileIndex[0]=1;
+			gw_FileIndex[0]=1;dbprintf("4\n");
 	        if(gc_CurrentCard==0)
 	        { 
 	            if(gw_LogFileIndex<=gw_FileTotalNumber[0])
@@ -1649,7 +1649,8 @@ void Play_Task()
 {
     while(1)
     {
-        dbprintf("gw_IR_Timer=%x\n",gw_IR_Timer);
+        //dbprintf("gw_IR_Timer=%x\n",gw_IR_Timer);
+        dbprintf("Phase= %bx\n", gc_PhaseInx);
 		switch(gc_PhaseInx)
         {
             case C_PlayInit:

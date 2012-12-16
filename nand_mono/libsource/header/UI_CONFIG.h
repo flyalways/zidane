@@ -14,6 +14,11 @@
 #define LCM_TEST_INIT   FEATURE_OFF
 #define UI_TEST_ONLY    FEATURE_OFF     // Infinite function to test UI implementation.
 
+// REVISIT!!!
+// I should not put below flags here. But it is kind of convenient to put all
+// the flag settings together. So...
+#define I2C_SIM_TEST_PIN    FEATURE_OFF
+
 #if Model==0
 #define CAR_64  //S+input set build target
 #else

@@ -256,7 +256,15 @@ int8 i2c_sim_get_byte (int8 *p_dat, bool ack_or_not)
     return err; // Error doesn't exist in this function.
 }
 
-
+#if (I2C_SIM_TEST_PIN == FEATURE_ON)
+void i2c_sim_test_pin ()
+{
+    while (1)
+    {
+        i2c_sim_send_byte (0xaa);
+    }
+}
+#endif
 
 
 ////////////////////////////////////////////////////////////////////////////////

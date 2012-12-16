@@ -32,7 +32,7 @@ sbit LCM_BACKLIGHT		= P1^0;
 // Definitions for SPI interface LCM.
 // 
 // RESETB:  P1^2
-// CSB:     FMGPIO11
+// CSB:     FMGPIO11. FMGPIO_9 for 64 pin SPDA2635A.
 // A0:      FMGPIO4
 // CLK:     P1^1
 // SI:      FMGPIO17
@@ -42,12 +42,28 @@ sbit LCM_BLB  =   P1^0;
 sbit SPI_CLK  =   P1^1;
 sbit LCM_RSTB =   P1^2;
 
+// The back light control is converse between 128 pin eva and 64 pin spda2635a.
+// The setting for 64 pin looks strange because I wrote the setting first for
+// 128 pin eva. I am lazy to make it look nice...
+#ifdef EVB_128
 #define LCM_BL_SPI_LO       LCM_BLB = 0
 #define LCM_BL_SPI_HI       LCM_BLB = 1
+#else
+#define LCM_BL_SPI_LO       LCM_BLB = 1
+#define LCM_BL_SPI_HI       LCM_BLB = 0
+#endif
+
 #define LCM_RSTB_SPI_LO     LCM_RSTB = 0
 #define LCM_RSTB_SPI_HI     LCM_RSTB = 1
+
+#ifdef EVB_128
 #define LCM_CSB_SPI_LO      XBYTE[0xB402] &= ~0x08  // FMGPIO11
 #define LCM_CSB_SPI_HI      XBYTE[0xB402] |= 0x08
+#else
+#define LCM_CSB_SPI_LO      XBYTE[0xB402] &= ~0x02  // FMGPIO_9
+#define LCM_CSB_SPI_HI      XBYTE[0xB402] |= 0x02
+#endif
+
 #define LCM_A0_SPI_CMD      XBYTE[0xB401] &= ~0x10  //FMGPIO4
 #define LCM_A0_SPI_DATA     XBYTE[0xB401] |= 0x10
 

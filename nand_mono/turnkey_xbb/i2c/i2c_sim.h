@@ -19,6 +19,9 @@ extern i2c_access_t i2c_access_sim;
 
 extern int8 i2c_sim_write_reg_byte (uint8 addr, uint8 reg, int8 val);
 extern int8 i2c_sim_read_reg_byte (uint8 addr, uint8 reg, uint8 *p_val, bool is_last);
+#if (I2C_SIM_TEST_PIN == FEATURE_ON)
+extern void i2c_sim_test_pin();
+#endif
 
 #endif // (FEATURE_I2C_DRIVER_VTBL == FEATURE_ON)
 

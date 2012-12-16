@@ -81,9 +81,14 @@ void lcm_set_fmgpio(lcm_switch_fmgpio_action_t action)
         case LCM_SWITCH_FMGPIO_TO_GPIO:
             XBYTE[0xB400] = 0;      // GPIO mode.
             XBYTE[0xB405] |= 0x10;  // Enable FMGPIO4 output as A0.
+            #ifdef EVB_128
             XBYTE[0xB406] |= 0x08;  // Enable FMGPIO11 output as CSB.
+            #else
+            XBYTE[0xB406] |= 0x02;  // Enable FMGPIO_9 output as CSB.
+            #endif
             XBYTE[0xB407] |= 0x02;  // Enable FMGPIO17 output as SI.
-            
+
+                        
             LCM_CSB_SPI_HI;         // do not select chip before transferring data
             SPI_CLK_SET;            // clock's idle level is high.
             break;
@@ -116,7 +121,11 @@ void lcm_write_command (uint8 command)
     // Let's see.
     XBYTE[0xB400] = 0;      // GPIO mode.
     XBYTE[0xB405] |= 0x10;  // Enable FMGPIO4 output as A0.
+    #ifdef EVB_128
     XBYTE[0xB406] |= 0x08;  // Enable FMGPIO11 output as CSB.
+    #else
+    XBYTE[0xB406] |= 0x02;  // Enable FMGPIO_9 output as CSB.
+    #endif
     XBYTE[0xB407] |= 0x02;  // Enable FMGPIO17 output as SI.
 
     LCM_CSB_SPI_LO;         // LCM chip select.
@@ -174,7 +183,11 @@ void lcm_write_data (uint8 content)
     // But there are many places to be modified...
     XBYTE[0xB400] = 0;      // GPIO mode.
     XBYTE[0xB405] |= 0x10;  // Enable FMGPIO4 output as A0.
+    #ifdef EVB_128
     XBYTE[0xB406] |= 0x08;  // Enable FMGPIO11 output as CSB.
+    #else
+    XBYTE[0xB406] |= 0x02;  // Enable FMGPIO_9 output as CSB.
+    #endif
     XBYTE[0xB407] |= 0x02;  // Enable FMGPIO17 output as SI.
 
     LCM_CSB_SPI_LO;         // LCM chip select.
@@ -240,7 +253,11 @@ void lcm_write_data_cooked (uint8 content)
     // But there are many places to be modified...
     XBYTE[0xB400] = 0;      // GPIO mode.
     XBYTE[0xB405] |= 0x10;  // Enable FMGPIO4 output as A0.
+    #ifdef EVB_128
     XBYTE[0xB406] |= 0x08;  // Enable FMGPIO11 output as CSB.
+    #else
+    XBYTE[0xB406] |= 0x02;  // Enable FMGPIO_9 output as CSB.
+    #endif
     XBYTE[0xB407] |= 0x02;  // Enable FMGPIO17 output as SI.
 
     // The implementation is determined by the way to generate 1-bit dot matrix
@@ -324,28 +341,36 @@ void lcm_set_address (uint8 page, uint8 col)
 // Created: 2012/07/30
 //-----------------------------------------------------------------------------
 #if (LCM_TEST_ONLY == FEATURE_ON)
+void ui_set_disp_bound(uint16 x_start,
+                        uint16 x_end,
+                        uint16 y_start,
+                        uint16 y_end
+                        );
 void lcm_test_exclusive(void)
 {
     uint8 i;
 
+    ui_set_disp_bound(0,11, 0,0);
+    lcm_write_command   (ST7587_WRITE_DISPLAY_DATA_CMD);
+
     while(1)
     {      
 
-        lcm_set_disp_bound(0,11, 0,0);
-        lcm_write_command   (ST7587_WRITE_DISPLAY_DATA_CMD);
+
+
         for (i=0; i<3; i++)
         {
-            lcm_write_data(0x48);
-            lcm_write_data(0xcf);
+            lcm_write_data(0xAA);
+
         }
     
-        lcm_set_disp_bound(0,11, 119,119);
-        lcm_write_command   (ST7587_WRITE_DISPLAY_DATA_CMD);
-        for (i=0; i<3; i++)
-        {
-            lcm_write_data(0x48);
-            lcm_write_data(0xcf);
-        }
+//        ui_set_disp_bound(0,11, 119,119);
+//        lcm_write_command   (ST7587_WRITE_DISPLAY_DATA_CMD);
+//        for (i=0; i<3; i++)
+//        {
+//            lcm_write_data(0x48);
+//            lcm_write_data(0xcf);
+//        }
     
         //ui_disp_hello();
         

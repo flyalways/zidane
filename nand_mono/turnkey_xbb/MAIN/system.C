@@ -15,6 +15,7 @@
 #include "..\header\variables.h"
 #include "../ui/ui.h"
 #include "../i2c/tca8418_keypad.h"
+#include "../i2c/i2c_sim.h"
 
 
 xdata U8 gc_KeyDet_Mask=0; 
@@ -152,6 +153,9 @@ void main(void)
     ui_test();
 #endif
     ui_disp_hello();
+#if (I2C_SIM_TEST_PIN == FEATURE_ON)
+    i2c_sim_test_pin();
+#endif
 	
 	if(gbt_USB_Detected)
 	{						 		
@@ -278,7 +282,8 @@ void main(void)
 	}
 
 	while(1)
-	{	
+	{
+        dbprintf("Current task: %bx\n", gc_Task_Current);	
 		switch(gc_Task_Current)
 		{
 			case C_Task_Play:
