@@ -37,13 +37,12 @@ int8 i2c_read_reg_byte  (
                             i2c_driver_t *i2c_driver,
                             uint8 addr,
                             uint8 reg,
-                            uint8 *p_val,
-                            bool is_last
+                            uint8 *p_val
                         ) reentrant
 {
     if ((i2c_driver)&&(i2c_driver->i2c_access))
     {
-        return i2c_driver->i2c_access->read_reg_byte (addr,reg,p_val,is_last);
+        return i2c_driver->i2c_access->read_reg_byte (addr,reg,p_val);
     }
 
     return I2C_ERROR_NO_DRIVER;
@@ -67,6 +66,18 @@ xdata i2c_driver_t i2c_driver_kt0810 = {
                                        };
 #else
 
+///-----------------------------------------------------------------------------
+/// 
+///
+/// 
+///
+/// @param  
+///
+/// @return 
+///
+/// @author William Chang
+/// @date   2012/11/03
+///-----------------------------------------------------------------------------
 int8 i2c_write_reg_byte (
                             uint8 addr,
                             uint8 reg,
@@ -76,14 +87,25 @@ int8 i2c_write_reg_byte (
     return i2c_sim_write_reg_byte (addr, reg, val);
 }
 
+///-----------------------------------------------------------------------------
+/// 
+///
+/// 
+///
+/// @param  
+///
+/// @return 
+///
+/// @author William Chang
+/// @date   2012/11/03
+///-----------------------------------------------------------------------------
 int8 i2c_read_reg_byte  (
                             uint8 addr,
                             uint8 reg,
-                            uint8 *p_val,
-                            bool is_last
+                            uint8 *p_val
                         )
 {
-    return i2c_sim_read_reg_byte (addr, reg, p_val, is_last);
+    return i2c_sim_read_reg_byte (addr, reg, p_val);
 }
 
 #endif // (FEATURE_I2C_DRIVER_VTBL == FEATURE_ON)

@@ -102,6 +102,14 @@
 // The counter of keypad we use tca8418 to scan 
 #define KEYMAP_COUNTER      15
 
+// 128 pin evaluation board:
+// P1.3 is used as the play key. But I set it as output direction.
+// Not sure if it can work as expectedly.
+//
+// 64 pin hw design with SPDA2635A:
+// P1.3 is used as the reset pin for the keyscan id.
+#define TCA8418_RESET_S     P1_3=0
+#define TCA8418_RESET_E     P1_3=1
 
 // Key mapping: key code -> real key. A real key is the 1st level of key info.
 // In our project, we use row 0,1,2,3,4 and col 0,1,2 as the keypad. 15 keys in
@@ -186,7 +194,7 @@ int8 tca8418_read_byte (uint8 reg, int8 *p_val)
 
     #else
 
-    err = i2c_read_reg_byte (TCA8418_ADDR_RD, reg, p_val, TRUE);
+    err = i2c_read_reg_byte (TCA8418_ADDR_RD, reg, p_val);
 
     #endif
 
@@ -210,6 +218,11 @@ int8 tca8418_read_byte (uint8 reg, int8 *p_val)
 void tca8418_init (void)
 {
     int8 err;
+
+    // Reset this ic.
+    TCA8418_RESET_S;
+    USER_DelayDTms(100);
+    TCA8418_RESET_E;
 
     // Write config register.
     // Currently we don't use overflow feature, any interrupt, key lock feature,
@@ -291,3 +304,45 @@ uint16 tca8418_get_real_key (void)
     // KEY_VALUE_NONE just for simplicity without error handling.
     return KEY_VALUE_NONE;    
 }
+
+///-----------------------------------------------------------------------------
+/// Test routine for tca8418.
+///
+/// It is supposed to be used independantly in main().
+///
+/// @param  
+///
+/// @return 
+///
+/// @author William Chang
+/// @date   2012/12/16
+///-----------------------------------------------------------------------------
+#if (TCA8418_TEST == FEATURE_ON)
+void tca8418_test()
+{
+    uint8 reg_val;
+    uint8 i;
+    int8 err;
+
+    // Reset this ic.
+    TCA8418_RESET_S;
+    USER_DelayDTms(100);
+    TCA8418_RESET_E;
+
+    // Write config register.
+    // Currently we don't use overflow feature, any interrupt, key lock feature,
+    // GPI feature, etc for tca8418. Basically, just keep the default value 0.
+    err = tca8418_write_byte (REG_CFG, 0);
+
+//    tca8418_init();
+
+//    // Read all the registers and print them out.
+//    for (i=REG_CFG; i<=REG_GPIO_PULL3; i++)
+//    {
+//        tca8418_read_byte (i, &reg_val);
+//        dbprintf ("reg %bx = %bx\n", i, reg_val);
+//    }
+
+    while(1);
+}
+#endif

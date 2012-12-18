@@ -93,6 +93,8 @@
         sbit SD_Detect          = P1^7;     //
 		#endif
 
+        // 128 pin evb use it as play key.
+        // 64 pin hw uses it as the key ic reset pin. Active low.
         sbit P1_3               = P1^3;     //(JC)H0612 for alternative play key
      
 /*  P3  */

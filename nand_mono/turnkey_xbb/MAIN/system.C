@@ -17,7 +17,6 @@
 #include "../i2c/tca8418_keypad.h"
 #include "../i2c/i2c_sim.h"
 
-
 xdata U8 gc_KeyDet_Mask=0; 
 
 xdata U8 gc_LongKeyCount=0;
@@ -149,12 +148,20 @@ void main(void)
 	gc_Vrefinit_Timer=60;
 	XBYTE[0xB421]=0x13;
 	LCM_init_process();
+
+    //-------------------------------------------------------------------------
+    // Put the test routine entry here.
+    // They should be all infinite loop.
+    //-------------------------------------------------------------------------
 #if (UI_TEST_ONLY == FEATURE_ON)
     ui_test();
 #endif
     ui_disp_hello();
 #if (I2C_SIM_TEST_PIN == FEATURE_ON)
     i2c_sim_test_pin();
+#endif
+#if (TCA8418_TEST == FEATURE_ON)
+    tca8418_test();
 #endif
 	
 	if(gbt_USB_Detected)

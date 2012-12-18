@@ -21,4 +21,8 @@
 
 extern uint16 tca8418_get_real_key (void);
 
+#if (TCA8418_TEST == FEATURE_ON)
+void tca8418_test();
+#endif
+
 #endif

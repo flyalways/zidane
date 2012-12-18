@@ -31,8 +31,7 @@ struct i2c_driver_st
     int8 (*i2c_read_reg_byte) (  struct i2c_driver_st *i2c_driver,
                                  uint8 addr,
                                  uint8 reg,
-                                 int8 *p_val,
-                                 bool is_last ) reentrant;
+                                 int8 *p_val) reentrant;
 };
 
 typedef struct i2c_driver_st i2c_driver_t;
@@ -56,8 +55,7 @@ typedef struct
     int8 (*i2c_read_reg_byte) ( (i2c_driver_t *) i2c_driver,
                                  uint8 addr,
                                  uint8 reg,
-                                 int8 *p_val,
-                                 bool is_last );        
+                                 int8 *p_val);        
 } i2c_driver_st;
 #endif
 
@@ -67,7 +65,7 @@ extern i2c_driver_t i2c_driver_kt0810;
 #else // (FEATURE_I2C_DRIVER_VTBL == FEATURE_ON)
 
 extern int8 i2c_write_reg_byte (uint8 addr,uint8 reg,int8 val);
-extern int8 i2c_read_reg_byte  (uint8 addr,uint8 reg,uint8 *p_val,bool is_last);
+extern int8 i2c_read_reg_byte  (uint8 addr,uint8 reg,uint8 *p_val);
 
 #endif // (FEATURE_I2C_DRIVER_VTBL == FEATURE_ON)
 
