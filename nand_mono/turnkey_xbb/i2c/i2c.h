@@ -66,7 +66,11 @@ extern i2c_driver_t i2c_driver_kt0810;
 
 extern int8 i2c_write_reg_byte (uint8 addr,uint8 reg,int8 val);
 extern int8 i2c_read_reg_byte  (uint8 addr,uint8 reg,uint8 *p_val);
-
+int8 i2c_read_reg_byte_tca8418a (
+                                    uint8 addr,
+                                    uint8 reg,
+                                    uint8 *p_val
+                                );
 #endif // (FEATURE_I2C_DRIVER_VTBL == FEATURE_ON)
 
 #endif

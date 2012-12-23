@@ -19,7 +19,7 @@
 #define KEY_VALUE_MISC          0x2E
 #define KEY_VALUE_BACKWARD      0x2F
 
-extern uint16 tca8418_get_real_key (void);
+extern uint8 tca8418_get_real_key (void);
 
 #if (TCA8418_TEST == FEATURE_ON)
 void tca8418_test();

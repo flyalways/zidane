@@ -36,6 +36,8 @@
 #define int8        signed char
 #define int16       signed int
 
+//#define NULL        0
+
 union LWDataType {
     	LWORD LW;
     	UWORD WD[2];

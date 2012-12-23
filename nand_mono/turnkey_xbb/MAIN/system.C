@@ -553,8 +553,13 @@ void TimeOutHandle()
         
         // Read the key event from tca8418 keypad. If we've got valid data, quit.
         // Otherwise, check sac line to see what's there.
+        // The value from tca8418a means people have pressed that key because
+        // we only care about the released key event from tca8418a.
+        // This is very simple and should be enough since we don't use any long
+        // key on the keypad matrix scanned by tca8418a.
         if ( gc_key_Pressed = tca8418_get_real_key() )
         {
+            gc_KeyValue = gc_key_Pressed;
             return;     
         }
 

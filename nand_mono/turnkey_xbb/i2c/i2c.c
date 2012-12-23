@@ -12,6 +12,12 @@
 /// @date   2012/11/03
 ////////////////////////////////////////////////////////////////////////////////
 
+///----------------------------------------------------------------------------
+/// REVISIT!!!
+/// Need to figure out a clever way to provide a common interface for different
+/// i2c devices.
+///----------------------------------------------------------------------------
+
 #include "SPDA2K.H"
 #include "i2c.h"
 #include "i2c_sim.h"
@@ -88,9 +94,9 @@ int8 i2c_write_reg_byte (
 }
 
 ///-----------------------------------------------------------------------------
+/// A common i2c interface to read a byte from a register of i2c device.
 /// 
-///
-/// 
+/// This does not fit for tca8418a...
 ///
 /// @param  
 ///
@@ -108,4 +114,22 @@ int8 i2c_read_reg_byte  (
     return i2c_sim_read_reg_byte (addr, reg, p_val);
 }
 
+///-----------------------------------------------------------------------------
+/// A specific i2c interface to read a byte from a register of tca8418a.
+///
+/// @param  
+///
+/// @return 
+///
+/// @author William Chang
+/// @date   2012/11/03
+///-----------------------------------------------------------------------------
+int8 i2c_read_reg_byte_tca8418a (
+                                    uint8 addr,
+                                    uint8 reg,
+                                    uint8 *p_val
+                                )
+{
+    return i2c_sim_read_reg_byte_tca8418a (addr, reg, p_val);
+}
 #endif // (FEATURE_I2C_DRIVER_VTBL == FEATURE_ON)
