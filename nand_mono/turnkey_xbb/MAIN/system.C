@@ -148,6 +148,7 @@ void main(void)
 	gc_Vrefinit_Timer=60;
 	XBYTE[0xB421]=0x13;
 	LCM_init_process();
+    tca8418_init();
 
     //-------------------------------------------------------------------------
     // Put the test routine entry here.

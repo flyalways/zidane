@@ -158,6 +158,7 @@ typedef enum
     LED_LECTURE,
     LED_MISC,
     LED_BACKWARD,
+    LED_HEALTH,
 
     // Keep this as last.
     LED_MAX,
@@ -210,25 +211,28 @@ typedef struct
 
 xdata tca8418_keymap_t tca8418_keymap[] =
 {
-    {1,  KEY_VALUE_FM},     {2,  KEY_VALUE_OPERA},  {3,  KEY_VALUE_PLAY},
-    {11, KEY_VALUE_MUSIC},  {12, KEY_VALUE_FICTION},{13, KEY_VALUE_PREV},
-    {21, KEY_VALUE_CITY},   {22, KEY_VALUE_COMIC},  {23, KEY_VALUE_NEXT},
-    {31, KEY_VALUE_SONG},   {32, KEY_VALUE_STORY},  {33, KEY_VALUE_FORWARD},
-    {41, KEY_VALUE_LECTURE},{42, KEY_VALUE_MISC},   {43, KEY_VALUE_BACKWARD},
+    {1,  KEY_VALUE_LECTURE},{2,  KEY_VALUE_HEALTH}, {3,  KEY_VALUE_NEXT},
+    {11, KEY_VALUE_FICTION},{12, KEY_VALUE_SONG},   {13, KEY_VALUE_PREV},
+    {21, KEY_VALUE_COMIC},  {22, KEY_VALUE_OPERA},  {23, KEY_VALUE_PLAY},
+    {31, KEY_VALUE_MISC},   {32, KEY_VALUE_STORY},  {33, KEY_VALUE_BACKWARD},
+    {41, KEY_VALUE_CITY},   {42, KEY_VALUE_FM},     {43, KEY_VALUE_FORWARD},
 };
 
 xdata tca8418_ledmap_t tca8418_ledmap[] =
 {
-    {1,     LED_FM,         7, 6, LED_ATTR_SWITCH},
-    {2,     LED_OPERA,      6, 5, LED_ATTR_SWITCH},
-    {3,     LED_PLAY,       5, 2, LED_ATTR_SWITCH}, // Temporary use.
-    {12,    LED_FICTION,    7, 4, LED_ATTR_SWITCH},
-    {22,    LED_COMIC,      6, 4, LED_ATTR_SWITCH},
-    {31,    LED_SONG,       7, 5, LED_ATTR_SWITCH},
+    {1,     LED_LECTURE,    5, 4, LED_ATTR_SWITCH},
+    {2,     LED_HEALTH,     5, 5, LED_ATTR_SWITCH},
+    //{3,     LED_NEXT,       5, 6, LED_ATTR_SWITCH}, // Temporary use.
+    {11,    LED_FICTION,    7, 4, LED_ATTR_SWITCH},    
+    {12,    LED_SONG,       7, 5, LED_ATTR_SWITCH},
+    {21,    LED_COMIC,      6, 4, LED_ATTR_SWITCH},
+    {22,    LED_OPERA,      6, 5, LED_ATTR_SWITCH},
+    //{23,    LED_PLAY,       5, 6, LED_ATTR_SWITCH},
+    {31,    LED_MISC,       5, 3, LED_ATTR_SWITCH},                
     {32,    LED_STORY,      6, 3, LED_ATTR_SWITCH},
-    {41,    LED_LECTURE,    5, 4, LED_ATTR_SWITCH},
-    {42,    LED_MISC,       5, 3, LED_ATTR_SWITCH},
-    
+    {41,    LED_CITY,       7, 3, LED_ATTR_SWITCH},
+    {42,    LED_FM,         7, 6, LED_ATTR_SWITCH},
+     
 //    // Keep this at the bottom!
 //    {0, 0, 0, 0, 0},        
 };
@@ -592,7 +596,7 @@ uint8 tca8418_get_real_key (void)
     {
         return KEY_VALUE_NONE;
     }
-    dbprintf ("key counter is %bx\n",event_cnt);
+    //dbprintf ("key counter is %bx\n",event_cnt);
 
     // Read the released key events.
     for (i=0; i<event_cnt; i++)
@@ -627,6 +631,7 @@ uint8 tca8418_get_real_key (void)
         if (tca8418_keymap[j].key_code == key_code)
         {
             dbprintf ("ked code is %bx\n", key_code);
+            //dbprintf ("key value is %bx\n", tca8418_keymap[j].key_value);
             tca8418_led_handle (key_code);
             return tca8418_keymap[j].key_value;
         }
@@ -714,23 +719,18 @@ void tca8418_test()
     tca8418_init();
     
     //tca8418_test_led();
-    tca8418_led_drive (LED_FM, LED_ACTION_ON);
+    //tca8418_led_drive (LED_FM, LED_ACTION_ON);
 
     // Read all the registers and print them out.
-    for (i=REG_CFG; i<=REG_GPIO_PULL3; i++)
-    {
-        tca8418_read_byte (i, &reg_val);
-        dbprintf ("reg %bx = %bx\n", i, reg_val);
-    }
+//    for (i=REG_CFG; i<=REG_GPIO_PULL3; i++)
+//    {
+//        tca8418_read_byte (i, &reg_val);
+//        dbprintf ("reg %bx = %bx\n", i, reg_val);
+//    }
 
     while(1)
     {
-        if (key_value = tca8418_get_real_key())
-        {
-            dbprintf ("key_value= %bx\n", key_value);
-        }
-        
-        
+        tca8418_get_real_key();
     }
 }
 #endif

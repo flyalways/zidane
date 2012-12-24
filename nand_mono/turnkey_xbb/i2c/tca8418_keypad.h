@@ -18,8 +18,10 @@
 #define KEY_VALUE_LECTURE       0x2D
 #define KEY_VALUE_MISC          0x2E
 #define KEY_VALUE_BACKWARD      0x2F
+#define KEY_VALUE_HEALTH        0x30
 
 extern uint8 tca8418_get_real_key (void);
+void tca8418_init(void);
 
 #if (TCA8418_TEST == FEATURE_ON)
 void tca8418_test();

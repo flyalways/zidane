@@ -1313,10 +1313,10 @@
       <FileType>1</FileType>
       <tvExp>1</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>53</ColumnNumber>
+      <ColumnNumber>49</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>589</TopLine>
-      <CurrentLine>629</CurrentLine>
+      <TopLine>224</TopLine>
+      <CurrentLine>224</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\i2c\tca8418_keypad.c</PathWithFileName>
       <FilenameWithoutPath>tca8418_keypad.c</FilenameWithoutPath>
@@ -1345,6 +1345,32 @@
   </Group>
 
   <AlienFiles>
+    <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\I2C\I2C.H</PathWithFilename>
+    <TopLine>40</TopLine>
+    <CurrentLine>73</CurrentLine>
+    <Constant>0</Constant>
+    <WindowPosition>
+      <length>0</length>
+      <flags>0</flags>
+      <showCmd>0</showCmd>
+      <MinPosition>
+        <xPos>0</xPos>
+        <yPos>0</yPos>
+      </MinPosition>
+      <MaxPosition>
+        <xPos>0</xPos>
+        <yPos>0</yPos>
+      </MaxPosition>
+      <NormalPosition>
+        <Top>0</Top>
+        <Left>0</Left>
+        <Right>0</Right>
+        <Bottom>0</Bottom>
+      </NormalPosition>
+    </WindowPosition>
+  </AlienFiles>
+
+  <AlienFiles>
     <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\I2C\I2C_SIM.H</PathWithFilename>
     <TopLine>1</TopLine>
     <CurrentLine>22</CurrentLine>
@@ -1371,9 +1397,9 @@
   </AlienFiles>
 
   <AlienFiles>
-    <PathWithFilename>C:\USERS\CHANWEIF\DOCUMENTS\GITHUB\ZIDANE\NAND_MONO\LIBSOURCE\HEADER\UI_CONFIG.H</PathWithFilename>
-    <TopLine>1</TopLine>
-    <CurrentLine>39</CurrentLine>
+    <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\TURNKEY_XBB\IR\LCM_BMP.H</PathWithFilename>
+    <TopLine>62</TopLine>
+    <CurrentLine>76</CurrentLine>
     <Constant>0</Constant>
     <WindowPosition>
       <length>0</length>
@@ -1397,9 +1423,9 @@
   </AlienFiles>
 
   <AlienFiles>
-    <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\I2C\I2C.H</PathWithFilename>
-    <TopLine>40</TopLine>
-    <CurrentLine>73</CurrentLine>
+    <PathWithFilename>C:\USERS\CHANWEIF\DOCUMENTS\GITHUB\ZIDANE\NAND_MONO\TURNKEY_XBB\IR\LCM_BMP_DRIVER.H</PathWithFilename>
+    <TopLine>86</TopLine>
+    <CurrentLine>100</CurrentLine>
     <Constant>0</Constant>
     <WindowPosition>
       <length>0</length>
@@ -1449,9 +1475,9 @@
   </AlienFiles>
 
   <AlienFiles>
-    <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\IR\LCM_BMP.h</PathWithFilename>
-    <TopLine>62</TopLine>
-    <CurrentLine>76</CurrentLine>
+    <PathWithFilename>C:\USERS\CHANWEIF\DOCUMENTS\GITHUB\ZIDANE\NAND_MONO\LIBSOURCE\HEADER\UI_CONFIG.H</PathWithFilename>
+    <TopLine>1</TopLine>
+    <CurrentLine>21</CurrentLine>
     <Constant>0</Constant>
     <WindowPosition>
       <length>0</length>
@@ -1475,9 +1501,9 @@
   </AlienFiles>
 
   <AlienFiles>
-    <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\IR\lcm_bmp_driver.h</PathWithFilename>
-    <TopLine>86</TopLine>
-    <CurrentLine>100</CurrentLine>
+    <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\I2C\TCA8418_KEYPAD.H</PathWithFilename>
+    <TopLine>1</TopLine>
+    <CurrentLine>21</CurrentLine>
     <Constant>0</Constant>
     <WindowPosition>
       <length>0</length>
@@ -2841,13 +2867,25 @@
     <ActiveMDIGroup>0</ActiveMDIGroup>
     <MDIGroup>
       <Size>100</Size>
-      <ActiveTab>6</ActiveTab>
+      <ActiveTab>8</ActiveTab>
       <Documents>
         <Doc>
-          <Name>\USERS\CHANWEIF\DOCUMENTS\GITHUB\ZIDANE\NAND_MONO\LIBSOURCE\HEADER\UI_CONFIG.H</Name>
-          <ColumnNumber>129</ColumnNumber>
+          <Name>.\MAIN\system.C</Name>
+          <ColumnNumber>37</ColumnNumber>
+          <TopLine>529</TopLine>
+          <CurrentLine>560</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>MAIN\../I2C/TCA8418_KEYPAD.H</Name>
+          <ColumnNumber>36</ColumnNumber>
           <TopLine>1</TopLine>
-          <CurrentLine>39</CurrentLine>
+          <CurrentLine>21</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>\USERS\CHANWEIF\DOCUMENTS\GITHUB\ZIDANE\NAND_MONO\LIBSOURCE\HEADER\UI_CONFIG.H</Name>
+          <ColumnNumber>39</ColumnNumber>
+          <TopLine>1</TopLine>
+          <CurrentLine>21</CurrentLine>
         </Doc>
         <Doc>
           <Name>\USERS\CHANWEIF\DOCUMENTS\GITHUB\ZIDANE\NAND_MONO\LIBSOURCE\HEADER\DEFINE.H</Name>
@@ -2881,9 +2919,9 @@
         </Doc>
         <Doc>
           <Name>.\i2c\tca8418_keypad.c</Name>
-          <ColumnNumber>5</ColumnNumber>
-          <TopLine>595</TopLine>
-          <CurrentLine>624</CurrentLine>
+          <ColumnNumber>17</ColumnNumber>
+          <TopLine>503</TopLine>
+          <CurrentLine>522</CurrentLine>
         </Doc>
         <Doc>
           <Name>.\i2c\i2c.c</Name>
@@ -2902,12 +2940,6 @@
           <ColumnNumber>34</ColumnNumber>
           <TopLine>40</TopLine>
           <CurrentLine>73</CurrentLine>
-        </Doc>
-        <Doc>
-          <Name>.\MAIN\system.C</Name>
-          <ColumnNumber>15</ColumnNumber>
-          <TopLine>1</TopLine>
-          <CurrentLine>3</CurrentLine>
         </Doc>
         <Doc>
           <Name>.\Key\ProcessKey.c</Name>
