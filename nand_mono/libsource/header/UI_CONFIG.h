@@ -9,7 +9,7 @@
 
 #define SERIAL_MONO     FEATURE_ON      // Flag for lcd type
 #define LCM_SIZE        2               // 0=128x64, 1=96x32, 2=160x120
-#define Model	        0               // 0: 64 pins, 1: 128 pins in evaluation board.
+#define Model	        1               // 0: 64 pins, 1: 128 pins in evaluation board.
 #define LCM_TEST_ONLY   FEATURE_OFF
 #define LCM_TEST_INIT   FEATURE_OFF
 #define UI_TEST_ONLY    FEATURE_OFF     // Infinite function to test UI implementation.
