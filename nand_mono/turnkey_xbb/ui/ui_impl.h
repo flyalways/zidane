@@ -76,5 +76,7 @@ void ui_disp_dbg_impl (char *str);
 void ui_disp_char_6x12 (uint8 origin_x, uint8 origin_y, uint8 ascii);
 //void ui_disp_string_6x12 (uint8 origin_x, uint8 origin_y, char *str, uint8 num);
 void ui_disp_string_6x12 (ui_str_t *ui_str);
+void dot_matrix_vtoh (uint8 *in, uint8 *out, uint8 height, uint8 width);
+void dot_matrix_vtoh_new (uint8 *in, uint8 *out, uint8 height, uint8 width);
 
 #endif

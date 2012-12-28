@@ -36,6 +36,9 @@
 #define int8        signed char
 #define int16       signed int
 
+#define uint32      unsigned long
+#define int32       signed long
+
 //#define NULL        0
 
 union LWDataType {

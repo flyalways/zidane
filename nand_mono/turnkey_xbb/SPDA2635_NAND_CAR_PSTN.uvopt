@@ -628,10 +628,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>15</ColumnNumber>
+      <ColumnNumber>51</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>1</TopLine>
-      <CurrentLine>3</CurrentLine>
+      <TopLine>148</TopLine>
+      <CurrentLine>181</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\MAIN\system.C</PathWithFileName>
       <FilenameWithoutPath>system.C</FilenameWithoutPath>
@@ -986,10 +986,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>5</ColumnNumber>
+      <ColumnNumber>54</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>61</TopLine>
-      <CurrentLine>61</CurrentLine>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\Key\ProcessKey.c</PathWithFileName>
       <FilenameWithoutPath>ProcessKey.c</FilenameWithoutPath>
@@ -1098,8 +1098,8 @@
       <Focus>0</Focus>
       <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>0</TopLine>
-      <CurrentLine>0</CurrentLine>
+      <TopLine>1</TopLine>
+      <CurrentLine>1</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\IR\LCM_BMP.c</PathWithFileName>
       <FilenameWithoutPath>LCM_BMP.c</FilenameWithoutPath>
@@ -1112,8 +1112,8 @@
       <Focus>0</Focus>
       <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>0</TopLine>
-      <CurrentLine>0</CurrentLine>
+      <TopLine>123</TopLine>
+      <CurrentLine>123</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\IR\LCM_BMP_driver.c</PathWithFileName>
       <FilenameWithoutPath>LCM_BMP_driver.c</FilenameWithoutPath>
@@ -1124,7 +1124,7 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>0</ColumnNumber>
+      <ColumnNumber>28</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
       <TopLine>0</TopLine>
       <CurrentLine>0</CurrentLine>
@@ -1196,8 +1196,8 @@
       <Focus>0</Focus>
       <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>1312</TopLine>
-      <CurrentLine>1326</CurrentLine>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\DIR\Dir_process.c</PathWithFileName>
       <FilenameWithoutPath>Dir_process.c</FilenameWithoutPath>
@@ -1241,7 +1241,7 @@
 
   <Group>
     <GroupName>ui</GroupName>
-    <tvExp>1</tvExp>
+    <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <File>
@@ -1250,10 +1250,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>12</ColumnNumber>
+      <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>0</TopLine>
-      <CurrentLine>0</CurrentLine>
+      <TopLine>181</TopLine>
+      <CurrentLine>202</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\ui\ui.c</PathWithFileName>
       <FilenameWithoutPath>ui.c</FilenameWithoutPath>
@@ -1264,10 +1264,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>24</ColumnNumber>
+      <ColumnNumber>15</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>0</TopLine>
-      <CurrentLine>0</CurrentLine>
+      <TopLine>1194</TopLine>
+      <CurrentLine>1232</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\ui\ui_impl.c</PathWithFileName>
       <FilenameWithoutPath>ui_impl.c</FilenameWithoutPath>
@@ -1287,8 +1287,8 @@
       <Focus>0</Focus>
       <ColumnNumber>63</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>522</TopLine>
-      <CurrentLine>522</CurrentLine>
+      <TopLine>285</TopLine>
+      <CurrentLine>285</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\i2c\i2c_sim.c</PathWithFileName>
       <FilenameWithoutPath>i2c_sim.c</FilenameWithoutPath>
@@ -1301,8 +1301,8 @@
       <Focus>0</Focus>
       <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>73</TopLine>
-      <CurrentLine>93</CurrentLine>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\i2c\i2c.c</PathWithFileName>
       <FilenameWithoutPath>i2c.c</FilenameWithoutPath>
@@ -1311,12 +1311,12 @@
       <GroupNumber>17</GroupNumber>
       <FileNumber>58</FileNumber>
       <FileType>1</FileType>
-      <tvExp>1</tvExp>
+      <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>49</ColumnNumber>
+      <ColumnNumber>17</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>224</TopLine>
-      <CurrentLine>224</CurrentLine>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\i2c\tca8418_keypad.c</PathWithFileName>
       <FilenameWithoutPath>tca8418_keypad.c</FilenameWithoutPath>
@@ -1344,114 +1344,45 @@
     </File>
   </Group>
 
-  <AlienFiles>
-    <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\I2C\I2C.H</PathWithFilename>
-    <TopLine>40</TopLine>
-    <CurrentLine>73</CurrentLine>
-    <Constant>0</Constant>
-    <WindowPosition>
-      <length>0</length>
-      <flags>0</flags>
-      <showCmd>0</showCmd>
-      <MinPosition>
-        <xPos>0</xPos>
-        <yPos>0</yPos>
-      </MinPosition>
-      <MaxPosition>
-        <xPos>0</xPos>
-        <yPos>0</yPos>
-      </MaxPosition>
-      <NormalPosition>
-        <Top>0</Top>
-        <Left>0</Left>
-        <Right>0</Right>
-        <Bottom>0</Bottom>
-      </NormalPosition>
-    </WindowPosition>
-  </AlienFiles>
-
-  <AlienFiles>
-    <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\I2C\I2C_SIM.H</PathWithFilename>
-    <TopLine>1</TopLine>
-    <CurrentLine>22</CurrentLine>
-    <Constant>0</Constant>
-    <WindowPosition>
-      <length>0</length>
-      <flags>0</flags>
-      <showCmd>0</showCmd>
-      <MinPosition>
-        <xPos>0</xPos>
-        <yPos>0</yPos>
-      </MinPosition>
-      <MaxPosition>
-        <xPos>0</xPos>
-        <yPos>0</yPos>
-      </MaxPosition>
-      <NormalPosition>
-        <Top>0</Top>
-        <Left>0</Left>
-        <Right>0</Right>
-        <Bottom>0</Bottom>
-      </NormalPosition>
-    </WindowPosition>
-  </AlienFiles>
+  <Group>
+    <GroupName>spi</GroupName>
+    <tvExp>1</tvExp>
+    <tvExpOptDlg>0</tvExpOptDlg>
+    <cbSel>0</cbSel>
+    <File>
+      <GroupNumber>0</GroupNumber>
+      <FileNumber>0</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>1</tvExp>
+      <Focus>0</Focus>
+      <ColumnNumber>5</ColumnNumber>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>215</TopLine>
+      <CurrentLine>231</CurrentLine>
+      <bDave2>0</bDave2>
+      <PathWithFileName>.\spi\gt_font.c</PathWithFileName>
+      <FilenameWithoutPath>gt_font.c</FilenameWithoutPath>
+    </File>
+    <File>
+      <GroupNumber>0</GroupNumber>
+      <FileNumber>0</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <Focus>0</Focus>
+      <ColumnNumber>85</ColumnNumber>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>32</TopLine>
+      <CurrentLine>32</CurrentLine>
+      <bDave2>0</bDave2>
+      <PathWithFileName>.\spi\gt_font_spi.c</PathWithFileName>
+      <FilenameWithoutPath>gt_font_spi.c</FilenameWithoutPath>
+    </File>
+  </Group>
 
   <AlienFiles>
     <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\TURNKEY_XBB\IR\LCM_BMP.H</PathWithFilename>
-    <TopLine>62</TopLine>
-    <CurrentLine>76</CurrentLine>
-    <Constant>0</Constant>
-    <WindowPosition>
-      <length>0</length>
-      <flags>0</flags>
-      <showCmd>0</showCmd>
-      <MinPosition>
-        <xPos>0</xPos>
-        <yPos>0</yPos>
-      </MinPosition>
-      <MaxPosition>
-        <xPos>0</xPos>
-        <yPos>0</yPos>
-      </MaxPosition>
-      <NormalPosition>
-        <Top>0</Top>
-        <Left>0</Left>
-        <Right>0</Right>
-        <Bottom>0</Bottom>
-      </NormalPosition>
-    </WindowPosition>
-  </AlienFiles>
-
-  <AlienFiles>
-    <PathWithFilename>C:\USERS\CHANWEIF\DOCUMENTS\GITHUB\ZIDANE\NAND_MONO\TURNKEY_XBB\IR\LCM_BMP_DRIVER.H</PathWithFilename>
-    <TopLine>86</TopLine>
-    <CurrentLine>100</CurrentLine>
-    <Constant>0</Constant>
-    <WindowPosition>
-      <length>0</length>
-      <flags>0</flags>
-      <showCmd>0</showCmd>
-      <MinPosition>
-        <xPos>0</xPos>
-        <yPos>0</yPos>
-      </MinPosition>
-      <MaxPosition>
-        <xPos>0</xPos>
-        <yPos>0</yPos>
-      </MaxPosition>
-      <NormalPosition>
-        <Top>0</Top>
-        <Left>0</Left>
-        <Right>0</Right>
-        <Bottom>0</Bottom>
-      </NormalPosition>
-    </WindowPosition>
-  </AlienFiles>
-
-  <AlienFiles>
-    <PathWithFilename>C:\USERS\CHANWEIF\DOCUMENTS\GITHUB\ZIDANE\NAND_MONO\LIBSOURCE\HEADER\DEFINE.H</PathWithFilename>
-    <TopLine>9</TopLine>
-    <CurrentLine>22</CurrentLine>
+    <TopLine>1</TopLine>
+    <CurrentLine>16</CurrentLine>
     <Constant>0</Constant>
     <WindowPosition>
       <length>0</length>
@@ -1477,7 +1408,7 @@
   <AlienFiles>
     <PathWithFilename>C:\USERS\CHANWEIF\DOCUMENTS\GITHUB\ZIDANE\NAND_MONO\LIBSOURCE\HEADER\UI_CONFIG.H</PathWithFilename>
     <TopLine>1</TopLine>
-    <CurrentLine>21</CurrentLine>
+    <CurrentLine>41</CurrentLine>
     <Constant>0</Constant>
     <WindowPosition>
       <length>0</length>
@@ -1501,9 +1432,87 @@
   </AlienFiles>
 
   <AlienFiles>
-    <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\I2C\TCA8418_KEYPAD.H</PathWithFilename>
+    <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\UI\UI_IMPL.H</PathWithFilename>
+    <TopLine>35</TopLine>
+    <CurrentLine>79</CurrentLine>
+    <Constant>0</Constant>
+    <WindowPosition>
+      <length>0</length>
+      <flags>0</flags>
+      <showCmd>0</showCmd>
+      <MinPosition>
+        <xPos>0</xPos>
+        <yPos>0</yPos>
+      </MinPosition>
+      <MaxPosition>
+        <xPos>0</xPos>
+        <yPos>0</yPos>
+      </MaxPosition>
+      <NormalPosition>
+        <Top>0</Top>
+        <Left>0</Left>
+        <Right>0</Right>
+        <Bottom>0</Bottom>
+      </NormalPosition>
+    </WindowPosition>
+  </AlienFiles>
+
+  <AlienFiles>
+    <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\spi\gt_font.h</PathWithFilename>
     <TopLine>1</TopLine>
-    <CurrentLine>21</CurrentLine>
+    <CurrentLine>7</CurrentLine>
+    <Constant>0</Constant>
+    <WindowPosition>
+      <length>0</length>
+      <flags>0</flags>
+      <showCmd>0</showCmd>
+      <MinPosition>
+        <xPos>0</xPos>
+        <yPos>0</yPos>
+      </MinPosition>
+      <MaxPosition>
+        <xPos>0</xPos>
+        <yPos>0</yPos>
+      </MaxPosition>
+      <NormalPosition>
+        <Top>0</Top>
+        <Left>0</Left>
+        <Right>0</Right>
+        <Bottom>0</Bottom>
+      </NormalPosition>
+    </WindowPosition>
+  </AlienFiles>
+
+  <AlienFiles>
+    <PathWithFilename>C:\Users\chanweif\Documents\GitHub\zidane\nand_mono\turnkey_xbb\spi\gt_font_spi.h</PathWithFilename>
+    <TopLine>1</TopLine>
+    <CurrentLine>4</CurrentLine>
+    <Constant>0</Constant>
+    <WindowPosition>
+      <length>0</length>
+      <flags>0</flags>
+      <showCmd>0</showCmd>
+      <MinPosition>
+        <xPos>0</xPos>
+        <yPos>0</yPos>
+      </MinPosition>
+      <MaxPosition>
+        <xPos>0</xPos>
+        <yPos>0</yPos>
+      </MaxPosition>
+      <NormalPosition>
+        <Top>0</Top>
+        <Left>0</Left>
+        <Right>0</Right>
+        <Bottom>0</Bottom>
+      </NormalPosition>
+    </WindowPosition>
+  </AlienFiles>
+
+  <AlienFiles>
+    <PathWithFilename>C:\USERS\CHANWEIF\DOCUMENTS\GITHUB\ZIDANE\NAND_MONO\LIBSOURCE\HEADER\DEFINE.H</PathWithFilename>
+    <TopLine>1</TopLine>
+    <CurrentLine>39</CurrentLine>
     <Constant>0</Constant>
     <WindowPosition>
       <length>0</length>
@@ -2867,85 +2876,91 @@
     <ActiveMDIGroup>0</ActiveMDIGroup>
     <MDIGroup>
       <Size>100</Size>
-      <ActiveTab>8</ActiveTab>
+      <ActiveTab>2</ActiveTab>
       <Documents>
         <Doc>
-          <Name>.\MAIN\system.C</Name>
-          <ColumnNumber>37</ColumnNumber>
-          <TopLine>529</TopLine>
-          <CurrentLine>560</CurrentLine>
+          <Name>SPI\GT_FONT_SPI.H</Name>
+          <ColumnNumber>68</ColumnNumber>
+          <TopLine>1</TopLine>
+          <CurrentLine>4</CurrentLine>
         </Doc>
         <Doc>
-          <Name>MAIN\../I2C/TCA8418_KEYPAD.H</Name>
-          <ColumnNumber>36</ColumnNumber>
-          <TopLine>1</TopLine>
-          <CurrentLine>21</CurrentLine>
+          <Name>.\spi\gt_font_spi.c</Name>
+          <ColumnNumber>85</ColumnNumber>
+          <TopLine>32</TopLine>
+          <CurrentLine>32</CurrentLine>
         </Doc>
         <Doc>
-          <Name>\USERS\CHANWEIF\DOCUMENTS\GITHUB\ZIDANE\NAND_MONO\LIBSOURCE\HEADER\UI_CONFIG.H</Name>
-          <ColumnNumber>39</ColumnNumber>
+          <Name>.\spi\gt_font.c</Name>
+          <ColumnNumber>5</ColumnNumber>
+          <TopLine>215</TopLine>
+          <CurrentLine>231</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>MAIN\../SPI/GT_FONT.H</Name>
+          <ColumnNumber>0</ColumnNumber>
           <TopLine>1</TopLine>
-          <CurrentLine>21</CurrentLine>
+          <CurrentLine>7</CurrentLine>
         </Doc>
         <Doc>
           <Name>\USERS\CHANWEIF\DOCUMENTS\GITHUB\ZIDANE\NAND_MONO\LIBSOURCE\HEADER\DEFINE.H</Name>
-          <ColumnNumber>63</ColumnNumber>
-          <TopLine>9</TopLine>
-          <CurrentLine>22</CurrentLine>
+          <ColumnNumber>8</ColumnNumber>
+          <TopLine>1</TopLine>
+          <CurrentLine>39</CurrentLine>
         </Doc>
         <Doc>
-          <Name>\USERS\CHANWEIF\DOCUMENTS\GITHUB\ZIDANE\NAND_MONO\TURNKEY_XBB\IR\LCM_BMP_DRIVER.H</Name>
+          <Name>.\IR\LCM_BMP.c</Name>
           <ColumnNumber>0</ColumnNumber>
-          <TopLine>86</TopLine>
-          <CurrentLine>100</CurrentLine>
+          <TopLine>1</TopLine>
+          <CurrentLine>1</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>.\MAIN\system.C</Name>
+          <ColumnNumber>51</ColumnNumber>
+          <TopLine>148</TopLine>
+          <CurrentLine>181</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>.\ui\ui_impl.c</Name>
+          <ColumnNumber>15</ColumnNumber>
+          <TopLine>1194</TopLine>
+          <CurrentLine>1232</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>\USERS\CHANWEIF\DOCUMENTS\GITHUB\ZIDANE\NAND_MONO\LIBSOURCE\HEADER\UI_CONFIG.H</Name>
+          <ColumnNumber>52</ColumnNumber>
+          <TopLine>1</TopLine>
+          <CurrentLine>41</CurrentLine>
         </Doc>
         <Doc>
           <Name>..\LIBSOURCE\USB\..\..\TURNKEY_XBB\IR\LCM_BMP.H</Name>
-          <ColumnNumber>0</ColumnNumber>
-          <TopLine>62</TopLine>
-          <CurrentLine>76</CurrentLine>
-        </Doc>
-        <Doc>
-          <Name>.\DIR\Dir_process.c</Name>
-          <ColumnNumber>0</ColumnNumber>
-          <TopLine>1312</TopLine>
-          <CurrentLine>1326</CurrentLine>
-        </Doc>
-        <Doc>
-          <Name>MAIN\../I2C/I2C_SIM.H</Name>
-          <ColumnNumber>74</ColumnNumber>
+          <ColumnNumber>84</ColumnNumber>
           <TopLine>1</TopLine>
-          <CurrentLine>22</CurrentLine>
-        </Doc>
-        <Doc>
-          <Name>.\i2c\tca8418_keypad.c</Name>
-          <ColumnNumber>17</ColumnNumber>
-          <TopLine>503</TopLine>
-          <CurrentLine>522</CurrentLine>
-        </Doc>
-        <Doc>
-          <Name>.\i2c\i2c.c</Name>
-          <ColumnNumber>0</ColumnNumber>
-          <TopLine>73</TopLine>
-          <CurrentLine>93</CurrentLine>
+          <CurrentLine>16</CurrentLine>
         </Doc>
         <Doc>
           <Name>.\i2c\i2c_sim.c</Name>
           <ColumnNumber>63</ColumnNumber>
-          <TopLine>522</TopLine>
-          <CurrentLine>522</CurrentLine>
+          <TopLine>285</TopLine>
+          <CurrentLine>285</CurrentLine>
         </Doc>
         <Doc>
-          <Name>I2C\I2C.H</Name>
-          <ColumnNumber>34</ColumnNumber>
-          <TopLine>40</TopLine>
-          <CurrentLine>73</CurrentLine>
+          <Name>.\IR\LCM_BMP_driver.c</Name>
+          <ColumnNumber>0</ColumnNumber>
+          <TopLine>123</TopLine>
+          <CurrentLine>123</CurrentLine>
         </Doc>
         <Doc>
-          <Name>.\Key\ProcessKey.c</Name>
-          <ColumnNumber>5</ColumnNumber>
-          <TopLine>61</TopLine>
-          <CurrentLine>61</CurrentLine>
+          <Name>.\ui\ui.c</Name>
+          <ColumnNumber>0</ColumnNumber>
+          <TopLine>181</TopLine>
+          <CurrentLine>202</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>PLAY\../UI/UI_IMPL.H</Name>
+          <ColumnNumber>72</ColumnNumber>
+          <TopLine>35</TopLine>
+          <CurrentLine>79</CurrentLine>
         </Doc>
       </Documents>
     </MDIGroup>
