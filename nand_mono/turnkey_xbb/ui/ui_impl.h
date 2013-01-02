@@ -5,6 +5,9 @@
 #define UI_DISP_BOUND_LIMIT_Y   120
 #define UI_MAX_LEN_STRING_6X12  26
 
+#define UI_BOUND_FILE_NAME_Y_S      51
+#define UI_BOUND_FILE_NAME_Y_E      66
+
 typedef struct 
 {
     uint8 x_start;

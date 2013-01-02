@@ -170,7 +170,7 @@ U8 LCM_UNICODE_HZK_GET_BMP(U8 tc_HighByte, U8 tc_LowByte,U8 * tc_BmpBuf,U8 tbt_U
 		}
 
 		tc_BmpBuf[tc_Loop] = gc_PlayRecordDataBuf[tw_ByteOffset];//get one byte
-        dbprintf("%bx\n", tc_BmpBuf[tc_Loop]);
+        //dbprintf("%bx\n", tc_BmpBuf[tc_Loop]);
 		tw_ByteOffset ++;
 	}			
 	tc_TwoByteFlag=tc_TwoByteFlag|tc_ValidColumn;  

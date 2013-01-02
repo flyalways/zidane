@@ -529,16 +529,13 @@ void LCM_Display(void)
 				gw_DispSongNum1=gw_FileIndex[0];
 				DOS_GetLongFileName(0,gc_FileLongName);
 				gw_LogData_Timer=2;  //20090107 chiayen modify 
-			//	LCM_ClearScreen();				//by home
-				LCM_erase_one_page(2);
-				LCM_erase_one_page(3);
 				LCM_ShowPlayTime(0);
 				gw_DisplayTime=gw_Disp_CurrentSec;
 				LCM_Disp_FileName(&gc_FileLongName[5],gc_FileLongName[2],gc_FileLongName[4],1);
 				gw_LCMScrollTimer=40;
 			}
 
-            #if (SERIAL_MONO == FEATURE_ON)
+            #if (SERIAL_MONO == FEATURE_OFF)
 			if(gw_LCMScrollTimer==0)
 			{
 				if(!gb_LrcFileName_Exist)

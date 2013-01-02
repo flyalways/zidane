@@ -150,21 +150,25 @@ void ui_show_task_phase (uint8 task_phase)
 }
 
 //-----------------------------------------------------------------------------
-// ui_show_file_name
+// Re-write the original function to display the file names. So I keep the original
+// parameters although they looks ugly.
 //
-// Description: show file name
+// param: uint8 *name: pinter to the unicode name data or isn name data.
+//        uint8 is_isn_unicode: 1 is isn; 0 is unicode.
+//        uint8 num: the number of byte of the name data. It should be even.
+//        uint8 is_on_off: 1 is on; 0 is off. I doubt if we will use 0.
 //
 // Created: 2012/10/14
 //-----------------------------------------------------------------------------
 uint8 ui_show_file_name
 (
-    uint8 *DataBuf,
-    uint8 tc_ISNOrUnicode,
-    uint8 nByte,
-    uint8 DispOnOff
+    uint8 *name,
+    uint8 is_isn_unicode,
+    uint8 num,
+    uint8 is_on_off
 )
 {
-    return (ui_show_file_name_impl (DataBuf, tc_ISNOrUnicode, nByte, DispOnOff));
+    return (ui_show_file_name_impl (name, is_isn_unicode, num, is_on_off));
 }
 
 //-----------------------------------------------------------------------------
