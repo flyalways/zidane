@@ -16,6 +16,7 @@
 #include "../ui/ui.h"
 #include "../i2c/tca8418_keypad.h"
 #include "../i2c/i2c_sim.h"
+#include "../spi/gt_font.h"
 
 xdata U8 gc_KeyDet_Mask=0; 
 
@@ -163,6 +164,9 @@ void main(void)
 #endif
 #if (TCA8418_TEST == FEATURE_ON)
     tca8418_test();
+#endif
+#if (GT_FONT_TEST == FEATURE_ON)
+    gt_font_test ();
 #endif
 	
 	if(gbt_USB_Detected)

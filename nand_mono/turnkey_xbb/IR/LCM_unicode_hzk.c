@@ -141,12 +141,12 @@ U8 LCM_UNICODE_HZK_GET_BMP(U8 tc_HighByte, U8 tc_LowByte,U8 * tc_BmpBuf,U8 tbt_U
 	if (tc_BmpAttribute == 0x01)
 	{//if bmp attribute is 0x01,per word bmp include 25byte(24 bmp byte + 1 flag byte) 
 		tdw_UnicodeZKOffset = tdw_UnicodeZKOffset * 25;//calculate the offset of the byte	
-	    tc_MaxLoop = 24;
+	    tc_MaxLoop = 24;dbprintf ("attr 01\n");
   	}
 	else if (tc_BmpAttribute == 0x00)
 	{//if bmp attribute is 0x00,per word bmp include 33byte(32 bmp byte + 1 flag byte) 
 		tdw_UnicodeZKOffset = tdw_UnicodeZKOffset * 33;//calculate the offset of the byte		
- 	    tc_MaxLoop = 32;
+ 	    tc_MaxLoop = 32;dbprintf ("attr 00\n");
 	}
 	else
 	{//other value 
@@ -170,6 +170,7 @@ U8 LCM_UNICODE_HZK_GET_BMP(U8 tc_HighByte, U8 tc_LowByte,U8 * tc_BmpBuf,U8 tbt_U
 		}
 
 		tc_BmpBuf[tc_Loop] = gc_PlayRecordDataBuf[tw_ByteOffset];//get one byte
+        //dbprintf("%bx\n", tc_BmpBuf[tc_Loop]);
 		tw_ByteOffset ++;
 	}			
 	tc_TwoByteFlag=tc_TwoByteFlag|tc_ValidColumn;  

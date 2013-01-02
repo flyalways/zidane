@@ -19,6 +19,7 @@
 // the flag settings together. So...
 #define I2C_SIM_TEST_PIN    FEATURE_OFF
 #define TCA8418_TEST        FEATURE_OFF
+#define GT_FONT_TEST        FEATURE_OFF
 
 #if Model==0
 #define CAR_64  //S+input set build target

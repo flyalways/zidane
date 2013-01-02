@@ -5,6 +5,9 @@
 #define UI_DISP_BOUND_LIMIT_Y   120
 #define UI_MAX_LEN_STRING_6X12  26
 
+#define UI_BOUND_FILE_NAME_Y_S      51
+#define UI_BOUND_FILE_NAME_Y_E      66
+
 typedef struct 
 {
     uint8 x_start;
@@ -76,5 +79,7 @@ void ui_disp_dbg_impl (char *str);
 void ui_disp_char_6x12 (uint8 origin_x, uint8 origin_y, uint8 ascii);
 //void ui_disp_string_6x12 (uint8 origin_x, uint8 origin_y, char *str, uint8 num);
 void ui_disp_string_6x12 (ui_str_t *ui_str);
+void dot_matrix_vtoh (uint8 *in, uint8 *out, uint8 height, uint8 width);
+void dot_matrix_vtoh_new (uint8 *in, uint8 *out, uint8 height, uint8 width);
 
 #endif

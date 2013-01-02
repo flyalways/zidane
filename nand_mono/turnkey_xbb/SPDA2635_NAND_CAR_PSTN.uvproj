@@ -1659,6 +1659,21 @@
             </File>
           </Files>
         </Group>
+        <Group>
+          <GroupName>spi</GroupName>
+          <Files>
+            <File>
+              <FileName>gt_font.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\spi\gt_font.c</FilePath>
+            </File>
+            <File>
+              <FileName>gt_font_spi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\spi\gt_font_spi.c</FilePath>
+            </File>
+          </Files>
+        </Group>
       </Groups>
     </Target>
   </Targets>

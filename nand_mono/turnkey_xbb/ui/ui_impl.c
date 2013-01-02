@@ -1028,99 +1028,131 @@ void ui_show_task_phase_impl (uint8 task_phase)
 }
 
 //-----------------------------------------------------------------------------
-// ui_show_file_name_impl
+// Display the hz string based on the unicode or isn code passed in.
 //
-// Description: show file name
+// I build ui_data_t for each hz.
+// 
+// We need to record the last display area so that we will show only the new hz
+// without last show. If the new string is longer than previous, we will be ok
+// and just show it. If not, we need to clear the previous area first.
+// We don't care about the y since it is all the same. We use the fixed value 16.
+// The height 16 could be the only constant here.
+//
+// param: uint8 *name: pinter to the unicode name data or isn name data.
+//        uint8 is_isn_unicode: 1 is isn; 0 is unicode.
+//        uint8 num: the number of byte of the name data. It should be even.
+//        uint8 is_on_off: 1 is on; 0 is off. I doubt if we will use 0.
+//
+// return: uint8: status of this run.
 //
 // Created: 2012/10/14
 //-----------------------------------------------------------------------------
 uint8 ui_show_file_name_impl
 (
-    uint8 *DataBuf,
-    uint8 tc_ISNOrUnicode,
-    uint8 nByte,
-    uint8 DispOnOff
+    uint8 *name,
+    uint8 is_isn_unicode,
+    uint8 num,
+    uint8 is_on_off
 )
 {
+    #if 0 // Show the message in Chinese: We can't display the file name.
     ui_show_bmp_by_string("filename_no", 0);
     return 0;
-
-    #if 0 // REVISIT!!!
-	U8 i,Column;
-	U8 Tmp_DataBuf[32];
-	U8 Sts;
-	U8 tc_ColumnNum,tc_FirstWorldColumnNum;
-
-	DispOnOff=1;
-	tc_FirstWorldColumnNum = 0x00;
-	Sts = 0;
-	i=0;
-	Column=0;
-
-	while(i<nByte)
-	{
-		if(DispOnOff)
-		{
-			if(!tc_ISNOrUnicode)
-			{
-				tc_ColumnNum = LCM_UNICODE_HZK_GET_BMP(*(DataBuf+i+1),*(DataBuf+i),Tmp_DataBuf,1);
-			}else{
-				tc_ColumnNum = LCM_UNICODE_HZK_GET_BMP(*(DataBuf+i),*(DataBuf+i+1),Tmp_DataBuf,0);
-			}
-			if(i==0)
-			{
-				tc_FirstWorldColumnNum = tc_ColumnNum;
-			}
-		}			
-		if((Column+(tc_ColumnNum&0x7f))>128)
-		{
-			Sts=1;
-			goto DispOver;
-		}
-		if(DispOnOff)
-		{	
-			if((tc_ColumnNum&0x7f) > 8)
-			{
-				LCM_disp_HZKCharBMP(2,Column,Tmp_DataBuf,LCM_IsWord,0);		//just for solang by home
-			}
-			else
-			{
-				LCM_disp_HZKCharBMP(2,Column,Tmp_DataBuf,LCM_IsChar,0);
-			}
-		}
-		Column+=(tc_ColumnNum&0x7f);
-
-		if(tc_ColumnNum&0x80)
-		{
-			i+=2;
-		}else
-		{
-			i+=1;
-		}
-	}
-	Sts=0;
-DispOver:
-	while(Column<128 && DispOnOff)
-	{
-		LCM_set_address(2,Column);//just for solang by home.
-		LCM_write_data(0x00);
-		LCM_set_address(2+1,Column);
-		LCM_write_data(0x00);
-		Column++;
-	}
-	if(Sts)
-	{
-		if(tc_FirstWorldColumnNum&0x80)
-		{
-			gw_DispFileName_ByteOffset++;
-		}
-		gw_DispFileName_ByteOffset+=1;
-	}else{
-		gw_DispFileName_ByteOffset=0;
-	}
-	return Sts;//overstep display area
-
     #endif
+
+    uint8 i;
+    uint8 dot_buf[32];
+    uint8 dot_buf_cooked[32];
+
+    static uint8 last_num=0;
+    static uint8 x_last_s=0;
+    static uint8 x_last_e=0;
+    ui_bound_t ui_bound_last;
+
+    uint8 x_s;
+    uint8 y_s;
+
+    ui_data_t ui_data_hz;
+
+    // It could be 15 or 16 for 16x16 hz font? But the data number should be
+    // both 32.
+    // We probably don't need to care about this parameter...
+    uint8 col_valid; 
+
+    if (is_on_off)
+    {
+        // Do we need to clear the area of last show?
+        if (num<last_num)
+        {
+            ui_bound_last.x_start   =x_last_s;
+            ui_bound_last.x_end     =x_last_e;
+            ui_bound_last.y_start   =UI_BOUND_FILE_NAME_Y_S;
+            ui_bound_last.y_end     =UI_BOUND_FILE_NAME_Y_E;
+            ui_clear_area (&ui_bound_last);                
+        }
+
+        // Set the origin to display the file name. We can use two forms:
+        // left-aligned or middle-aligned.
+        // left-aligned is quite easy. The origin is just (0,Y). Use it now:)
+        x_s = 0;
+        y_s = UI_BOUND_FILE_NAME_Y_S;
+        x_last_s = x_s;
+
+        // Show each hz with two bytes of data.
+        for (i=0; i<num; i=i+2)
+        {
+            // Clear the buf first.
+            memset (dot_buf, 0, 32);
+            memset (dot_buf_cooked, 0, 32);
+
+            // Get the original dot matrix data and the valid column.
+            if (!is_isn_unicode)
+            {
+                // unicode
+                col_valid = LCM_UNICODE_HZK_GET_BMP (*(name+i+1), *(name+i), dot_buf, 1);dbprintf("col is %bx\n",col_valid);
+            }
+            else
+            {
+                // isn code.
+                col_valid = LCM_UNICODE_HZK_GET_BMP (*(name+i+1), *(name+i), dot_buf, 0);
+            }
+            
+            // Get the real column value.
+            col_valid &= 0x7F;
+
+            // Transform the dot matrix data from vertical
+            // negative with vertical move to horizontal positive with hozirontal
+            // move.
+            dot_matrix_vtoh_new (dot_buf, dot_buf_cooked, 16, col_valid);
+
+            // Build ui_data_t for each hz. And show it.
+            ui_data_hz.origin_x = x_s;
+            ui_data_hz.origin_y = y_s;
+            ui_data_hz.ui_bmp.bmp.length = col_valid;
+            ui_data_hz.ui_bmp.bmp.height = 16;
+            ui_data_hz.ui_bmp.bmp.byte_of_line = (col_valid+7)/8;
+            ui_data_hz.ui_bmp.bmp.p_data = dot_buf_cooked;
+            // It is 16x16 or 12x16, we will use 32 bytes of dot data to show it
+            // in the end after transformation.
+            ui_data_hz.ui_bmp.size_bmp_data = 32;
+            ui_disp_ui_data (&ui_data_hz, 0);
+            
+            // Update the bound info for next hz.
+            x_s += col_valid;         
+        }
+
+        // Update the last bound info for this file name.
+        last_num=num;
+        x_last_e = x_s;
+        
+        return 0;  
+    }
+
+    else // We don't want to show? You shouldn't call this...
+    {
+        return 1;
+    }
+
 }
 
 //-----------------------------------------------------------------------------
@@ -1155,47 +1187,125 @@ void ui_show_demo_menu(void)
                       sizeof(bmp_demo_bot)-3);   
 }
 
-//-----------------------------------------------------------------------------
-// vtoh_16x16
-//
-// Description: transform the 16x16 dot matrix data read from unicode hzk file from
-//              vertical, negative modulo to horizontal positive modulo.
-//
-// Created: 2012/10/04
-//-----------------------------------------------------------------------------
-void vtoh_16x16 (unsigned char *v, unsigned char *h)
+///-----------------------------------------------------------------------------
+/// Dot matrix tranformation from vertical negative modulo with horizon move to
+/// horizontal postive modulo with horizontal move.
+///
+/// This is so abstract and complicated... It is good if it works...
+/// We store the dot matrix data by byte. Make sure the out data array is initialized
+/// to 0. This will make the construct of new dot data a little simple. Otherwise,
+/// we need to check if every bit is 1 or 0 before using them...
+///
+/// It is tested with simulation to work as expected. But it seems not in a real
+/// test... It's hard to locate the root cause if there are more than two things
+/// which can be prvoed to be right...
+///
+/// @param uint8 *in: pointer to the original dot matrix data array.
+///        uint8 *out: pointer to the new dot matrix data array.
+///        uint8 height: height of font.
+///        uint8 width: width of font.
+///
+/// @date 2012/12/26
+///-----------------------------------------------------------------------------
+void dot_matrix_vtoh (uint8 *in, uint8 *out, uint8 height, uint8 width)
 {
-    // Be careful when using loop variables as decreasing step. It must be
-    // defined as signed not unsigned because when it decreases to 0, j--
-    // will be a positive number if it is defined as unsigned. Then the loop
-    // will never stop.
-    char i,j;
-    for (i=0; i<16; i=i+2)
+    uint8 i,j;
+    uint8 bit_val=0; // We only care about the last bit: 0000000*
+    uint8 bit_pos; // bit position 0~7 in a byte.
+    uint8 byte=0;
+    uint8 *byte_p;
+    uint8 byte_h;
+    uint8 byte_w;
+
+    byte_h = (height+7)/8; // Number of byte for one column of dots.
+    byte_w = (width+7)/8;  // Number of byte for one row of dots.
+
+    // The idea here is to find a new place for each dot.
+    for (i=0; i<height; i++)
     {
-        for (j=7; j>=0; j--)
+        for (j=0; j<width; j++)
         {
-            h[i] |= ( ((v[0+2*(7-j)] >> (unsigned char)(i/2)) & (unsigned char)0x01) << j );
+            //-----------------------------------------------------------------
+            // Tear down the original data
+            //-----------------------------------------------------------------
+            // Locate the byte of data in for this dot.
+            byte = in[width*(i/8) + j];
+
+            // Get this bit from this byte.
+            bit_pos = i%8;
+            bit_val = (byte>>bit_pos)&0x01; // 0000000*
+
+            //-----------------------------------------------------------------
+            // Put this bit value to the new place of out data.
+            //-----------------------------------------------------------------
+            // First, locate the byte of data out for this dot.
+            byte_p = &out[byte_w*i + j/8];
+
+            // Put the bit value to a new bit position.
+            bit_pos = j%8;
+            bit_pos = 7-bit_pos; // We use the horizontal positive.
+            bit_val <<= bit_pos;
+            *byte_p |= bit_val;
         }
     }
-    for (i=1; i<16; i=i+2)
+    
+}
+
+///-----------------------------------------------------------------------------
+/// Dot matrix tranformation from vertical negative modulo with vertical move to
+/// horizontal postive modulo with horizontal move.
+///
+/// The current font I'm gonna use is provided from Generalplus. It's for mono
+/// lcd. The modulo is "vertical move with vertical negative". And the mono lcd
+/// our hw uses is "horizontal move with horizontal positive"... What a terrible
+/// design!!!
+///
+/// @param uint8 *in: pointer to the original dot matrix data array.
+///        uint8 *out: pointer to the new dot matrix data array.
+///        uint8 height: height of font.
+///        uint8 width: width of font.
+///
+/// @data 2012/12/28
+///-----------------------------------------------------------------------------
+void dot_matrix_vtoh_new (uint8 *in, uint8 *out, uint8 height, uint8 width)
+{
+    uint8 i,j;
+    uint8 bit_val=0; // We only care about the last bit: 0000000*
+    uint8 bit_pos; // bit position 0~7 in a byte.
+    uint8 byte=0;
+    uint8 *byte_p;
+    uint8 byte_h;
+    uint8 byte_w;
+
+    byte_h = (height+7)/8; // Number of byte for one column of dots.
+    byte_w = (width+7)/8;  // Number of byte for one row of dots.
+
+    // The idea here is to find a new place for each dot.
+    for (i=0; i<height; i++)
     {
-        for (j=7; j>=0; j--)
+        for (j=0; j<width; j++)
         {
-            h[i] |= ( ((v[16+2*(7-j)] >> (unsigned char)(i/2)) & (unsigned char)0x01) << j );
-        }
-    }
-    for (i=16; i<32; i=i+2)
-    {
-        for (j=7; j>=0; j--)
-        {
-            h[i] |= ( ((v[1+2*(7-j)] >> (unsigned char)((i-16)/2)) & (unsigned char)0x01) << j );
-        }
-    }
-    for (i=17; i<32; i=i+2)
-    {
-        for (j=7; j>=0; j--)
-        {
-            h[i] |= ( ((v[17+2*(7-j)] >> (unsigned char)((i-16)/2)) & (unsigned char)0x01) << j );
+            //-----------------------------------------------------------------
+            // Tear down the original data
+            //-----------------------------------------------------------------
+            // Locate the byte of data in for this dot.
+            byte = in[byte_h*j + i/8];
+
+            // Get this bit from this byte.
+            bit_pos = i%8;
+            bit_val = (byte>>bit_pos)&0x01; // 0000000*
+
+            //-----------------------------------------------------------------
+            // Put this bit value to the new place of out data.
+            //-----------------------------------------------------------------
+            // First, locate the byte of data out for this dot.
+            byte_p = &out[byte_w*i + j/8];
+
+            // Put the bit value to a new bit position.
+            bit_pos = j%8;
+            bit_pos = 7-bit_pos; // We use the horizontal positive.
+            bit_val <<= bit_pos;
+            *byte_p |= bit_val;
         }
     }
 }
@@ -1205,49 +1315,53 @@ void vtoh_16x16 (unsigned char *v, unsigned char *h)
 //
 // Created: 2012/09/05
 //-----------------------------------------------------------------------------
-xdata uint8 bmp_tmp[32];
-xdata uint8 bmp_tmp_h[32];
 extern uint8 LCM_UNICODE_HZK_GET_BMP(U8 tc_HighByte, U8 tc_LowByte,U8 * tc_BmpBuf,U8 tbt_UnicodeOrISN);
-
+extern void gt_font_get_dot (uint8 *dot, uint16 code_num, uint8 code_type);
 #if (UI_TEST_ONLY == FEATURE_ON)
 void ui_test_impl(void)
 {
     uint8 i;
     ui_data_t hz_data;
+    uint8 hzk_flag;
+    xdata uint8 bmp_tmp[32];
+    xdata uint8 bmp_tmp_h[32];
+    uint8 name[8]={0x00, 0x4e, 0x01, 0x4e, 0x02, 0x4e,0x03,0x4e};
 
-    LCM_UNICODE_HZK_GET_BMP (0x4e,
-                             0x00,
-                             bmp_tmp,
-                             1);
-
+    memset (bmp_tmp, 0, 32);
     memset (bmp_tmp_h, 0, 32);
-    vtoh_16x16 (bmp_tmp, bmp_tmp_h);
 
-    //while(1)
+    #if 1 // test the font of generalplus with unicode.
+    hzk_flag = LCM_UNICODE_HZK_GET_BMP (0x4e, 0x8b, bmp_tmp, 1);
+    dbprintf ("hzk flag is %bx\n", hzk_flag);
+    dot_matrix_vtoh_new(bmp_tmp, bmp_tmp_h, 16,16);
+    #endif
+
+    #if 0 // test the font from font ic GT20.
+    gt_font_get_dot (bmp_tmp_h, 0x4e8b, 1);
+    #endif
+
+    /**/
+    hz_data.origin_x = 0;
+    hz_data.origin_y = 20;
+    hz_data.ui_bmp.bmp.length       = 16;
+    hz_data.ui_bmp.bmp.height       = 16;
+    hz_data.ui_bmp.bmp.byte_of_line = 2;
+    hz_data.ui_bmp.bmp.p_data       = bmp_tmp;
+    hz_data.ui_bmp.size_bmp_data    = 32;
+    ui_disp_ui_data (&hz_data, 0);
+
+    hz_data.origin_x = 20;
+    hz_data.origin_y = 20;
+    hz_data.ui_bmp.bmp.p_data       = bmp_tmp_h;
+    ui_disp_ui_data (&hz_data, 0);
+    
+
+    
+    ui_show_file_name_impl (name, 0, 8, 1);    
+        
+    while(1)
     {
-//        ui_show_demo_menu();
-//        ui_clear_screen();
-//        ui_disp_hello_impl();
-//        ui_clear_screen();
-
-        /*
-        hz_data.origin_x = 0;
-        hz_data.origin_y = 20;
-        hz_data.ui_bmp.bmp.length       = 16;
-        hz_data.ui_bmp.bmp.height       = 16;
-        hz_data.ui_bmp.bmp.byte_of_line = 2;
-        hz_data.ui_bmp.bmp.p_data       = bmp_tmp;
-        hz_data.ui_bmp.size_bmp_data    = 32;
-        ui_disp_ui_data (&hz_data, 0);
-
-        hz_data.origin_x = 20;
-        hz_data.origin_y = 20;
-        hz_data.ui_bmp.bmp.p_data       = bmp_tmp_h;
-        ui_disp_ui_data (&hz_data, 0);
-        */
-        //ui_show_music_basic();
-
-
+    ;
     }
     
 }
