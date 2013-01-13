@@ -158,7 +158,6 @@ void i2c_sim_ack (void)
     i2c_sim_delay(1);   // Just for safe. Maybe redundant since SCL has been LOW for a while. 
     I2C_SDA_LOW;
     i2c_sim_delay(1);
-
     I2C_SCL_HIGH;
     i2c_sim_delay(1);
     I2C_SCL_LOW;
@@ -298,6 +297,11 @@ void i2c_sim_get_byte (int8 *p_dat, bool ack_or_not)
 
     // Initial bus state.
     I2C_SCL_LOW;
+    // Important! 51 GPIO input is an "and" operation of the value inside and the
+    // value of outside line. Before you read the line outside, make sure you have
+    // set the inside value to 1.
+    // I spent two hours here for debugging the kt0810 driver...
+    I2C_SDA_HIGH;
     I2C_SDA_SET_INPUT;
     i2c_sim_delay(1);
 
@@ -550,6 +554,137 @@ xdata i2c_access_t i2c_access_sim = {
                                     };
 #endif
 
+///-----------------------------------------------------------------------------
+/// Write one word to a 16 bit register of a device on the i2c bus simulated by gpio.
+///
+/// Although we do not get ack (you can say it is an error), we don't quit but
+/// continue to send remaining stuff. The ideal handle is to wait and check again
+/// several times. But it is not implemented here for simplicity.
+///
+/// @param  uint8 addr: device address on the bus.
+///         uint8 reg:  register address in the device.
+///         uint16 val:  value written to the register.
+///
+/// @return int8: error and status.
+///
+/// @author William Chang
+/// @date   2013/01/05
+///-----------------------------------------------------------------------------
+int8 i2c_sim_write_reg_word (uint8 addr, uint8 reg, uint16 val)
+{
+    int8 err=0;
+
+    // Send start condition.
+    i2c_sim_start();
+
+    // Send the device address on the bus.
+    if ( i2c_sim_send_byte(addr) )
+    {
+        err |= I2C_ERROR_NO_ACK;
+        dbprintf ("err= %bx sending dev addr in write_reg\n", err);
+    }
+
+    // Send the register address to the device.
+    if ( i2c_sim_send_byte(reg) )
+    {
+        err |= I2C_ERROR_NO_ACK;
+        dbprintf ("err= %bx sending reg in write_reg\n", err);
+    }
+
+    // Send the high byte value to the register.
+    if ( i2c_sim_send_byte(val>>8) )
+    {
+        err |= I2C_ERROR_NO_ACK;
+        dbprintf ("err= %bx sending high val in write_reg\n", err);
+    }
+
+    // Send the low byte value to the register.
+    if ( i2c_sim_send_byte(val&0xFF) )
+    {
+        err |= I2C_ERROR_NO_ACK;
+        dbprintf ("err= %bx sending low val in write_reg\n", err);
+    }
+
+    // Send stop condition.
+    i2c_sim_stop();
+
+    return err;
+}
+
+///-----------------------------------------------------------------------------
+/// Read one word from a register of FM ic KT0810 simulated by gpio.
+///
+/// This is a specific read function for KT0810 based on its own spec.
+/// 
+/// Pay attention to the addr parameter. The address passed in should be the
+/// address for write operation. We will make another one for read operation.
+///
+/// @param  uint8 addr: device address for write operation on the bus.
+///         uint8 reg:  register address in the device.
+///         uint16 *val: place to take the value returned from the register.
+///
+/// @return int8: error and status.
+///
+/// @author William Chang
+/// @date   2013/01/05
+///-----------------------------------------------------------------------------
+int8 i2c_sim_read_reg_word_kt0810 (uint8 addr, uint8 reg, uint16 *p_val)
+{
+    int8 err=0;
+    uint8 val_hi;
+    uint8 val_lo;
+
+    // Send start condition.
+    i2c_sim_start();
+
+    // Send the device address of write operation.
+    if ( i2c_sim_send_byte(addr) )
+    {
+        err |= I2C_ERROR_NO_ACK;
+        dbprintf ("err= %bx sending dev write addr in read_reg\n", err);
+    }
+
+    // Send the register address to the device.
+    if ( i2c_sim_send_byte(reg) )
+    {
+        err |= I2C_ERROR_NO_ACK;
+        dbprintf ("err= %bx sending reg in read_reg\n", err);
+    }
+
+    // Send the start signal again.
+    i2c_sim_start();
+
+    // Send the device address of read operation. For kt0810, it is
+    // write address plus 1. That is also a common standard for i2c devices.
+    if ( i2c_sim_send_byte (addr+1) )
+    {
+        err |= I2C_ERROR_NO_ACK;
+        dbprintf ("err= %bx sending dev read addr in read_reg\n", err);   
+    }
+
+    // Should we wait for some time???
+
+    // Receive the bits 15-8. And give an ack.
+    i2c_sim_get_byte(&val_hi, 1);
+
+    // Receive the bits 7-0. And don't ack.
+    i2c_sim_get_byte(&val_lo, 0); // NON-ACK
+
+    // Send the stop signal if needed.
+    i2c_sim_stop();
+    
+    //*p_val = (0x00FF&val_hi)<<8 + val_lo;
+    *p_val = ((uint16)val_hi)*0x100 + val_lo;
+
+    return err;
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// i2c driver test routine simulated by gpio.
+//-----------------------------------------------------------------------------
 #if (I2C_SIM_TEST_PIN == FEATURE_ON)
 void i2c_sim_test_pin ()
 {

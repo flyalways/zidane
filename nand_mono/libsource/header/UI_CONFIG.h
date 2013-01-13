@@ -13,6 +13,7 @@
 #define LCM_TEST_ONLY   FEATURE_OFF
 #define LCM_TEST_INIT   FEATURE_OFF
 #define UI_TEST_ONLY    FEATURE_OFF     // Infinite function to test UI implementation.
+#define FM_CITY         fm_city_shanghai               // See fm module for reference.
 
 // REVISIT!!!
 // I should not put below flags here. But it is kind of convenient to put all
@@ -20,6 +21,8 @@
 #define I2C_SIM_TEST_PIN    FEATURE_OFF
 #define TCA8418_TEST        FEATURE_OFF
 #define GT_FONT_TEST        FEATURE_OFF
+#define KT0810_TEST         FEATURE_OFF
+#define FM_TEST             FEATURE_ON
 
 #if Model==0
 #define CAR_64  //S+input set build target

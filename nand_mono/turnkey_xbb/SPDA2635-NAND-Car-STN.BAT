@@ -42,6 +42,8 @@ SET CPU_XTAL=0x0112A880
 "C:\Keil\C51\BIN\C51.EXE" @.\obj\i2c_sim.__i
 "C:\Keil\C51\BIN\C51.EXE" @.\obj\i2c.__i
 "C:\Keil\C51\BIN\C51.EXE" @.\obj\TCA841~1.__I
+"C:\Keil\C51\BIN\C51.EXE" @.\obj\kt0810.__i
+"C:\Keil\C51\BIN\C51.EXE" @.\obj\fm_new.__i
 "C:\Keil\C51\BIN\C51.EXE" @.\obj\utility.__i
 "C:\Keil\C51\BIN\C51.EXE" @.\obj\gt_font.__i
 "C:\Keil\C51\BIN\C51.EXE" @.\obj\GT_FON~1.__I

@@ -20,6 +20,8 @@ extern i2c_access_t i2c_access_sim;
 extern int8 i2c_sim_write_reg_byte (uint8 addr, uint8 reg, int8 val);
 extern int8 i2c_sim_read_reg_byte (uint8 addr, uint8 reg, uint8 *p_val);
 int8 i2c_sim_read_reg_byte_tca8418a (uint8 addr, uint8 reg, uint8 *p_val);
+int8 i2c_sim_write_reg_word (uint8 addr, uint8 reg, uint16 val);
+int8 i2c_sim_read_reg_word_kt0810 (uint8 addr, uint8 reg, uint16 *p_val);
 #if (I2C_SIM_TEST_PIN == FEATURE_ON)
 extern void i2c_sim_test_pin();
 #endif

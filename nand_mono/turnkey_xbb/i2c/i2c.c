@@ -133,3 +133,23 @@ int8 i2c_read_reg_byte_tca8418a (
     return i2c_sim_read_reg_byte_tca8418a (addr, reg, p_val);
 }
 #endif // (FEATURE_I2C_DRIVER_VTBL == FEATURE_ON)
+
+///-----------------------------------------------------------------------------
+/// A common i2c interface to write a word
+///
+/// @date   2013/01/05
+///-----------------------------------------------------------------------------
+int8 i2c_write_reg_word (uint8 addr, uint8 reg, uint16 val)
+{
+    return i2c_sim_write_reg_word (addr, reg, val);
+}
+
+///-----------------------------------------------------------------------------
+/// A specific i2c interface to read a word from a register of kt0810sg.
+///
+/// @date   2013/01/05
+///-----------------------------------------------------------------------------
+int8 i2c_read_reg_word_kt0810 (uint8 addr, uint8 reg, uint16 *p_val)
+{
+    return i2c_sim_read_reg_word_kt0810 (addr, reg, p_val);
+}

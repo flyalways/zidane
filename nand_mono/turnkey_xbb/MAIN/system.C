@@ -17,6 +17,8 @@
 #include "../i2c/tca8418_keypad.h"
 #include "../i2c/i2c_sim.h"
 #include "../spi/gt_font.h"
+#include "../i2c/kt0810.h"
+#include "../i2c/fm_new.h"
 
 xdata U8 gc_KeyDet_Mask=0; 
 
@@ -150,6 +152,8 @@ void main(void)
 	XBYTE[0xB421]=0x13;
 	LCM_init_process();
     tca8418_init();
+    kt0810_init();
+    fm_init();
 
     //-------------------------------------------------------------------------
     // Put the test routine entry here.
@@ -167,6 +171,12 @@ void main(void)
 #endif
 #if (GT_FONT_TEST == FEATURE_ON)
     gt_font_test ();
+#endif
+#if (KT0810_TEST == FEATURE_ON)
+    kt0810_test();
+#endif
+#if (FM_TEST == FEATURE_ON)
+    fm_test();
 #endif
 	
 	if(gbt_USB_Detected)

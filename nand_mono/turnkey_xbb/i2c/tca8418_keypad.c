@@ -644,6 +644,34 @@ uint8 tca8418_get_real_key (void)
     return KEY_VALUE_NONE;    
 }
 
+///-----------------------------------------------------------------------------
+/// Check if the key is a key to switch the category.
+///
+/// @param uint8 key
+/// @return 0: false; 1: true.
+/// @date 2013/01/10
+///-----------------------------------------------------------------------------
+uint8 tca8418_is_category_key (uint8 key)
+{
+    if ((key == KEY_VALUE_OPERA)
+        || (key == KEY_VALUE_MUSIC)
+        || (key == KEY_VALUE_FICTION)
+        || (key == KEY_VALUE_COMIC)
+        || (key == KEY_VALUE_SONG)
+        || (key == KEY_VALUE_STORY)
+        || (key == KEY_VALUE_LECTURE)
+        || (key == KEY_VALUE_MISC)
+        || (key == KEY_VALUE_HEALTH))
+    {
+        dbprintf ("It is a category key %bx\n", key);
+        return 1;
+    }
+    else
+    {
+        dbprintf ("It is not a category key %bx\n", key);
+        return 0;
+    }
+}
 
 ///-----------------------------------------------------------------------------
 /// LED test routine drived using tca8418.
