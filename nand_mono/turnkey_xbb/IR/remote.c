@@ -112,6 +112,7 @@ code U8 FloderIcon16x16_Dir[]=
 
 void LCM_ShowFloderIcon(U8 Column)
 {
+#if 0
 	U8	i,j,k=0;
 	gc_LCM_line=0;
 	#if (LCM_SIZE==1)  //20090225
@@ -139,10 +140,13 @@ void LCM_ShowFloderIcon(U8 Column)
 	gw_DisplayFreq1=0xFFFF;
 	#endif
 	gw_DispFileName_ByteOffset=0;
+#endif
 }
 
 void ir_init(void)
 {
+#if 0
+
 	// set time out
 	IR_REG[0x00] = LO_BYTE(TIME_OUT_MIN);
 	IR_REG[0x01] = HI_BYTE(TIME_OUT_MIN);
@@ -202,11 +206,15 @@ void ir_init(void)
 	IR_REG[0x19] = 0x07; // clear all events
 //	dbprintf("IR HW enabled\n");
 	EX0 = 1; EA = 1;
+
+#endif
 }
 
 
 void ir_service(void)
 {
+#if 0
+
 	U16 tw_temp=0;	
 	if(gc_IRCmdStatus!=0)
 	{
@@ -1489,10 +1497,13 @@ void ir_commandservice(void)
 				break;
 	    }
 	}
+#endif
 }
 
 void SaveNumber(U8 number)
 {
+#if 0
+
 	if(gc_IRCmdStatus==1)
 	{
 		gw_IR_Timer=120;
@@ -1576,10 +1587,12 @@ void SaveNumber(U8 number)
 			}
 		}
 	}
+#endif
 }
 
 void PickFreq_Process(void)
 {
+#if 0
  
 	if(gb_ChannelSet==1)
 	{
@@ -1607,9 +1620,10 @@ void PickFreq_Process(void)
 			gc_IRNum_Count=0;
 		}
 	}
+#endif
 }
 
-
+#if 0
 void ClearIRBuffer(void)
 {
 	gb_ChannelSet=0;
@@ -1742,10 +1756,12 @@ void NextorPre_Song(U8 tb_state)
 		ClearIRBuffer();
 	}
 }
-
+#endif
 
 void PickSong_Process(void)
 {
+#if 0
+
 	if(gb_PickSongSet==1)
 	{
 		U16	tw_SongNumber=0;
@@ -1832,10 +1848,13 @@ void PickSong_Process(void)
 		gc_DisplaySongnameCount=0;
 		gw_SongNumberSD=gw_FileIndex[0];
 	}
+#endif
 }
 
 void MediaChange(void)  //20090107 chiayen add
 {
+#if 0
+
 	if((gb_SD_Exist==1) && (gb_Host_Exist==1))
 	{
 		if(gc_CurrentCard==0)
@@ -1873,9 +1892,10 @@ void MediaChange(void)  //20090107 chiayen add
 			gc_CurrentCard=0;
 		}
 	}
+#endif
 }
 
-
+#if 0
 void UI_DispGet_DirName(void)
 {
 	WORD tw_Length;
@@ -1946,6 +1966,4 @@ void PlayMode_CHG(void)  //chiayen0807
         gc_PhaseInx=1;
     }
 }
-
-
-
+#endif
