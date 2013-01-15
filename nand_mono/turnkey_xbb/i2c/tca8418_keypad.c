@@ -668,7 +668,8 @@ uint8 tca8418_is_category_key (uint8 key)
     }
     else
     {
-        dbprintf ("It is not a category key %bx\n", key);
+        // The debug message is anoying. Shut it up.
+        //dbprintf ("It is not a category key %bx\n", key);
         return 0;
     }
 }

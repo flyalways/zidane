@@ -12,11 +12,26 @@
 #include "../IR/lcm_bmp_driver.h"
 #include "ui_impl.h"
 #include "../Header/variables.h"
+#include "../i2c/fm_new.h"
 
 #include "ui_bmp.c"
 #include <string.h>
 
+extern fm_city_cfg_t *p_fm;
+
 static xdata bool ui_is_lock = FALSE;        // Flag of ui locked or not.
+
+typedef struct
+{
+    fm_city_t city;
+    ui_data_t *city_ui_data;
+} ui_fm_city_t;
+
+ui_fm_city_t ui_fm_cities[] =
+{
+    {fm_city_shanghai,  &ui_data_fm_city_sh},
+    {fm_city_beijing,   &ui_data_fm_city_bj},
+};
 
 //-----------------------------------------------------------------------------
 // ui_init_impl
@@ -330,7 +345,7 @@ void ui_clear_area (ui_bound_t *p_ui_bound)
 
     // Check if the bound range is reasonable.
 
-    size_ddram = (x_end-x_start)*(y_end-y_start)/8*4;
+    size_ddram = (uint16)(x_end-x_start)*(uint16)(y_end-y_start)/8*4;
 
     ui_set_disp_bound (x_start, x_end, y_start, y_end);
     lcm_write_command (ST7587_WRITE_DISPLAY_DATA_CMD);
@@ -341,6 +356,24 @@ void ui_clear_area (ui_bound_t *p_ui_bound)
     } 
 }
 
+///----------------------------------------------------------------------------
+/// Clear the area specified by explicit bound.
+///
+/// This is the same with ui_clear_area() above but just more convenient to use.
+///
+/// @date 2013/01/15
+///----------------------------------------------------------------------------
+void ui_clear_area_new (uint8 x_s, uint8 x_e, uint8 y_s, uint8 y_e)
+{
+    ui_bound_t ui_bound;
+
+    ui_bound.x_start    = x_s;
+    ui_bound.x_end      = x_e;
+    ui_bound.y_start    = y_s;
+    ui_bound.y_end      = y_e;
+
+    ui_clear_area (&ui_bound);
+}
 
 // REVISIT!!!
 // Once this feature is used in ui code, every impl function must check this.
@@ -768,6 +801,59 @@ void ui_disp_digit_6x12 (uint8 origin_x, uint8 origin_y, uint8 digit)
 
     ui_disp_ui_data (&ui_data_digit, 0);   
 }
+
+///-----------------------------------------------------------------------------
+/// ui_disp_digit_8x16
+///
+/// Draw a 8x16 digit on the screen for FM UI.
+/// 
+/// @date 2013/01/15
+///-----------------------------------------------------------------------------
+void ui_disp_digit_8x16 (uint8 origin_x, uint8 origin_y, uint8 digit)
+{  
+    ui_data_t ui_data_digit;
+
+    // Check the display bound setting
+
+
+    // Initialize ui_data_t fields for every digit to show.
+    ui_data_digit.origin_x                  = origin_x;
+    ui_data_digit.origin_y                  = origin_y;
+    ui_data_digit.ui_bmp.bmp.length         = 8;
+    ui_data_digit.ui_bmp.bmp.height         = 16;
+    ui_data_digit.ui_bmp.bmp.byte_of_line   = 1;
+    ui_data_digit.ui_bmp.bmp.p_data         = &bmp_digit_8x16[16*digit];
+    ui_data_digit.ui_bmp.size_bmp_data      = 16;
+
+    ui_disp_ui_data (&ui_data_digit, 0);   
+}
+
+///-----------------------------------------------------------------------------
+/// ui_disp_digit_12x24
+///
+/// Draw a 12x24 digit on the screen for FM station. The font is No.18.
+/// 
+/// @date 2013/01/15
+///-----------------------------------------------------------------------------
+void ui_disp_digit_12x24 (uint8 origin_x, uint8 origin_y, uint8 digit)
+{  
+    ui_data_t ui_data_digit;
+
+    // Check the display bound setting
+
+
+    // Initialize ui_data_t fields for every digit to show.
+    ui_data_digit.origin_x                  = origin_x;
+    ui_data_digit.origin_y                  = origin_y;
+    ui_data_digit.ui_bmp.bmp.length         = 12;
+    ui_data_digit.ui_bmp.bmp.height         = 24;
+    ui_data_digit.ui_bmp.bmp.byte_of_line   = 2;
+    ui_data_digit.ui_bmp.bmp.p_data         = &bmp_digit_12x24[48*digit];
+    ui_data_digit.ui_bmp.size_bmp_data      = 48;
+
+    ui_disp_ui_data (&ui_data_digit, 0);   
+}
+
 
 //-----------------------------------------------------------------------------
 // ui_disp_char_6x12
@@ -1309,6 +1395,190 @@ void dot_matrix_vtoh_new (uint8 *in, uint8 *out, uint8 height, uint8 width)
         }
     }
 }
+
+
+
+
+//*****************************************************************************
+// Below is ui implementation for FM function
+//*****************************************************************************
+
+
+
+
+///----------------------------------------------------------------------------
+/// Display the ui outline for FM task as UES requires.
+///
+/// @date 2013/01/13
+///----------------------------------------------------------------------------
+void ui_fm_init_impl (void)
+{
+    ui_bound_t ui_bound = {0, 159, 0, 119};
+
+    // Clear the screen first.
+    ui_clear_area (&ui_bound);
+
+    // Get what city the FM is for because we need to decide which modulo to use.
+    // We display the city later.
+    
+    // Display them.
+    ui_disp_ui_data (&ui_data_fm_chan, 0);
+    ui_disp_ui_data (&ui_data_fm_vol, 0);
+    ui_disp_ui_data (&ui_data_fm_hz, 0);
+    ui_disp_ui_data (&ui_data_music_line_2_0_0, 0);
+}
+
+///----------------------------------------------------------------------------
+/// Display the current channel position and the total counter of channels.
+///
+/// @date 2013/01/13
+///----------------------------------------------------------------------------
+void ui_fm_show_chan_num (void)
+{
+    static uint8 chan_pos_last=0;
+    static uint8 chan_total_last=0;
+
+    uint8 chan_pos;
+    uint8 chan_total;
+
+    chan_pos = p_fm->index_cur + 1;
+    chan_total = p_fm->chan_cnt;
+
+    // Show the current channel index.
+    if (chan_pos != chan_pos_last)
+    {
+        ui_disp_digit_6x12 (12, 0, chan_pos/10);
+        ui_disp_digit_6x12 (18, 0, chan_pos%10);
+        chan_pos_last = chan_pos;   
+    }
+
+    // Show the total channel counter.
+    if (chan_total != chan_total_last)
+    {
+        ui_disp_digit_6x12 (54, 0, chan_total/10);
+        ui_disp_digit_6x12 (60, 0, chan_total%10);
+        chan_total_last = chan_total;                                        
+    }
+}
+
+///----------------------------------------------------------------------------
+/// Display the FM volume
+/// 
+/// I prefer to use digit numbers describing volume.
+///
+/// @date 2013/01/14
+///----------------------------------------------------------------------------
+void ui_fm_show_vol (void)
+{
+    static uint8 vol_last=0;
+    uint8 vol;
+
+    vol = p_fm->vol;
+
+    if (vol != vol_last)
+    {
+        // Tens digit.
+        if (vol/10)
+        {
+            ui_disp_digit_6x12 (141, 0, vol/10);
+        }
+        else
+        {
+            ui_disp_char_6x12 (141, 0, ' ');
+        }
+
+        // Ones digit.
+        ui_disp_digit_6x12 (147, 0, vol%10);
+
+        vol_last = vol;
+    }  
+}
+
+///----------------------------------------------------------------------------
+/// Display the current station frequency. The unit is MHz.
+///
+/// We display the digit numbers from back to head. Like 107.7, the order we
+/// display will be: '7', '.', '7', '0', '1'.
+///
+/// @date 2013/01/13
+///----------------------------------------------------------------------------
+void ui_fm_show_station(void)
+{
+    static uint32 station_last=0;
+    uint32 station;
+
+    station = p_fm->station_cur;
+
+    if (station != station_last)
+    {
+        station /= 100; // The unit will be 100K.
+        
+        // We will use 12x24 for station digit numbers in the end. "MHz" starts
+        // at (99, 51).
+        ui_disp_digit_12x24 (84, 43, station%10);
+        ui_disp_char_6x12 (78, 51, '.');
+        ui_disp_digit_12x24 (66, 43, (station/10)%10);
+        ui_disp_digit_12x24 (54, 43, (station/100)%10);
+        if ((station/1000) % 10)
+        {
+            ui_disp_digit_12x24 (42, 43, (station/1000)%10);
+        }
+        else
+        {
+            ui_clear_area_new (42, 53, 43, 67);
+        }
+
+        station_last = station;
+    }
+}
+
+///----------------------------------------------------------------------------
+/// Display the city
+///
+/// @date 2013/01/14
+///----------------------------------------------------------------------------
+void ui_fm_show_city(void)
+{
+    uint8 i;
+    uint8 cnt;
+
+    cnt = sizeof(ui_fm_cities)/sizeof(ui_fm_city_t);
+
+    // Find the modulo for this city.
+    for (i=0; i<cnt; i++)
+    {
+        if (p_fm->city == ui_fm_cities[i].city)
+        {
+            break;
+        }
+    }
+
+    if (i==cnt)
+    {
+        dbprintf ("No modulo for the city %bx\n", p_fm->city);
+        return;
+    }
+
+    ui_disp_ui_data (ui_fm_cities[i].city_ui_data, 0);    
+}
+
+///----------------------------------------------------------------------------
+/// FM ui routine.
+///
+/// The main place to display FM stuff if there is something refreshed.
+///
+/// @date 2013/01/14
+///----------------------------------------------------------------------------
+void ui_fm_refresh_impl (void)
+{
+    ui_fm_show_chan_num();
+    ui_fm_show_vol();
+    ui_fm_show_station();
+    ui_fm_show_city();    
+}
+
+
+
 
 //-----------------------------------------------------------------------------
 // UI test routine

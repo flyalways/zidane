@@ -8,6 +8,8 @@
 #include "SPDA2K.H"
 #include "kt0810.h"
 #include "tca8418_keypad.h"
+#include "../ui/ui.h"
+#include "fm_new.h"
 
 typedef enum
 {
@@ -85,36 +87,19 @@ code uint32 fm_chan_list_beijing[] =
     0,
 };
 
-typedef enum
-{
-    fm_city_shanghai,
-    fm_city_beijing,
-} fm_city_t;
-
-typedef struct
-{
-    fm_city_t   city;
-    uint8       index_default;
-    uint8       index_cur;
-    uint8       chan_cnt;
-    uint32      station_cur;
-    uint32      *p_chan_list;
-} fm_city_cfg_t;
-
 // The main purpose of this table here is to connect the channel list of a city
 // to the city. Other fields like the index stuff, they are 0 here. But they
 // will be initialized in fm_init().
 static fm_city_cfg_t fm_cities[] = 
 {
-    {fm_city_shanghai,      0, 0, 0, 0, fm_chan_list_shanghai},
-    {fm_city_beijing,       0, 0, 0, 0, fm_chan_list_beijing},
+    {fm_city_shanghai,      0, 0, 0, 0, 0, fm_chan_list_shanghai},
+    {fm_city_beijing,       0, 0, 0, 0, 0, fm_chan_list_beijing},
 };
 
 // FM control block for the current FM management status.
 static fm_city_cfg_t fm_block;
-static fm_city_cfg_t *p_fm = &fm_block;
-
-static fm_city_t fm_city = FM_CITY; 
+fm_city_cfg_t *p_fm;
+fm_city_t fm_city = FM_CITY; 
 
 
 
@@ -154,7 +139,9 @@ void fm_init(void)
         return; 
     }
 
-    // Populate the FM control block.
+    // Populate the FM control block. Clear first.
+    p_fm = &fm_block;
+    memset (p_fm, 0, sizeof(fm_block));
     p_fm->city          = fm_city;
     p_fm->index_default = fm_cities[i].index_default;
     p_fm->index_cur     = p_fm->index_default; // After initial, we use default channel.
@@ -168,11 +155,15 @@ void fm_init(void)
     }
     p_fm->chan_cnt = j;
     
+    // Read the volume.
+    p_fm->vol = kt0810_get_vol();
+
     // Print some cfg info for the FM setting.
     dbprintf ("FM city is %bx\n", p_fm->city);
     dbprintf ("FM default channel index is %bx\n", p_fm->index_default);
     dbprintf ("FM current channel index is %bx\n", p_fm->index_cur);
     dbprintf ("FM channel number is %bx\n", p_fm->chan_cnt);
+    dbprintf ("FM vol is %bx\n", p_fm->vol);
     dbprintf ("FM current station is %lx\n", p_fm->station_cur); 
 }
 
@@ -186,6 +177,21 @@ void fm_init(void)
 void fm_start(void)
 {
     kt0810_set_station (p_fm->station_cur);
+}
+
+///----------------------------------------------------------------------------
+/// FM seek function.
+///
+/// This is a wrapper for seek function in kt0810. But we will maintain the FM
+/// control block here.
+///
+/// @date 2013/01/15
+///----------------------------------------------------------------------------
+void fm_seek (uint8 dir)
+{
+    kt0810_seek (dir);
+
+    p_fm->station_cur = kt0810_get_station();
 }
 
 ///----------------------------------------------------------------------------
@@ -229,6 +235,7 @@ void fm_tune_chan (uint8 dir)
 
     // Tune to the new station.
     kt0810_set_station (*(p_fm->p_chan_list + p_fm->index_cur));
+    p_fm->station_cur = *(p_fm->p_chan_list + p_fm->index_cur);
 }
 
 ///----------------------------------------------------------------------------
@@ -249,7 +256,7 @@ uint8 fm_is_control_key (uint8 key_val)
     {
         // REVISIT!!!
         // The debug message here could be anoyed here. Wipe it off later.
-        dbprintf ("None fm key\n");
+        //dbprintf ("None fm key\n");
         return 0;
     }
 
@@ -315,11 +322,11 @@ void fm_control (uint8 key_val)
     switch (fm_action)
     {
         case FM_ACTION_SEEK_UP:
-            kt0810_seek(1);
+            fm_seek(1);
             break;
 
         case FM_ACTION_SEEK_DOWN:
-            kt0810_seek(0);
+            fm_seek(0);
             break;
 
         case FM_ACTION_TUNE_STEP_UP:
@@ -340,10 +347,12 @@ void fm_control (uint8 key_val)
 
         case FM_ACTION_VOL_UP:
             kt0810_vol_change(1);
+            p_fm->vol++;
             break;
 
         case FM_ACTION_VOL_DOWN:
             kt0810_vol_change(0);
+            p_fm->vol--;
             break;
 
         default:
@@ -366,6 +375,8 @@ void fm_task(void)
 
     // Run a station first.
     fm_start();
+    ui_fm_init();
+    ui_fm_refresh();
 
     while(1)
     {
@@ -386,6 +397,9 @@ void fm_task(void)
         {
             continue;
         }
+
+        // Refresh ui stuff.
+        ui_fm_refresh();
     }
 
     // Prepare to switch to play task.
@@ -398,17 +412,19 @@ void fm_task(void)
 
 void fm_test (void)
 {
-    uint8 key;
+//    uint8 key;
+//
+//    fm_start();
+//
+//    while (1)
+//    {
+//        if (key = tca8418_get_real_key())
+//        {
+//            fm_control (key);    
+//        }
+//    }
 
-    fm_start();
-
-    while (1)
-    {
-        if (key = tca8418_get_real_key())
-        {
-            fm_control (key);    
-        }
-    }
+    fm_task();
 }
 
 #endif

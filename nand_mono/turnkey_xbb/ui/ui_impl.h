@@ -8,6 +8,9 @@
 #define UI_BOUND_FILE_NAME_Y_S      51
 #define UI_BOUND_FILE_NAME_Y_E      66
 
+#define UI_BOUND_FM_CHAN_X_S        27
+#define UI_BOUND_FM_CHAN_Y_S        51
+
 typedef struct 
 {
     uint8 x_start;
@@ -81,5 +84,8 @@ void ui_disp_char_6x12 (uint8 origin_x, uint8 origin_y, uint8 ascii);
 void ui_disp_string_6x12 (ui_str_t *ui_str);
 void dot_matrix_vtoh (uint8 *in, uint8 *out, uint8 height, uint8 width);
 void dot_matrix_vtoh_new (uint8 *in, uint8 *out, uint8 height, uint8 width);
+void ui_fm_init_impl (void);
+void ui_fm_refresh_impl (void);
+
 
 #endif

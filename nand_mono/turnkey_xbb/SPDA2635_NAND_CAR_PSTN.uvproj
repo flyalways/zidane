@@ -1661,13 +1661,6 @@
               </Ax51>
             </Group51>
           </GroupOption>
-          <Files>
-            <File>
-              <FileName>utility.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\utility\utility.c</FilePath>
-            </File>
-          </Files>
         </Group>
         <Group>
           <GroupName>spi</GroupName>

@@ -30,5 +30,8 @@ extern uint8 ui_show_file_name
 );
 extern void ui_show_vol(uint8);
 void ui_show_dbg (char *str);
+void ui_fm_init (void);
+void ui_fm_refresh (void);
+
 
 #endif

@@ -194,6 +194,23 @@ void kt0810_is_done (void)
 }
 
 ///----------------------------------------------------------------------------
+/// Read the current station.
+///
+/// @date 2013/01/15
+///----------------------------------------------------------------------------
+uint32 kt0810_get_station(void)
+{
+    uint16 reg;
+    uint32 station;
+
+    kt0810_read_reg (KT0810_REG_STATUS_B, &reg);
+    station = (reg&REG_MASK_STATUS_B_CHAN)*50 + 64000;
+    dbprintf ("Current station is %lx\n", station);   
+
+    return station;
+}
+
+///----------------------------------------------------------------------------
 /// Seek to a station
 ///
 /// @param uint8 seek_dir: 0 is downward, 1 is upward.
@@ -367,6 +384,20 @@ void kt0810_vol_change (uint8 dir)
     dbprintf ("New vol is %bx\n", reg & REG_MASK_VOL_CFG_VOL);
 }
 
+///----------------------------------------------------------------------------
+/// Read the volume field.
+/// 
+/// @return uint8: the volume value.
+/// @date 2013/01/14
+///----------------------------------------------------------------------------   
+uint8 kt0810_get_vol (void)
+{
+    uint16 reg;
+       
+    // Read the volume.
+    kt0810_read_reg (KT0810_REG_VOL_CFG, &reg);
+    return reg & REG_MASK_VOL_CFG_VOL;
+}
 
 
 

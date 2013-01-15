@@ -23,7 +23,7 @@
 #define KEY_VALUE_VOL_UP        C_Key_Volup
 #define KEY_VALUE_VOL_DOWN      C_Key_Voldn
 
-extern uint8 tca8418_get_real_key (void);
+uint8 tca8418_get_real_key (void);
 void tca8418_init(void);
 uint8 tca8418_is_category_key (uint8 key);
 
