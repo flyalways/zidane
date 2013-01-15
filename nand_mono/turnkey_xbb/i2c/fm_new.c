@@ -11,6 +11,22 @@
 #include "../ui/ui.h"
 #include "fm_new.h"
 
+//-----------------------------------------------------------------------------
+// Function and global variable declaration which we call here from other modules.
+//-----------------------------------------------------------------------------
+void play_stop(void);
+void play_proc(void);
+
+extern uint8 gc_Task_Current;
+extern uint8 gc_Task_Next;
+extern uint8 gc_PhaseInx;
+
+
+
+
+//-----------------------------------------------------------------------------
+// Type, macro and global variable definition in this module.
+//-----------------------------------------------------------------------------
 typedef enum
 {
     FM_ACTION_NONE,
@@ -176,7 +192,11 @@ void fm_init(void)
 ///----------------------------------------------------------------------------   
 void fm_start(void)
 {
+    // Restore the station.
     kt0810_set_station (p_fm->station_cur);
+
+    // restore the volume because when we quit FM, it is hard muted.
+    kt0810_set_vol (p_fm->vol);
 }
 
 ///----------------------------------------------------------------------------
@@ -362,6 +382,21 @@ void fm_control (uint8 key_val)
 }
 
 ///----------------------------------------------------------------------------
+/// Turn off the FM receiver.
+///
+/// When we don't want to hear the FM, just hard mute it by setting the volume
+/// to 0.
+///
+/// @date 2013/01/15
+///----------------------------------------------------------------------------
+void fm_stop(void)
+{
+    // Do we need to do some work to save FM status?
+
+    kt0810_mute_hard();
+}
+
+///----------------------------------------------------------------------------
 /// fm task
 ///
 /// @date 2013/01/10
@@ -369,9 +404,6 @@ void fm_control (uint8 key_val)
 void fm_task(void)
 {
     uint8 key;
-
-    // Stop the play system
-
 
     // Run a station first.
     fm_start();
@@ -390,6 +422,7 @@ void fm_task(void)
         // If the key is a key to switch category.
         else if (tca8418_is_category_key(key))
         {
+            gc_Task_Next = C_Task_Play;
             break;
         }
         // Other invalid keys. Do nothing.
@@ -402,7 +435,19 @@ void fm_task(void)
         ui_fm_refresh();
     }
 
+    // We are leaving FM task.
+    fm_stop();
+
     // Prepare to switch to play task.
+    if (gc_Task_Next == C_Task_Play)
+    {
+        gc_Task_Current = C_Task_Play;
+
+        // Resume the play status.
+        gc_PhaseInx = C_PlayProc;
+    }
+    
+    ui_clear_screen();
 }
 
 ///----------------------------------------------------------------------------

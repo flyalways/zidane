@@ -335,6 +335,10 @@ void main(void)
                 PowerOffProcess();
                 break;
 
+            case C_Task_FM_NEW:
+                fm_task();
+                break;
+
 		/*	case C_Task_RPTMenu:
 				RPTMenuProcess();
 				break; */

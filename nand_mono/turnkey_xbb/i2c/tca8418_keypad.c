@@ -631,7 +631,7 @@ uint8 tca8418_get_real_key (void)
         if (tca8418_keymap[j].key_code == key_code)
         {
             dbprintf ("ked code is %bx\n", key_code);
-            //dbprintf ("key value is %bx\n", tca8418_keymap[j].key_value);
+            dbprintf ("key value is %bx\n", tca8418_keymap[j].key_value);
             tca8418_led_handle (key_code);
             return tca8418_keymap[j].key_value;
         }

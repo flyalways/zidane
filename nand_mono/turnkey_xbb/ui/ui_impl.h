@@ -58,7 +58,6 @@ typedef struct
 void ui_init_impl ();
 void ui_clear_ddram();
 void ui_disp_hello_impl();
-void ui_clear_screen();
 void ui_show_demo_menu();
 void ui_test_impl();
 void ui_show_err_impl();
@@ -86,6 +85,7 @@ void dot_matrix_vtoh (uint8 *in, uint8 *out, uint8 height, uint8 width);
 void dot_matrix_vtoh_new (uint8 *in, uint8 *out, uint8 height, uint8 width);
 void ui_fm_init_impl (void);
 void ui_fm_refresh_impl (void);
+void ui_clear_screen_impl(void);
 
 
 #endif

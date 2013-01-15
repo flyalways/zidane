@@ -32,6 +32,7 @@ extern void ui_show_vol(uint8);
 void ui_show_dbg (char *str);
 void ui_fm_init (void);
 void ui_fm_refresh (void);
+void ui_clear_screen(void);
 
 
 #endif

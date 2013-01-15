@@ -22,7 +22,7 @@
 #define TCA8418_TEST        FEATURE_OFF
 #define GT_FONT_TEST        FEATURE_OFF
 #define KT0810_TEST         FEATURE_OFF
-#define FM_TEST             FEATURE_ON
+#define FM_TEST             FEATURE_OFF
 
 #if Model==0
 #define CAR_64  //S+input set build target

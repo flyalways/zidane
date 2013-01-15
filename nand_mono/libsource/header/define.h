@@ -642,6 +642,7 @@ union WORDDataType {
 #define C_Task_PlayMenu             15  //20090107 chiayen add
 #define	C_Task_PowerOff				16
 #define C_Task_RPTMenu				17
+#define C_Task_FM_NEW               18
 
 #define TASK_PHASE_PLAYACT          0x00
 #define TASK_PHASE_PAUSE			0x01
@@ -695,6 +696,8 @@ union WORDDataType {
 #define C_PlayModeChg	0x13  //chiayen0807
 #define C_FmFreqChg		0x14  //chiayen0807
 #define C_PowerOff		0x15
+
+#define C_Play_to_fm    0x16
 
 #define C_RecIdle       0x00
 #define C_RecInit       0x01

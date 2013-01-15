@@ -100,7 +100,7 @@ int8 kt0810_read_reg (uint8 reg, uint16 *p_val)
 /// Initialize FM ic based on my need:
 ///     1. Traditional, Cycling seek.
 ///     2. Autotune.
-///     3. Maybe softmute...
+///     3. No soft mute but hard mute...
 ///     4. No any interrupt.
 ///     5. Channel spacing is 100K.
 ///     6. Channel range is 87M-108M.
@@ -149,11 +149,11 @@ void kt0810_init(void)
     kt0810_write_reg (KT0810_REG_SEEK_CFG,
                       (reg&(~REG_MASK_SEEK_CFG_SPACE)) | REG_FIELD_SEEK_CFG_SPACE_100K);
 
-    // Set the volume to the max. No hard mute.
+    // Set the volume to the max.
     // It's lazy to set register like this way below...
     kt0810_read_reg (KT0810_REG_VOL_CFG, &reg);
     kt0810_write_reg (KT0810_REG_VOL_CFG,
-                      reg|REG_MASK_VOL_CFG_MUTE_B|REG_MASK_VOL_CFG_VOL);
+                      reg|REG_MASK_VOL_CFG_VOL);
 
 
     // At this point, kt0810 is in a pause status waiting for my control.
@@ -399,6 +399,41 @@ uint8 kt0810_get_vol (void)
     return reg & REG_MASK_VOL_CFG_VOL;
 }
 
+///----------------------------------------------------------------------------
+/// Set the volume field.
+/// 
+/// The volume range is 0-15.
+///
+/// @param uint8 vol: the volume value.
+/// @date 2013/01/15
+///----------------------------------------------------------------------------   
+void kt0810_set_vol (uint8 vol)
+{
+    uint16 reg;
+
+    if (vol>15)
+    {
+        dbprintf ("FM vol setting is invalid %bx\n", vol);
+    }
+
+    kt0810_read_reg (KT0810_REG_VOL_CFG, &reg);
+    kt0810_write_reg (KT0810_REG_VOL_CFG, reg&(~REG_MASK_VOL_CFG_VOL) | vol);
+}
+
+///----------------------------------------------------------------------------
+/// Hard mute the FM ic.
+///
+/// This is done by setting the volume to 0.
+///
+/// @date 2013/01/15
+///----------------------------------------------------------------------------
+void kt0810_mute_hard (void)
+{
+    uint16 reg;
+
+    kt0810_read_reg (KT0810_REG_VOL_CFG, &reg);
+    kt0810_write_reg (KT0810_REG_VOL_CFG, (reg&(~REG_MASK_VOL_CFG_VOL)) | 0);
+}
 
 
 

@@ -95,7 +95,7 @@ UBYTE code PlayTask_PhaseTab[]=
 	C_PlayIdle,         // 0x1F
 
 	C_PlayIdle,         // 0x20
-	C_PlayIdle,     
+	C_Play_to_fm,       // 0x21 KEY_VALUE_FM
 	C_PlayProc,
 	C_PlayProc,
 	C_PlayProc,

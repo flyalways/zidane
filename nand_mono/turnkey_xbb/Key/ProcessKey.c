@@ -48,7 +48,7 @@ void ProcKey_in_play(void)
      U8 x_gc_temp;
 
     // When the screen is not lit, don't act.
-	if(LCM_BACKLIGHT==1)
+	if(LCM_BACKLIGHT==0)
 	{
 		gc_KeyEvent=0;
 		return;	

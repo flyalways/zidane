@@ -1650,7 +1650,7 @@ void Play_Task()
     while(1)
     {
         //dbprintf("gw_IR_Timer=%x\n",gw_IR_Timer);
-        dbprintf("Phase= %bx\n", gc_PhaseInx);
+        //dbprintf("Phase= %bx\n", gc_PhaseInx);
 		switch(gc_PhaseInx)
         {
             case C_PlayInit:
@@ -1827,6 +1827,9 @@ void Play_Task()
 //			   	AS6200_PowerOff();
 				gc_Task_Next=C_Task_PowerOff;
             break;
+            case C_Play_to_fm:
+                gc_Task_Next = C_Task_FM_NEW;
+                break;
 
         }
         //(JC)======play icon proc=========s
@@ -1883,6 +1886,14 @@ void Play_Task()
                     play_stop();    
                 }
             }
+
+            // Add my stuff to prepare FM task.
+            if (gc_Task_Current == C_Task_FM_NEW)
+            {
+                play_stop();
+            }
+
+            // Quit the play task.
             break;  
         }
     }

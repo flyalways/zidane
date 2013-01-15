@@ -375,6 +375,16 @@ void ui_clear_area_new (uint8 x_s, uint8 x_e, uint8 y_s, uint8 y_e)
     ui_clear_area (&ui_bound);
 }
 
+///----------------------------------------------------------------------------
+/// Clear the screen 160x120.
+///
+/// @date 2013/01/15
+///----------------------------------------------------------------------------
+void ui_clear_screen_impl(void)
+{
+    ui_clear_area_new (0, 159, 0, 119);
+}
+
 // REVISIT!!!
 // Once this feature is used in ui code, every impl function must check this.
 //-----------------------------------------------------------------------------
@@ -726,7 +736,8 @@ void ui_disp_hello_impl(void)
 //
 // Created: 2012/07/24
 //-----------------------------------------------------------------------------
-void ui_clear_screen(void)
+#if 0 // We have already a definition above.
+void ui_clear_ddram(void)
 {
     uint16  i;
     uint16  size_x; // column counter
@@ -752,6 +763,7 @@ void ui_clear_screen(void)
         lcm_write_data(0x00);
     }    
 }
+#endif
 
 //-----------------------------------------------------------------------------
 // ui_show_err_impl
@@ -1057,7 +1069,7 @@ void ui_show_music_pause_impl (void)
 void ui_show_nofile_impl (void)
 {
     // Clear the screen first
-    ui_clear_screen();
+    ui_clear_screen_impl();
 
     // Show the message of no file.
     ui_disp_ui_data (&ui_data_nofile, 0);
